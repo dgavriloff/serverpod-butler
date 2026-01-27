@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:js_interop';
-import 'package:web/web.dart' as web;
 
 /// JS interop bindings for the Web Speech API (Chrome).
 /// Uses webkitSpeechRecognition which is the only widely-supported variant.
@@ -80,10 +79,11 @@ class SpeechRecognitionService {
   int _lastFinalIndex = 0;
 
   /// Check if the Web Speech API is available in this browser.
+  /// Tries to instantiate the recognition object — if it throws, it's unsupported.
   static bool get isSupported {
     try {
-      final value = (web.window as JSObject).getProperty('webkitSpeechRecognition'.toJS);
-      return value.typeofEquals('function');
+      _JsSpeechRecognition();
+      return true;
     } catch (_) {
       return false;
     }
