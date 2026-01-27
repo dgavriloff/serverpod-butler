@@ -1,30 +1,25 @@
 # Production configuration for Railway deployment.
-# Railway environment variables override these defaults via Serverpod's
-# SERVERPOD_* env var convention.
+# Environment variables override these defaults:
+#   SERVERPOD_API_SERVER_PUBLIC_HOST, SERVERPOD_DATABASE_HOST, etc.
 
-# Configuration for the main API server.
 apiServer:
   port: 8080
-  publicHost: ${RAILWAY_PUBLIC_DOMAIN:api.examplepod.com}
+  publicHost: localhost
   publicPort: 443
   publicScheme: https
 
-# Configuration for the Insights server.
 insightsServer:
   port: 8081
-  publicHost: ${RAILWAY_PUBLIC_DOMAIN:insights.examplepod.com}
+  publicHost: localhost
   publicPort: 443
   publicScheme: https
 
-# Configuration for the web server (serves Flutter app).
 webServer:
   port: 8082
-  publicHost: ${RAILWAY_PUBLIC_DOMAIN:app.examplepod.com}
+  publicHost: localhost
   publicPort: 443
   publicScheme: https
 
-# Database - Railway provides these via environment variables:
-# SERVERPOD_DATABASE_HOST, SERVERPOD_DATABASE_PORT, etc.
 database:
   host: localhost
   port: 5432
@@ -32,8 +27,6 @@ database:
   user: postgres
   requireSsl: false
 
-# Redis - Railway provides these via environment variables:
-# SERVERPOD_REDIS_HOST, SERVERPOD_REDIS_PORT, etc.
 redis:
   enabled: true
   host: localhost
