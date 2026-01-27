@@ -45,14 +45,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Serverpod specific - ignore generated code by default
-**/generated/
-**/migrations/
+# Serverpod specific - ignore generated code in client/flutter packages
+# (server generated code + migrations are tracked for Docker builds)
+breakout_butler/breakout_butler_client/lib/src/protocol/generated/
+breakout_butler/breakout_butler_flutter/**/generated/
 *.g.dart
-
-# But track server generated code + migrations (needed for Docker builds)
-!breakout_butler/breakout_butler_server/lib/src/generated/
-!breakout_butler/breakout_butler_server/migrations/
 
 # Build outputs
 **/web/app/
