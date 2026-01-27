@@ -9,38 +9,32 @@
 # Leave unset or empty for open access (production)
 
 :{$PORT:8443} {
-	# IP whitelist — block non-allowed IPs when ALLOWED_IPS is set
-	@blocked {
-		not remote_ip {$ALLOWED_IPS:0.0.0.0/0}
-	}
-	handle @blocked {
-		respond "Access denied" 403
-	}
+	# IP whitelist — block non-allowed IPs when ALLOWED_IPS is set.
+	# Uses route block so directives execute in declaration order.
+	# The healthcheck path (/) is always allowed through.
+	route {
+		@blocked {
+			not remote_ip {$ALLOWED_IPS:0.0.0.0/0}
+			not path /
+		}
+		respond @blocked "Access denied" 403
 
-	# API calls (Serverpod RPC is POST-only)
-	@api {
-		method POST
-	}
-	handle @api {
-		reverse_proxy localhost:8080
-	}
+		# API calls (Serverpod RPC is POST-only)
+		@api method POST
+		reverse_proxy @api localhost:8080
 
-	# WebSocket connections (for streaming)
-	@websocket {
-		header Connection *Upgrade*
-		header Upgrade websocket
-	}
-	handle @websocket {
-		reverse_proxy localhost:8080
-	}
+		# WebSocket connections (for streaming)
+		@websocket {
+			header Connection *Upgrade*
+			header Upgrade websocket
+		}
+		reverse_proxy @websocket localhost:8080
 
-	# Insights API (optional, for Serverpod Studio)
-	handle /insights/* {
-		reverse_proxy localhost:8081
-	}
+		# Insights API (optional, for Serverpod Studio)
+		@insights path /insights/*
+		reverse_proxy @insights localhost:8081
 
-	# Everything else → web server (Flutter app + static files)
-	handle {
+		# Everything else → web server (Flutter app + static files)
 		reverse_proxy localhost:8082
 	}
 }
