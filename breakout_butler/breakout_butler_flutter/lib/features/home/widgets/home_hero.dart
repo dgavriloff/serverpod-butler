@@ -11,7 +11,7 @@ class HomeHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: SpSpacing.xxl),
+      padding: const EdgeInsets.only(bottom: SpSpacing.sm),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
