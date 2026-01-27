@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
 import '../services/audio_recorder_web.dart';
+import '../services/speech_recognition_web.dart';
 import '../widgets/audio_visualizer.dart';
 
 /// Professor's dashboard showing all breakout rooms
@@ -26,26 +26,25 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   bool _isLoading = true;
   String? _error;
   bool _isRecording = false;
-  bool _isTranscribing = false;
 
-  /// Queue of audio chunks waiting to be transcribed.
-  /// Chunks arrive every 3s but Gemini can take 5-15s, so we queue them
-  /// instead of dropping them.
-  final List<Uint8List> _audioQueue = [];
-  bool _isProcessingQueue = false;
+  /// Current interim (partial) speech recognition text, shown in italic.
+  String _interimText = '';
 
   StreamSubscription? _roomSubscription;
   StreamSubscription? _transcriptSubscription;
-  StreamSubscription? _audioSubscription;
+  StreamSubscription? _speechSubscription;
 
   final _transcriptController = TextEditingController();
+  final _transcriptScrollController = ScrollController();
   AudioRecorderService? _audioRecorder;
+  SpeechRecognitionService? _speechRecognition;
 
   @override
   void initState() {
     super.initState();
     if (kIsWeb) {
       _audioRecorder = AudioRecorderService();
+      _speechRecognition = SpeechRecognitionService();
     }
     _loadSession();
   }
@@ -54,9 +53,11 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   void dispose() {
     _roomSubscription?.cancel();
     _transcriptSubscription?.cancel();
-    _audioSubscription?.cancel();
+    _speechSubscription?.cancel();
     _audioRecorder?.dispose();
+    _speechRecognition?.dispose();
     _transcriptController.dispose();
+    _transcriptScrollController.dispose();
     super.dispose();
   }
 
@@ -113,18 +114,31 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
         });
       });
 
-      // Subscribe to transcript updates
+      // Subscribe to transcript updates from server (Redis broadcast)
       _transcriptSubscription = client.butler
           .transcriptStream(_liveSession!.sessionId)
           .listen((update) {
         setState(() {
           _transcriptChunks.add(update.text);
         });
+        _scrollTranscriptToBottom();
       });
     } catch (e) {
       // Streaming might not be available yet
       debugPrint('Streaming error: $e');
     }
+  }
+
+  void _scrollTranscriptToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_transcriptScrollController.hasClients) {
+        _transcriptScrollController.animateTo(
+          _transcriptScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Future<void> _addTranscript() async {
@@ -143,92 +157,83 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
     }
   }
 
-  /// Toggle audio recording on/off
+  /// Toggle audio recording + speech recognition on/off
   Future<void> _toggleRecording() async {
-    debugPrint('[_toggleRecording] called, _audioRecorder=${_audioRecorder != null}, _liveSession=${_liveSession?.id}, _isRecording=$_isRecording');
-    if (_audioRecorder == null || _liveSession == null) {
-      debugPrint('[_toggleRecording] ABORT: recorder or session is null');
+    debugPrint('[_toggleRecording] called, _isRecording=$_isRecording');
+    if (_audioRecorder == null || _speechRecognition == null || _liveSession == null) {
+      debugPrint('[_toggleRecording] ABORT: services or session is null');
       return;
     }
 
     if (_isRecording) {
-      debugPrint('[_toggleRecording] stopping recording...');
+      // Stop both services
+      _speechRecognition!.stop();
+      _speechSubscription?.cancel();
+      _speechSubscription = null;
       await _audioRecorder!.stopRecording();
-      _audioSubscription?.cancel();
-      _audioSubscription = null;
-      // Let the queue finish draining (don't clear it — those chunks were already recorded)
       setState(() {
         _isRecording = false;
+        _interimText = '';
       });
-      debugPrint('[_toggleRecording] stopped, ${_audioQueue.length} chunks still in queue');
+      debugPrint('[_toggleRecording] stopped');
     } else {
-      debugPrint('[_toggleRecording] starting recording...');
-      final error = await _audioRecorder!.startRecording();
-      debugPrint('[_toggleRecording] startRecording returned: ${error ?? 'SUCCESS'}');
-      if (error == null) {
-        setState(() {
-          _isRecording = true;
-        });
-
-        // Listen to audio chunks and send to server for transcription
-        _audioSubscription = _audioRecorder!.audioStream.listen((audioData) {
-          debugPrint('[_toggleRecording] got audio chunk: ${audioData.length} bytes');
-          _processAudioChunk(audioData);
-        });
-        debugPrint('[_toggleRecording] subscribed to audioStream');
-      } else {
-        debugPrint('[_toggleRecording] ERROR: $error');
+      // Start visualizer (for frequency bars)
+      final vizError = await _audioRecorder!.startRecording();
+      if (vizError != null) {
+        debugPrint('[_toggleRecording] visualizer error: $vizError');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(error),
-              duration: const Duration(seconds: 5),
-            ),
+            SnackBar(content: Text(vizError), duration: const Duration(seconds: 5)),
           );
         }
-      }
-    }
-  }
-
-  /// Enqueue audio chunk for transcription.
-  /// Chunks are processed sequentially — no chunk is ever dropped.
-  void _processAudioChunk(Uint8List audioData) {
-    if (_liveSession == null) return;
-
-    _audioQueue.add(audioData);
-    debugPrint('[_processAudioChunk] queued chunk (${audioData.length} bytes), queue size: ${_audioQueue.length}');
-    _drainAudioQueue();
-  }
-
-  /// Process queued audio chunks one at a time.
-  Future<void> _drainAudioQueue() async {
-    if (_isProcessingQueue || _audioQueue.isEmpty || _liveSession == null) return;
-    _isProcessingQueue = true;
-
-    while (_audioQueue.isNotEmpty && _liveSession != null && mounted) {
-      final chunk = _audioQueue.removeAt(0);
-      debugPrint('[_drainAudioQueue] processing chunk (${chunk.length} bytes), ${_audioQueue.length} remaining');
-
-      if (mounted) {
-        setState(() => _isTranscribing = true);
+        return;
       }
 
-      try {
-        final transcribedText = await client.butler.processAudio(
-          _liveSession!.sessionId,
-          chunk.buffer.asByteData(),
-          'audio/webm',
-        );
-        debugPrint('[_drainAudioQueue] transcribed: "${transcribedText.length > 80 ? '${transcribedText.substring(0, 80)}...' : transcribedText}"');
-      } catch (e) {
-        debugPrint('[_drainAudioQueue] ERROR: $e');
-        // Don't spam the user with errors for every chunk — just log it
+      // Start speech recognition
+      final speechError = _speechRecognition!.start();
+      if (speechError != null) {
+        debugPrint('[_toggleRecording] speech recognition error: $speechError');
+        await _audioRecorder!.stopRecording();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(speechError), duration: const Duration(seconds: 5)),
+          );
+        }
+        return;
       }
-    }
 
-    _isProcessingQueue = false;
-    if (mounted) {
-      setState(() => _isTranscribing = false);
+      setState(() => _isRecording = true);
+
+      // Listen to speech recognition results
+      _speechSubscription = _speechRecognition!.resultStream.listen(
+        (result) {
+          if (result.isFinal) {
+            // Final result — send to server, clear interim text.
+            // The server broadcasts via Redis and our _transcriptSubscription
+            // will pick it up and add to _transcriptChunks.
+            final text = result.text.trim();
+            if (text.isNotEmpty && _liveSession != null) {
+              debugPrint('[speech] final: "$text"');
+              client.butler.addTranscriptText(_liveSession!.sessionId, text);
+            }
+            setState(() => _interimText = '');
+          } else {
+            // Interim result — show locally only, no server call
+            setState(() => _interimText = result.text);
+            _scrollTranscriptToBottom();
+          }
+        },
+        onError: (error) {
+          debugPrint('[speech] stream error: $error');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Speech recognition: $error')),
+            );
+          }
+        },
+      );
+
+      debugPrint('[_toggleRecording] started both services');
     }
   }
 
@@ -508,6 +513,8 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   }
 
   Widget _buildTranscriptPanel(ColorScheme colorScheme) {
+    final hasContent = _transcriptChunks.isNotEmpty || _interimText.isNotEmpty;
+
     return Column(
       children: [
         // Transcript header
@@ -527,7 +534,7 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Live Transcript', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    if (_isRecording)
+                    if (_isRecording && _audioRecorder != null)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -537,7 +544,7 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
                             height: 18,
                           ),
                           const SizedBox(width: 6),
-                          Text(_isTranscribing ? 'Transcribing...' : 'Recording', style: const TextStyle(fontSize: 10, color: Colors.red)),
+                          const Text('Listening...', style: TextStyle(fontSize: 10, color: Colors.red)),
                         ],
                       ),
                   ],
@@ -558,7 +565,7 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
         ),
         // Transcript content
         Expanded(
-          child: _transcriptChunks.isEmpty
+          child: !hasContent
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -570,12 +577,29 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
                   ),
                 )
               : ListView.builder(
+                  controller: _transcriptScrollController,
                   padding: const EdgeInsets.all(16),
-                  itemCount: _transcriptChunks.length,
-                  itemBuilder: (context, index) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(_transcriptChunks[index]),
-                  ),
+                  itemCount: _transcriptChunks.length + (_interimText.isNotEmpty ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index < _transcriptChunks.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(_transcriptChunks[index]),
+                      );
+                    } else {
+                      // Interim text — visually distinct
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          _interimText,
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 ),
         ),
         // Manual transcript input
@@ -600,6 +624,10 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   }
 
   Widget _buildMobileTranscriptBar(ColorScheme colorScheme) {
+    final displayText = _interimText.isNotEmpty
+        ? _interimText
+        : (_transcriptChunks.isNotEmpty ? _transcriptChunks.last : 'No transcript');
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -621,10 +649,14 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
               ),
             Expanded(
               child: Text(
-                _transcriptChunks.isEmpty ? 'No transcript' : _transcriptChunks.last,
+                displayText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface,
+                  fontStyle: _interimText.isNotEmpty ? FontStyle.italic : FontStyle.normal,
+                ),
               ),
             ),
             const SizedBox(width: 8),
