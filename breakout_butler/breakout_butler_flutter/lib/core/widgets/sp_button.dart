@@ -39,9 +39,14 @@ class SpPrimaryButton extends StatelessWidget {
         : icon != null
             ? Row(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 16),
-                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: Icon(icon, size: 16),
+                  ),
+                  const SizedBox(width: 6),
                   Text(label),
                 ],
               )
@@ -92,9 +97,14 @@ class SpSecondaryButton extends StatelessWidget {
         : icon != null
             ? Row(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 16),
-                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: Icon(icon, size: 16),
+                  ),
+                  const SizedBox(width: 6),
                   Text(label),
                 ],
               )
