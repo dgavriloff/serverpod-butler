@@ -181,6 +181,14 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
     }
 
     if (_isRecording) {
+      // Flush any pending interim text as a final result before stopping.
+      // Chrome's Web Speech API may have buffered partial speech that
+      // hasn't been finalized yet — send it now so it isn't lost.
+      if (_interimText.trim().isNotEmpty && _liveSession != null) {
+        debugPrint('[_toggleRecording] flushing interim text: "$_interimText"');
+        client.butler.addTranscriptText(_liveSession!.sessionId, _interimText.trim());
+      }
+
       // Stop everything
       _speechRecognition?.stop();
       _speechSubscription?.cancel();
