@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
+import '../services/cookie_web.dart';
 
 /// Home screen with join room and create room options
 class HomeScreen extends StatefulWidget {
@@ -67,7 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (mounted) {
         final token = liveSession.creatorToken ?? '';
-        Navigator.of(context).pushReplacementNamed('/$tag?token=$token');
+        CookieService.set('creator_$tag', token);
+        Navigator.of(context).pushReplacementNamed('/$tag');
       }
     } catch (e) {
       setState(() {

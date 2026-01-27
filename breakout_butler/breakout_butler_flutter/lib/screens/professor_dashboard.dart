@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
 import '../services/audio_recorder_web.dart';
+import '../services/cookie_web.dart';
 import '../services/speech_recognition_web.dart';
 import '../widgets/audio_visualizer.dart';
 
 /// Professor's dashboard showing all breakout rooms.
-/// Requires a valid creator token passed as `?token=xxx` in the URL.
+/// Requires a valid creator token stored in a browser cookie
+/// (set during session creation). Falls back to `?token=xxx` query param.
 class ProfessorDashboard extends StatefulWidget {
   final String urlTag;
   final String? token;
@@ -78,10 +80,12 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
 
   Future<void> _loadSession() async {
     try {
-      // Validate creator token
-      if (widget.token == null || widget.token!.isEmpty) {
+      // Resolve creator token: cookie first, then URL query param fallback
+      final token = CookieService.get('creator_${widget.urlTag}') ?? widget.token;
+
+      if (token == null || token.isEmpty) {
         setState(() {
-          _error = 'Access denied. No creator token provided.';
+          _error = 'Access denied. No creator token found.';
           _isLoading = false;
         });
         return;
@@ -89,7 +93,7 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
 
       final isValid = await client.session.validateCreatorToken(
         widget.urlTag,
-        widget.token!,
+        token,
       );
       if (!isValid) {
         setState(() {
