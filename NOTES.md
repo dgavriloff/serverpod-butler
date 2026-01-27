@@ -336,3 +336,148 @@ Future<String> askButler(String question, String transcript) async {
   return response.text ?? '';
 }
 ```
+
+---
+
+## Railway Deployment
+
+### Project: `zoological-celebration`
+
+Railway project has 3 services:
+- **serverpod-butler** — the app (builds from GitHub `dgavriloff/serverpod-butler`, `main` branch)
+- **Postgres** — `ghcr.io/railwayapp-templates/postgres-ssl:17` (with volume)
+- **Redis** — `redis:8.2.1` (with volume)
+
+Two environments: `production` and `dev` (both deploy from `main`).
+
+### Architecture
+
+```
+Internet → Railway public domain (HTTPS :443)
+         → Caddy (listens on $PORT, Railway-assigned)
+              ├── POST requests      → Serverpod API (:8080)
+              ├── WebSocket upgrades → Serverpod API (:8080)
+              ├── /insights/*        → Serverpod Insights (:8081)
+              └── everything else    → Serverpod Web (:8082, serves Flutter app)
+```
+
+**Why Caddy?** Railway only exposes one port per service. Serverpod runs API on 8080 and web on 8082. Caddy multiplexes both through a single Railway-assigned `$PORT`.
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `Dockerfile` | Multi-stage: Flutter web build → Dart server compile → Debian runtime + Caddy |
+| `Caddyfile.production` | Routes POST→API, WebSocket→API, else→web server |
+| `railway.toml` | Tells Railway to use Dockerfile (not Railpack auto-detect) |
+| `production.yaml` | Serverpod config; env vars override `localhost` defaults |
+| `.dockerignore` | Excludes build artifacts, keeps generated code + migrations |
+
+### Environment Variables (set in Railway dashboard or CLI)
+
+**Auto-provided by Railway:**
+- `PORT` — the port Railway routes traffic to (Caddy listens on this)
+- `RAILWAY_PUBLIC_DOMAIN` — the `*.up.railway.app` domain
+
+**Must be set manually for Serverpod:**
+
+| Variable | Purpose |
+|----------|---------|
+| `GEMINI_API_KEY` | Gemini API for transcription |
+| `SERVERPOD_DATABASE_HOST` | `postgres.railway.internal` |
+| `SERVERPOD_DATABASE_PORT` | `5432` |
+| `SERVERPOD_DATABASE_NAME` | `railway` |
+| `SERVERPOD_DATABASE_USER` | `postgres` |
+| `SERVERPOD_DATABASE_PASSWORD` | From Railway Postgres plugin |
+| `SERVERPOD_REDIS_HOST` | `redis.railway.internal` |
+| `SERVERPOD_REDIS_PORT` | `6379` |
+| `SERVERPOD_REDIS_PASSWORD` | From Railway Redis plugin |
+| `SERVERPOD_PASSWORD_database` | Same as `SERVERPOD_DATABASE_PASSWORD` |
+| `SERVERPOD_PASSWORD_redis` | Same as `SERVERPOD_REDIS_PASSWORD` |
+| `SERVERPOD_PASSWORD_serviceSecret` | Random secret for Insights auth |
+| `SERVERPOD_PASSWORD_emailSecretHashPepper` | Random secret |
+| `SERVERPOD_PASSWORD_jwtHmacSha512PrivateKey` | Random secret |
+| `SERVERPOD_PASSWORD_jwtRefreshTokenHashPepper` | Random secret |
+
+**Note:** Serverpod has TWO password systems:
+1. `SERVERPOD_DATABASE_PASSWORD` — overrides `database.password` in the config directly
+2. `SERVERPOD_PASSWORD_<key>` — maps to `passwords.yaml` entries (used by auth module for JWT, service secrets, etc.)
+
+Both must be set. The `SERVERPOD_PASSWORD_database` and `SERVERPOD_PASSWORD_redis` entries are read from `passwords.yaml` for the DB/Redis connections. The `SERVERPOD_DATABASE_*` vars override the config file host/port/name/user/password.
+
+### What Didn't Work / Lessons Learned
+
+#### 1. Railpack can't build Dart/Flutter
+Railway's default builder (Railpack) doesn't support Dart or Flutter. It saw the repo root (markdown files, no recognizable language) and failed. **Fix:** `railway.toml` with `dockerfilePath = "Dockerfile"`.
+
+#### 2. Alpine doesn't work for Dart AOT binaries
+Dart `compile exe` produces glibc-linked binaries. Alpine uses musl. The binary segfaults silently. **Fix:** Use `debian:bookworm-slim` as the runtime base.
+
+#### 3. Original Dockerfile had `COPY --from=server-build /runtime/ /`
+This path doesn't exist in the `dart:3.8.0` image. Dart AOT executables are fully self-contained — no separate runtime libraries needed. **Fix:** Just copy the compiled binary.
+
+#### 4. Flutter Docker image version mismatch
+`ghcr.io/cirruslabs/flutter:3.29.3` ships Dart SDK 3.7.2, but `pubspec.yaml` requires `^3.8.0`. **Fix:** Use `flutter:3.38.7` which has Dart 3.8.x.
+
+#### 5. `**/generated/` in .gitignore blocked Docker builds
+The root `.gitignore` had `**/generated/` and `**/migrations/` which:
+- Prevented `git add` of server generated code (needed `git add -f`)
+- Made `railway up` (CLI deploy) skip those files since it respects `.gitignore`
+- GitHub-triggered deploys also didn't have these files
+
+**Fix:** Changed `.gitignore` to use specific paths instead of globs:
+```
+breakout_butler/breakout_butler_client/lib/src/protocol/generated/
+breakout_butler/breakout_butler_flutter/**/generated/
+```
+This ignores client/flutter generated code but tracks server generated code + migrations.
+
+#### 6. `passwords.yaml` is gitignored → missing at runtime
+Serverpod needs `passwords.yaml` for auth (JWT secrets, service secret, etc.). It's rightfully gitignored. **Fix:** Set `SERVERPOD_PASSWORD_<key>` environment variables in Railway for every key in the production section of `passwords.yaml`.
+
+#### 7. `${VAR:default}` syntax doesn't work in Serverpod YAML
+The original `production.yaml` used `${RAILWAY_PUBLIC_DOMAIN:api.examplepod.com}` but Serverpod's YAML parser doesn't support shell-style variable substitution with defaults. **Fix:** Use plain `localhost` defaults and rely on Serverpod's built-in env var override mechanism (`SERVERPOD_API_SERVER_PUBLIC_HOST`, etc.).
+
+#### 8. DB password auth failure
+Even with `SERVERPOD_DATABASE_PASSWORD` set, Serverpod may use `SERVERPOD_PASSWORD_database` for the actual DB connection (from the passwords map). Both need to be set to the same value from the Railway Postgres plugin.
+
+**Current status:** Password vars found → DB `password authentication failed for user "postgres"`. This suggests `SERVERPOD_PASSWORD_database` may not be matching the actual Railway Postgres password, OR the `production.yaml` `database.name` is `serverpod` but Railway's DB name is `railway`.
+
+### Still TODO
+
+1. **Fix DB connection** — Verify `SERVERPOD_DATABASE_NAME=railway` overrides `database.name: serverpod` in production.yaml. Check which password Serverpod actually uses for the DB connection.
+2. **Set `SERVERPOD_API_SERVER_PUBLIC_HOST`** — Needs to be the Railway public domain so the Flutter app's `config.json` gets the right API URL.
+3. **Run migrations** — First successful boot needs `--apply-migrations` flag or manual migration.
+4. **Generate a Railway domain** — Already created `serverpod-butler-dev.up.railway.app` for production env.
+5. **Test the full flow** — Flutter app loads → API calls work → DB connected → Redis connected.
+
+### Useful Railway CLI Commands
+
+```bash
+# Link project (already done)
+railway link
+
+# Switch environment
+railway environment production
+
+# Link service
+railway service serverpod-butler
+
+# Set env vars
+railway variables set KEY=value
+
+# View env vars
+railway variables
+
+# View logs
+railway logs
+
+# Deploy from local (uses .gitignore by default)
+railway up --ci
+
+# Deploy ignoring .gitignore
+railway up --ci --no-gitignore
+
+# Check project status
+railway status --json
+```
