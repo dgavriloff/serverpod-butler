@@ -10,7 +10,7 @@
 
 {
 	servers {
-		trusted_proxies static private_ranges
+		trusted_proxies static private_ranges 100.64.0.0/10
 	}
 }
 
@@ -19,15 +19,9 @@
 	# Uses route block so directives execute in declaration order.
 	# The healthcheck path (/) is always allowed through.
 	route {
-		# Debug: show client IP (remove after testing)
-		handle /debug-ip {
-			respond "remote_ip: {remote_host}, xff: {header.X-Forwarded-For}, real-ip: {header.X-Real-Ip}, cf-ip: {header.CF-Connecting-IP}" 200
-		}
-
 		@blocked {
 			not remote_ip {$ALLOWED_IPS:0.0.0.0/0}
 			not path /
-			not path /debug-ip
 		}
 		respond @blocked "Access denied" 403
 
