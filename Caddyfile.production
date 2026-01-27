@@ -8,6 +8,12 @@
 # Set ALLOWED_IPS env var to restrict access (e.g. "50.47.24.251/32")
 # Leave unset or empty for open access (production)
 
+{
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
 :{$PORT:8443} {
 	# IP whitelist — block non-allowed IPs when ALLOWED_IPS is set.
 	# Uses route block so directives execute in declaration order.
