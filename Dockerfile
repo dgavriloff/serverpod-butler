@@ -5,7 +5,7 @@
 # =============================================================================
 
 # Stage 1: Build Flutter web app
-FROM ghcr.io/cirruslabs/flutter:3.29.3 AS flutter-build
+FROM ghcr.io/cirruslabs/flutter:3.38.7 AS flutter-build
 WORKDIR /app
 
 # Copy all packages (Flutter needs client lib for dependencies)
