@@ -52,7 +52,14 @@ breakout_butler/breakout_butler_flutter/**/generated/
 *.g.dart
 
 # Build outputs
-**/web/app/
+# NOTE: web/app/ is intentionally TRACKED (not ignored).
+# Flutter web is pre-built locally and committed so Railway doesn't
+# have to install Flutter + rebuild from scratch on every push.
+# After changing Flutter code, rebuild and commit:
+#   cd breakout_butler/breakout_butler_flutter
+#   flutter build web --base-href /app/ --wasm
+#   cp -r build/web/* ../breakout_butler_server/web/app/
+#   git add breakout_butler/breakout_butler_server/web/app/
 **/build/
 
 # Docker

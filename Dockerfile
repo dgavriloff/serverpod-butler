@@ -1,23 +1,18 @@
 # =============================================================================
 # Multi-stage Dockerfile for Railway deployment
-# Builds Flutter web app + Serverpod server in a single image
+# Compiles Serverpod server + copies pre-built Flutter web app
 # Uses Caddy as reverse proxy to serve API + web through a single port
+#
+# IMPORTANT: Flutter web is PRE-BUILT locally and committed to git.
+# This avoids installing Flutter SDK in Docker (saves ~5min per deploy).
+# After changing Flutter code, rebuild and commit:
+#   cd breakout_butler/breakout_butler_flutter
+#   flutter build web --base-href /app/ --wasm
+#   cp -r build/web/* ../breakout_butler_server/web/app/
+#   git add breakout_butler/breakout_butler_server/web/app/
 # =============================================================================
 
-# Stage 1: Build Flutter web app
-FROM ghcr.io/cirruslabs/flutter:3.38.7 AS flutter-build
-WORKDIR /app
-
-# Copy all packages (Flutter needs client lib for dependencies)
-COPY breakout_butler/breakout_butler_client breakout_butler_client
-COPY breakout_butler/breakout_butler_flutter breakout_butler_flutter
-
-# Build Flutter web
-WORKDIR /app/breakout_butler_flutter
-RUN flutter pub get
-RUN flutter build web --base-href /app/ --wasm
-
-# Stage 2: Build Dart server
+# Stage 1: Build Dart server
 FROM dart:3.8.0 AS server-build
 WORKDIR /app
 
@@ -49,8 +44,8 @@ COPY --from=server-build /app/web/ web/
 COPY --from=server-build /app/migrations/ migrations/
 COPY --from=server-build /app/lib/src/generated/protocol.yaml lib/src/generated/protocol.yaml
 
-# Copy Flutter web build into Serverpod's web/app/ directory
-COPY --from=flutter-build /app/breakout_butler_flutter/build/web/ web/app/
+# Flutter web build is pre-built and committed at web/app/ in the server package
+# (already included via COPY --from=server-build /app/web/ web/ above)
 
 # Copy production Caddyfile
 COPY Caddyfile.production /etc/caddy/Caddyfile

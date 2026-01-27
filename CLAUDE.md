@@ -43,11 +43,20 @@ mkcert localhost 127.0.0.1 <LAN_IP>
 - For localhost: set to `http://localhost:8080`
 
 ### Build & Deploy Flutter Web
+
+**IMPORTANT: Pre-built workflow.** Flutter web output is committed to git so
+Railway doesn't have to install the Flutter SDK and rebuild from scratch on
+every push. The Dockerfile does NOT build Flutter — it copies the pre-built
+files from `breakout_butler_server/web/app/`.
+
+After ANY Flutter code change, you MUST rebuild and commit the output:
 ```bash
 cd breakout_butler/breakout_butler_flutter
 flutter build web --base-href /app/ --wasm
 cp -r build/web/* ../breakout_butler_server/web/app/
+git add breakout_butler/breakout_butler_server/web/app/
 ```
+If you skip this step, Railway will deploy stale frontend code.
 
 ### Serverpod Development Config
 - `breakout_butler_server/config/development.yaml`
