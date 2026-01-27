@@ -4,7 +4,7 @@
 .vscode
 .idea
 **/build/
-**/web/app/
+# NOTE: web/app/ is NOT ignored — it contains the pre-built Flutter web output
 **/certs/
 **/doc/
 **/.dart_tool/
