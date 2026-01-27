@@ -41,24 +41,34 @@ class ButlerEndpoint extends Endpoint {
   Future<String> processAudio(
     Session session,
     int sessionId,
-    Uint8List audioData,
+    ByteData audioData,
     String mimeType,
   ) async {
-    session.log('Processing audio: ${audioData.length} bytes, mimeType: $mimeType');
+    final audioBytes = audioData.buffer.asUint8List();
+    print('[processAudio] START sessionId=$sessionId, ${audioBytes.length} bytes, mimeType=$mimeType');
 
-    // Transcribe using Gemini
-    final transcribedText = await GeminiService.instance.transcribeAudio(
-      audioData,
-      mimeType,
-    );
+    try {
+      print('[processAudio] calling GeminiService.transcribeAudio...');
+      final transcribedText = await GeminiService.instance.transcribeAudio(
+        audioBytes,
+        mimeType,
+      );
+      print('[processAudio] transcription result: "${transcribedText.length > 100 ? '${transcribedText.substring(0, 100)}...' : transcribedText}"');
 
-    session.log('Transcribed text: "$transcribedText"');
+      if (transcribedText.isNotEmpty) {
+        print('[processAudio] calling addTranscriptText...');
+        await addTranscriptText(session, sessionId, transcribedText);
+        print('[processAudio] addTranscriptText done');
+      }
 
-    if (transcribedText.isNotEmpty) {
-      await addTranscriptText(session, sessionId, transcribedText);
+      print('[processAudio] SUCCESS returning text');
+      return transcribedText;
+    } catch (e, st) {
+      print('[processAudio] ERROR: $e');
+      print('[processAudio] STACK: $st');
+      session.log('processAudio error: $e\n$st', level: LogLevel.error);
+      return '';
     }
-
-    return transcribedText;
   }
 
   /// Manually add text to transcript (useful for testing and demo)
@@ -67,21 +77,29 @@ class ButlerEndpoint extends Endpoint {
     int sessionId,
     String text,
   ) async {
+    print('[addTranscriptText] START sessionId=$sessionId, text="${text.length > 50 ? '${text.substring(0, 50)}...' : text}"');
+
     // Get current live session
+    print('[addTranscriptText] querying LiveSession...');
     final liveSession = await LiveSession.db.findFirstRow(
       session,
       where: (t) => t.sessionId.equals(sessionId) & t.isActive.equals(true),
     );
+    print('[addTranscriptText] liveSession found: ${liveSession != null} (id=${liveSession?.id})');
 
     if (liveSession == null) {
+      print('[addTranscriptText] ERROR: No active live session!');
       throw Exception('No active live session found');
     }
 
     // Append to transcript
+    print('[addTranscriptText] updating transcript in DB...');
     liveSession.transcript = '${liveSession.transcript}\n$text'.trim();
     await LiveSession.db.updateRow(session, liveSession);
+    print('[addTranscriptText] DB update done');
 
     // Store as chunk for searchability
+    print('[addTranscriptText] inserting TranscriptChunk...');
     await TranscriptChunk.db.insertRow(
       session,
       TranscriptChunk(
@@ -90,16 +108,26 @@ class ButlerEndpoint extends Endpoint {
         text: text,
       ),
     );
+    print('[addTranscriptText] chunk inserted');
 
-    // Broadcast update
-    final update = TranscriptUpdate(
-      text: text,
-      timestamp: DateTime.now(),
-    );
-    session.messages.postMessage(
-      _transcriptChannel(sessionId),
-      update,
-    );
+    // Broadcast update (non-fatal if messaging fails)
+    try {
+      print('[addTranscriptText] broadcasting via Redis...');
+      final update = TranscriptUpdate(
+        text: text,
+        timestamp: DateTime.now(),
+      );
+      session.messages.postMessage(
+        _transcriptChannel(sessionId),
+        update,
+      );
+      print('[addTranscriptText] broadcast done');
+    } catch (e) {
+      print('[addTranscriptText] BROADCAST FAILED: $e');
+      session.log('Broadcast failed (Redis may be down): $e',
+          level: LogLevel.warning);
+    }
+    print('[addTranscriptText] END');
   }
 
   /// Ask the butler a question about the transcript - uses Gemini AI

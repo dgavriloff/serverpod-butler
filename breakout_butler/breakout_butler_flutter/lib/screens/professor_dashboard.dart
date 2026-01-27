@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
 import '../services/audio_recorder_web.dart';
+import '../widgets/audio_visualizer.dart';
 
 /// Professor's dashboard showing all breakout rooms
 class ProfessorDashboard extends StatefulWidget {
@@ -138,19 +139,25 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
 
   /// Toggle audio recording on/off
   Future<void> _toggleRecording() async {
-    if (_audioRecorder == null || _liveSession == null) return;
+    debugPrint('[_toggleRecording] called, _audioRecorder=${_audioRecorder != null}, _liveSession=${_liveSession?.id}, _isRecording=$_isRecording');
+    if (_audioRecorder == null || _liveSession == null) {
+      debugPrint('[_toggleRecording] ABORT: recorder or session is null');
+      return;
+    }
 
     if (_isRecording) {
-      // Stop recording
+      debugPrint('[_toggleRecording] stopping recording...');
       await _audioRecorder!.stopRecording();
       _audioSubscription?.cancel();
       _audioSubscription = null;
       setState(() {
         _isRecording = false;
       });
+      debugPrint('[_toggleRecording] stopped');
     } else {
-      // Start recording - now returns error message or null on success
+      debugPrint('[_toggleRecording] starting recording...');
       final error = await _audioRecorder!.startRecording();
+      debugPrint('[_toggleRecording] startRecording returned: ${error ?? 'SUCCESS'}');
       if (error == null) {
         setState(() {
           _isRecording = true;
@@ -158,9 +165,12 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
 
         // Listen to audio chunks and send to server for transcription
         _audioSubscription = _audioRecorder!.audioStream.listen((audioData) {
+          debugPrint('[_toggleRecording] got audio chunk: ${audioData.length} bytes');
           _processAudioChunk(audioData);
         });
+        debugPrint('[_toggleRecording] subscribed to audioStream');
       } else {
+        debugPrint('[_toggleRecording] ERROR: $error');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -175,32 +185,41 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
 
   /// Send audio chunk to server for transcription
   Future<void> _processAudioChunk(Uint8List audioData) async {
-    if (_liveSession == null || _isTranscribing) return;
+    debugPrint('[_processAudioChunk] called, ${audioData.length} bytes, _isTranscribing=$_isTranscribing, sessionId=${_liveSession?.sessionId}');
+    if (_liveSession == null || _isTranscribing) {
+      debugPrint('[_processAudioChunk] SKIPPED (session=${_liveSession != null}, busy=$_isTranscribing)');
+      return;
+    }
 
     setState(() {
       _isTranscribing = true;
     });
 
     try {
-      // Send audio to server for Gemini transcription
+      debugPrint('[_processAudioChunk] calling client.butler.processAudio...');
       final transcribedText = await client.butler.processAudio(
         _liveSession!.sessionId,
-        audioData,
+        audioData.buffer.asByteData(),
         'audio/webm',
       );
-
-      if (transcribedText.isNotEmpty && mounted) {
-        // Transcript is automatically broadcast to all clients via the server
-        debugPrint('Transcribed: $transcribedText');
-      }
+      debugPrint('[_processAudioChunk] SUCCESS: "${transcribedText.length > 80 ? '${transcribedText.substring(0, 80)}...' : transcribedText}"');
     } catch (e) {
-      debugPrint('Transcription error: $e');
+      debugPrint('[_processAudioChunk] ERROR: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Transcription error: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
           _isTranscribing = false;
         });
       }
+      debugPrint('[_processAudioChunk] DONE, _isTranscribing reset to false');
     }
   }
 
@@ -503,8 +522,12 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
-                          const SizedBox(width: 4),
+                          AudioVisualizer(
+                            audioLevelStream: _audioRecorder!.audioLevelStream,
+                            width: 100,
+                            height: 18,
+                          ),
+                          const SizedBox(width: 6),
                           Text(_isTranscribing ? 'Transcribing...' : 'Recording', style: const TextStyle(fontSize: 10, color: Colors.red)),
                         ],
                       ),
@@ -578,8 +601,15 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
         top: false,
         child: Row(
           children: [
-            if (_isRecording)
-              Container(width: 8, height: 8, margin: const EdgeInsets.only(right: 8), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+            if (_isRecording && _audioRecorder != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: AudioVisualizer(
+                  audioLevelStream: _audioRecorder!.audioLevelStream,
+                  width: 60,
+                  height: 20,
+                ),
+              ),
             Expanded(
               child: Text(
                 _transcriptChunks.isEmpty ? 'No transcript' : _transcriptChunks.last,

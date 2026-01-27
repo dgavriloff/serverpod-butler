@@ -266,7 +266,7 @@ class EndpointButler extends _i2.EndpointRef {
   /// Process audio chunk and transcribe using Gemini
   _i3.Future<String> processAudio(
     int sessionId,
-    _i6.Uint8List audioData,
+    _i6.ByteData audioData,
     String mimeType,
   ) => caller.callServerEndpoint<String>(
     'butler',
