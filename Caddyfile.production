@@ -20,7 +20,7 @@
 	# The healthcheck path (/) is always allowed through.
 	route {
 		@blocked {
-			not remote_ip {$ALLOWED_IPS:0.0.0.0/0}
+			not client_ip {$ALLOWED_IPS:0.0.0.0/0}
 			not path /
 		}
 		respond @blocked "Access denied" 403
