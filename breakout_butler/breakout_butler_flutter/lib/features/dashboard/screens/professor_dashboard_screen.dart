@@ -182,12 +182,13 @@ class _ProfessorDashboardScreenState
         onSegmentTap: (index) {
           if (index == 0) context.go('/');
         },
-        trailing: TextButton.icon(
+        trailing: OutlinedButton.icon(
           onPressed: _onCloseRoom,
           icon: const Icon(Icons.close, size: 16),
           label: const Text('close room'),
-          style: TextButton.styleFrom(
+          style: OutlinedButton.styleFrom(
             foregroundColor: SpColors.live,
+            side: const BorderSide(color: SpColors.border),
           ),
         ),
       ),
