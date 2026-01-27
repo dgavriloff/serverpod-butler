@@ -4,7 +4,7 @@ import '../theme/sp_colors.dart';
 import '../theme/sp_spacing.dart';
 import '../theme/sp_typography.dart';
 
-/// scratchpad text field — 48px height, 6px radius, label above.
+/// breakoutpad text field — 48px height, 6px radius, label above.
 ///
 /// Focus: blue border. Error: red border + message below.
 class SpTextField extends StatelessWidget {

@@ -16,7 +16,7 @@ class HomeHero extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'scratchpad',
+            'breakoutpad',
             style: SpTypography.display,
             textAlign: TextAlign.center,
           ),

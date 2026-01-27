@@ -1,7 +1,7 @@
 import 'package:flutter/painting.dart';
 import 'sp_colors.dart';
 
-/// scratchpad design system — type scale.
+/// breakoutpad design system — type scale.
 ///
 /// System fonts only. Weight over size. Generous line-height.
 /// Lowercase bias enforced at the content level, not here.

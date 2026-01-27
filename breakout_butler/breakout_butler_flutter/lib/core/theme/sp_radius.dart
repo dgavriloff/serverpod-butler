@@ -1,6 +1,6 @@
 import 'package:flutter/painting.dart';
 
-/// scratchpad design system — border radius tokens.
+/// breakoutpad design system — border radius tokens.
 abstract final class SpRadius {
   static const double card = 8;
   static const double button = 6;

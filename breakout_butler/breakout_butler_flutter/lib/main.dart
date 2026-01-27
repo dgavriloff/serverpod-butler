@@ -17,18 +17,18 @@ void main() async {
   client = Client(serverUrl)
     ..connectivityMonitor = FlutterConnectivityMonitor();
 
-  runApp(const ProviderScope(child: ScratchpadApp()));
+  runApp(const ProviderScope(child: BreakoutpadApp()));
 }
 
-class ScratchpadApp extends StatelessWidget {
-  const ScratchpadApp({super.key});
+class BreakoutpadApp extends StatelessWidget {
+  const BreakoutpadApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'scratchpad',
+      title: 'breakoutpad',
       debugShowCheckedModeBanner: false,
-      theme: buildScratchpadTheme(),
+      theme: buildBreakoutpadTheme(),
       routerConfig: appRouter,
     );
   }

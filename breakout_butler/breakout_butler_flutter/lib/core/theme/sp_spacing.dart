@@ -1,6 +1,6 @@
 import 'package:flutter/painting.dart';
 
-/// scratchpad design system — spacing tokens.
+/// breakoutpad design system — spacing tokens.
 ///
 /// 4px base unit. Aggressive whitespace.
 abstract final class SpSpacing {

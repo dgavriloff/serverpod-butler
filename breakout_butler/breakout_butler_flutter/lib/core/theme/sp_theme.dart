@@ -3,10 +3,10 @@ import 'sp_colors.dart';
 import 'sp_radius.dart';
 import 'sp_typography.dart';
 
-/// Builds the scratchpad light theme from design tokens.
+/// Builds the breakoutpad light theme from design tokens.
 ///
 /// Light only for now. Dark theme support planned for later.
-ThemeData buildScratchpadTheme() {
+ThemeData buildBreakoutpadTheme() {
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,

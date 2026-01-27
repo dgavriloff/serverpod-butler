@@ -4,7 +4,7 @@ import '../theme/sp_durations.dart';
 import '../theme/sp_radius.dart';
 import '../theme/sp_spacing.dart';
 
-/// scratchpad card — 8px radius, 1px border, 20px padding, no shadow.
+/// breakoutpad card — 8px radius, 1px border, 20px padding, no shadow.
 ///
 /// Supports optional hover effect (background shifts to #F8F8F8).
 class SpCard extends StatefulWidget {

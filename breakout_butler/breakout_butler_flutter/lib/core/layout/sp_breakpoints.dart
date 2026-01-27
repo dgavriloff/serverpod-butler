@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-/// scratchpad breakpoint system.
+/// breakoutpad breakpoint system.
 ///
 /// <600px  → mobile (single column, bottom nav, sidebar as modal)
 /// 600-1024 → tablet (content + collapsible sidebar)

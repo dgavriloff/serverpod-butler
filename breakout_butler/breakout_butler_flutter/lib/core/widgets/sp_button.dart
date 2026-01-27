@@ -3,7 +3,7 @@ import '../theme/sp_colors.dart';
 import '../theme/sp_radius.dart';
 import '../theme/sp_typography.dart';
 
-/// scratchpad primary button — blue bg, white text, 6px radius.
+/// breakoutpad primary button — blue bg, white text, 6px radius.
 ///
 /// When [isLoading] is true, shows a subtle shimmer placeholder
 /// instead of a spinner (design doc: never spinners).
@@ -57,7 +57,7 @@ class SpPrimaryButton extends StatelessWidget {
   }
 }
 
-/// scratchpad secondary button — transparent bg, border, dark text.
+/// breakoutpad secondary button — transparent bg, border, dark text.
 class SpSecondaryButton extends StatelessWidget {
   const SpSecondaryButton({
     super.key,

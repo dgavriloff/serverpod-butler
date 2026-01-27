@@ -5,7 +5,7 @@ import '../../features/dashboard/screens/professor_dashboard_screen.dart';
 import '../../features/home/screens/home_screen.dart';
 import '../../features/student/screens/student_room_screen.dart';
 
-/// scratchpad app router — declarative, URL-based.
+/// breakoutpad app router — declarative, URL-based.
 ///
 /// Routes:
 ///   /                     → HomeScreen

@@ -4,7 +4,7 @@ import '../theme/sp_durations.dart';
 import '../theme/sp_spacing.dart';
 import 'sp_breakpoints.dart';
 
-/// The core three-panel layout from the scratchpad design doc.
+/// The core three-panel layout from the breakoutpad design doc.
 ///
 /// Desktop: nav bar + primary content + sidebar (280-320px)
 /// Tablet:  nav bar + primary content + toggle-able sidebar

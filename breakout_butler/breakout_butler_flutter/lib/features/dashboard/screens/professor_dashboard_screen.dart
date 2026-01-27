@@ -178,7 +178,7 @@ class _ProfessorDashboardScreenState
 
     return SpThreePanelLayout(
       nav: SpBreadcrumbNav(
-        segments: ['scratchpad', widget.urlTag],
+        segments: ['breakoutpad', widget.urlTag],
         onSegmentTap: (index) {
           if (index == 0) context.go('/');
         },

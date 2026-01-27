@@ -1,4 +1,4 @@
-/// scratchpad design system — animation duration tokens.
+/// breakoutpad design system — animation duration tokens.
 ///
 /// Functional motion only. 150-250ms range. ease-out curves.
 abstract final class SpDurations {

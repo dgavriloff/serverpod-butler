@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-/// scratchpad design system — color tokens.
+/// breakoutpad design system — color tokens.
 ///
 /// White-forward palette with calm blue as the single CTA color.
 /// No gradients, no pure black.

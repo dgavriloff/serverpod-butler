@@ -93,7 +93,7 @@ class _StudentRoomScreenState extends ConsumerState<StudentRoomScreen> {
 
     return SpThreePanelLayout(
       nav: SpBreadcrumbNav(
-        segments: ['scratchpad', widget.urlTag, 'room ${widget.roomNumber}'],
+        segments: ['breakoutpad', widget.urlTag, 'room ${widget.roomNumber}'],
         onSegmentTap: (index) {
           if (index == 0) context.go('/');
           // index 1 would go to professor dashboard, but students
