@@ -8,7 +8,7 @@ import '../../../core/widgets/sp_highlight.dart';
 import '../../../core/widgets/sp_status_indicator.dart';
 
 /// Individual room card showing room number, content preview, and activity.
-class RoomCard extends StatelessWidget {
+class RoomCard extends StatefulWidget {
   const RoomCard({
     super.key,
     required this.roomNumber,
@@ -21,53 +21,64 @@ class RoomCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final hasContent = content.isNotEmpty;
+  State<RoomCard> createState() => _RoomCardState();
+}
 
-    return SpCard(
-      hoverable: true,
-      onTap: onTap,
-      padding: const EdgeInsets.all(SpSpacing.md),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SpHighlight(
-                child: Text(
-                  '$roomNumber',
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w700,
-                    height: 1.0,
-                    color: SpColors.textSecondary,
+class _RoomCardState extends State<RoomCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasContent = widget.content.isNotEmpty;
+
+    final numberText = Text(
+      '${widget.roomNumber}',
+      style: const TextStyle(
+        fontSize: 48,
+        fontWeight: FontWeight.w700,
+        height: 1.0,
+        color: SpColors.textSecondary,
+      ),
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: SpCard(
+        hoverable: true,
+        onTap: widget.onTap,
+        padding: const EdgeInsets.all(SpSpacing.md),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _hovered ? SpHighlight(child: numberText) : numberText,
+                const SizedBox(height: SpSpacing.xs),
+                Text('room ${widget.roomNumber}', style: SpTypography.overline),
+                const SizedBox(height: SpSpacing.sm),
+                Expanded(
+                  child: Text(
+                    hasContent ? widget.content : 'no activity yet',
+                    style: SpTypography.caption.copyWith(
+                      color: hasContent
+                          ? SpColors.textTertiary
+                          : SpColors.textPlaceholder,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ),
-              const SizedBox(height: SpSpacing.xs),
-              Text('room $roomNumber', style: SpTypography.overline),
-              const SizedBox(height: SpSpacing.sm),
-              Expanded(
-                child: Text(
-                  hasContent ? content : 'no activity yet',
-                  style: SpTypography.caption.copyWith(
-                    color: hasContent
-                        ? SpColors.textTertiary
-                        : SpColors.textPlaceholder,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          if (hasContent)
-            const Positioned(
-              top: 0,
-              right: 0,
-              child: SpStatusDot.online(),
+              ],
             ),
-        ],
+            if (hasContent)
+              const Positioned(
+                top: 0,
+                right: 0,
+                child: SpStatusDot.online(),
+              ),
+          ],
+        ),
       ),
     );
   }

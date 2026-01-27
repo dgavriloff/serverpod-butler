@@ -72,17 +72,20 @@ class SpBreadcrumbNav extends StatelessWidget {
       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
     );
 
-    final text = SpHighlight(child: Text(segments[index], style: style));
+    final textWidget = Text(segments[index], style: style);
+    final child = isActive
+        ? SpHighlight(child: textWidget)
+        : textWidget;
 
     if (isActive || onSegmentTap == null) {
-      return text;
+      return child;
     }
 
     return GestureDetector(
       onTap: () => onSegmentTap!(index),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: text,
+        child: child,
       ),
     );
   }
