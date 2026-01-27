@@ -40,7 +40,7 @@ ThemeData buildScratchpadTheme() {
         backgroundColor: SpColors.primaryAction,
         foregroundColor: SpColors.background,
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: SpRadius.buttonBorder),
         textStyle: SpTypography.body.copyWith(
           fontWeight: FontWeight.w600,
@@ -52,7 +52,7 @@ ThemeData buildScratchpadTheme() {
       style: OutlinedButton.styleFrom(
         foregroundColor: SpColors.textPrimary,
         side: const BorderSide(color: SpColors.borderInput),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: SpRadius.buttonBorder),
         textStyle: SpTypography.body.copyWith(
           fontWeight: FontWeight.w600,
