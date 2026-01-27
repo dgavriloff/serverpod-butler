@@ -102,67 +102,71 @@ class _SpThreePanelLayoutState extends State<SpThreePanelLayout> {
   }
 
   Widget _buildDesktop() {
-    return Column(
-      children: [
-        widget.nav,
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(child: widget.body),
-              if (widget.sidebar != null) ...[
-                const VerticalDivider(width: 1),
-                SizedBox(
-                  width: widget.sidebarWidth,
-                  child: widget.sidebar!,
-                ),
+    return Scaffold(
+      body: Column(
+        children: [
+          widget.nav,
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: widget.body),
+                if (widget.sidebar != null) ...[
+                  const VerticalDivider(width: 1),
+                  SizedBox(
+                    width: widget.sidebarWidth,
+                    child: widget.sidebar!,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildTablet() {
-    return Column(
-      children: [
-        // Nav with sidebar toggle
-        Row(
-          children: [
-            Expanded(child: widget.nav),
-            if (widget.sidebar != null)
-              IconButton(
-                icon: Icon(
-                  _sidebarExpanded ? Icons.chevron_right : Icons.chevron_left,
-                  color: SpColors.textSecondary,
-                ),
-                onPressed: _toggleSidebar,
-                tooltip: _sidebarExpanded ? 'hide panel' : 'show panel',
-              ),
-          ],
-        ),
-        Expanded(
-          child: Row(
+    return Scaffold(
+      body: Column(
+        children: [
+          // Nav with sidebar toggle
+          Row(
             children: [
-              Expanded(child: widget.body),
+              Expanded(child: widget.nav),
               if (widget.sidebar != null)
-                AnimatedContainer(
-                  duration: SpDurations.normal,
-                  curve: Curves.easeOutCubic,
-                  width: _sidebarExpanded ? widget.sidebarWidth : 0,
-                  child: _sidebarExpanded
-                      ? Row(
-                          children: [
-                            const VerticalDivider(width: 1),
-                            Expanded(child: widget.sidebar!),
-                          ],
-                        )
-                      : const SizedBox.shrink(),
+                IconButton(
+                  icon: Icon(
+                    _sidebarExpanded ? Icons.chevron_right : Icons.chevron_left,
+                    color: SpColors.textSecondary,
+                  ),
+                  onPressed: _toggleSidebar,
+                  tooltip: _sidebarExpanded ? 'hide panel' : 'show panel',
                 ),
             ],
           ),
-        ),
-      ],
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: widget.body),
+                if (widget.sidebar != null)
+                  AnimatedContainer(
+                    duration: SpDurations.normal,
+                    curve: Curves.easeOutCubic,
+                    width: _sidebarExpanded ? widget.sidebarWidth : 0,
+                    child: _sidebarExpanded
+                        ? Row(
+                            children: [
+                              const VerticalDivider(width: 1),
+                              Expanded(child: widget.sidebar!),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

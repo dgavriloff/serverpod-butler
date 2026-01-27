@@ -36,4 +36,8 @@ abstract final class SpColors {
   // ── Interactive states ──────────────────────────────────────────────
   static const cardHover = Color(0xFFF8F8F8);
   static const secondaryHover = Color(0xFFF5F5F5);
+
+  // ── Highlight ─────────────────────────────────────────────────────
+  /// Soft yellow underline for big text emphasis (breadcrumbs, headers, numbers).
+  static const highlight = Color(0xFFFFF176);
 }

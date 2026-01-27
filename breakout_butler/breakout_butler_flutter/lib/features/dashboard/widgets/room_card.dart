@@ -4,6 +4,7 @@ import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_card.dart';
+import '../../../core/widgets/sp_highlight.dart';
 import '../../../core/widgets/sp_status_indicator.dart';
 
 /// Individual room card showing room number, content preview, and activity.
@@ -32,13 +33,15 @@ class RoomCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '$roomNumber',
-                style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w700,
-                  height: 1.0,
-                  color: SpColors.surfaceTertiary,
+              SpHighlight(
+                child: Text(
+                  '$roomNumber',
+                  style: const TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w700,
+                    height: 1.0,
+                    color: SpColors.textSecondary,
+                  ),
                 ),
               ),
               const SizedBox(height: SpSpacing.xs),

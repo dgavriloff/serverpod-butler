@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/sp_colors.dart';
 import '../theme/sp_spacing.dart';
 import '../theme/sp_typography.dart';
+import 'sp_highlight.dart';
 
 /// Breadcrumb-style navigation bar.
 ///
@@ -71,15 +72,17 @@ class SpBreadcrumbNav extends StatelessWidget {
       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
     );
 
+    final text = SpHighlight(child: Text(segments[index], style: style));
+
     if (isActive || onSegmentTap == null) {
-      return Text(segments[index], style: style);
+      return text;
     }
 
     return GestureDetector(
       onTap: () => onSegmentTap!(index),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        child: Text(segments[index], style: style),
+        child: text,
       ),
     );
   }

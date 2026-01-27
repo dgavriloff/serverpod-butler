@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
+import '../../../core/widgets/sp_highlight.dart';
 import '../../../core/widgets/sp_status_indicator.dart';
 import '../../../core/widgets/sp_text_field.dart';
 import '../../../widgets/audio_visualizer.dart';
@@ -61,7 +62,7 @@ class _TranscriptPanelState extends ConsumerState<TranscriptPanel> {
                 const SpLiveBadge(),
                 const SizedBox(width: SpSpacing.sm),
               ],
-              Text('transcript', style: SpTypography.section),
+              SpHighlight(child: Text('transcript', style: SpTypography.section)),
               const Spacer(),
               if (recordingState.isRecording &&
                   recordingNotifier.audioLevelStream != null)
