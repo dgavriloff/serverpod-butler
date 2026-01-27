@@ -22,16 +22,13 @@ class _StudentRoomState extends State<StudentRoom> {
   LiveSession? _liveSession;
   ClassSession? _classSession;
   String _content = '';
-  List<String> _transcriptChunks = [];
   bool _isLoading = true;
   String? _error;
   bool _isSaving = false;
 
   final _contentController = TextEditingController();
-  final _questionController = TextEditingController();
 
   StreamSubscription? _roomSubscription;
-  StreamSubscription? _transcriptSubscription;
   Timer? _saveDebounce;
 
   @override
@@ -43,10 +40,8 @@ class _StudentRoomState extends State<StudentRoom> {
   @override
   void dispose() {
     _roomSubscription?.cancel();
-    _transcriptSubscription?.cancel();
     _saveDebounce?.cancel();
     _contentController.dispose();
-    _questionController.dispose();
     super.dispose();
   }
 
@@ -70,9 +65,6 @@ class _StudentRoomState extends State<StudentRoom> {
         _content = room?.content ?? '';
         _contentController.text = _content;
         _isLoading = false;
-        if (liveSession.transcript.isNotEmpty) {
-          _transcriptChunks = [liveSession.transcript];
-        }
       });
 
       _subscribeToUpdates();
@@ -105,15 +97,6 @@ class _StudentRoomState extends State<StudentRoom> {
           });
         }
       });
-
-      // Subscribe to transcript updates
-      _transcriptSubscription = client.butler
-          .transcriptStream(_liveSession!.sessionId)
-          .listen((update) {
-        setState(() {
-          _transcriptChunks.add(update.text);
-        });
-      });
     } catch (e) {
       debugPrint('Streaming error: $e');
     }
@@ -142,64 +125,6 @@ class _StudentRoomState extends State<StudentRoom> {
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
-      }
-    }
-  }
-
-  Future<void> _askButler() async {
-    final question = _questionController.text.trim();
-    if (question.isEmpty || _liveSession == null) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text('Asking Butler...'),
-          ],
-        ),
-      ),
-    );
-
-    try {
-      final response = await client.butler.askButler(
-        _liveSession!.sessionId,
-        question,
-      );
-
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        _questionController.clear();
-
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.smart_toy, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(width: 8),
-                const Text('Butler'),
-              ],
-            ),
-            content: Text(response.answer),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Thanks!'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
       }
     }
   }
@@ -254,191 +179,24 @@ class _StudentRoomState extends State<StudentRoom> {
             ),
         ],
       ),
-      body: Row(
-        children: [
-          // Left side: Collaborative document
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Prompt banner
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  color: colorScheme.primaryContainer,
-                  child: Row(
-                    children: [
-                      Icon(Icons.tips_and_updates, color: colorScheme.onPrimaryContainer),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Ask the Butler "What\'s my assignment?" to get your task from the lecture',
-                          style: TextStyle(
-                            color: colorScheme.onPrimaryContainer,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Document editor
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _contentController,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      decoration: InputDecoration(
-                        hintText: 'Start writing your group\'s ideas here...\n\nThis document is shared with everyone in Room ${widget.roomNumber}.',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerLowest,
-                      ),
-                      style: const TextStyle(fontSize: 16, height: 1.5),
-                      onChanged: _onContentChanged,
-                    ),
-                  ),
-                ),
-              ],
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: TextField(
+          controller: _contentController,
+          maxLines: null,
+          expands: true,
+          textAlignVertical: TextAlignVertical.top,
+          decoration: InputDecoration(
+            hintText: 'Start writing your group\'s ideas here...\n\nThis document is shared with everyone in Room ${widget.roomNumber}.',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
+            filled: true,
+            fillColor: colorScheme.surfaceContainerLowest,
           ),
-
-          // Right side: Butler panel
-          Container(
-            width: 320,
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(color: colorScheme.outlineVariant),
-              ),
-            ),
-            child: Column(
-              children: [
-                // Butler header
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: colorScheme.secondaryContainer,
-                  child: Row(
-                    children: [
-                      Icon(Icons.smart_toy, color: colorScheme.onSecondaryContainer),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Butler',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Lecture context
-                Expanded(
-                  child: _transcriptChunks.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.record_voice_over_outlined,
-                                  size: 48,
-                                  color: colorScheme.outline,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Lecture context will appear here',
-                                  style: TextStyle(color: colorScheme.outline),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Butler is listening to your professor...',
-                                  style: TextStyle(
-                                    color: colorScheme.outline,
-                                    fontSize: 12,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : ListView(
-                          padding: const EdgeInsets.all(16),
-                          children: [
-                            Text(
-                              'From the lecture:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ..._transcriptChunks.map(
-                              (chunk) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Text(
-                                  chunk,
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-
-                // Ask Butler input
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: colorScheme.outlineVariant),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Ask Butler',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _questionController,
-                        decoration: InputDecoration(
-                          hintText: 'What did she say about...?',
-                          border: const OutlineInputBorder(),
-                          isDense: true,
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.send),
-                            onPressed: _askButler,
-                          ),
-                        ),
-                        onSubmitted: (_) => _askButler(),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          style: const TextStyle(fontSize: 16, height: 1.5),
+          onChanged: _onContentChanged,
+        ),
       ),
     );
   }
