@@ -61,6 +61,6 @@ EXPOSE 8082
 
 # Start both Serverpod and Caddy
 # Serverpod runs in background, Caddy in foreground
-CMD ./server --mode production --server-id default --logging normal --role monolith & \
-    sleep 2 && \
+CMD ./server --mode production --server-id default --logging normal --role monolith --apply-migrations & \
+    sleep 5 && \
     caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
