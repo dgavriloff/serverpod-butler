@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 
@@ -49,12 +50,14 @@ class SessionEndpoint extends Endpoint {
       throw Exception('URL tag "$urlTag" is already in use');
     }
 
+    final token = _generateToken();
     final liveSession = LiveSession(
       sessionId: sessionId,
       urlTag: urlTag,
       isActive: true,
       transcript: '',
       startedAt: DateTime.now(),
+      creatorToken: token,
     );
 
     return await LiveSession.db.insertRow(session, liveSession);
@@ -92,6 +95,23 @@ class SessionEndpoint extends Endpoint {
     }
   }
 
+  /// Validate a creator token for a live session.
+  /// Returns true if the token matches the session's creator token.
+  Future<bool> validateCreatorToken(
+    Session session,
+    String urlTag,
+    String token,
+  ) async {
+    final liveSession = await LiveSession.db.findFirstRow(
+      session,
+      where: (t) =>
+          t.urlTag.equals(urlTag) &
+          t.isActive.equals(true) &
+          t.creatorToken.equals(token),
+    );
+    return liveSession != null;
+  }
+
   /// Get all rooms for a session
   Future<List<Room>> getRooms(Session session, int sessionId) async {
     return await Room.db.find(
@@ -99,5 +119,12 @@ class SessionEndpoint extends Endpoint {
       where: (t) => t.sessionId.equals(sessionId),
       orderBy: (t) => t.roomNumber,
     );
+  }
+
+  /// Generate a random URL-safe token.
+  static String _generateToken() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rng = Random.secure();
+    return List.generate(32, (_) => chars[rng.nextInt(chars.length)]).join();
   }
 }

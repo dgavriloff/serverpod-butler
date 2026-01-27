@@ -666,6 +666,31 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['urlTag'],
                   ),
         ),
+        'validateCreatorToken': _i1.MethodConnector(
+          name: 'validateCreatorToken',
+          params: {
+            'urlTag': _i1.ParameterDescription(
+              name: 'urlTag',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'token': _i1.ParameterDescription(
+              name: 'token',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['session'] as _i6.SessionEndpoint)
+                  .validateCreatorToken(
+                    session,
+                    params['urlTag'],
+                    params['token'],
+                  ),
+        ),
         'getRooms': _i1.MethodConnector(
           name: 'getRooms',
           params: {

@@ -14,6 +14,8 @@ fields:
   startedAt: DateTime
   ### When this live session expires/ended
   expiresAt: DateTime?
+  ### Secret token for creator/professor access to the dashboard
+  creatorToken: String?
 indexes:
   ### URL tags must be unique among active sessions
   url_tag_active_idx:

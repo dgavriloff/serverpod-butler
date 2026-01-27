@@ -60,13 +60,14 @@ class _HomeScreenState extends State<HomeScreen> {
         roomCount,
       );
 
-      await client.session.startLiveSession(
+      final liveSession = await client.session.startLiveSession(
         session.id!,
         tag,
       );
 
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/$tag');
+        final token = liveSession.creatorToken ?? '';
+        Navigator.of(context).pushReplacementNamed('/$tag?token=$token');
       }
     } catch (e) {
       setState(() {

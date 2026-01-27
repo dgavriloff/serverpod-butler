@@ -9,11 +9,13 @@ import '../services/audio_recorder_web.dart';
 import '../services/speech_recognition_web.dart';
 import '../widgets/audio_visualizer.dart';
 
-/// Professor's dashboard showing all breakout rooms
+/// Professor's dashboard showing all breakout rooms.
+/// Requires a valid creator token passed as `?token=xxx` in the URL.
 class ProfessorDashboard extends StatefulWidget {
   final String urlTag;
+  final String? token;
 
-  const ProfessorDashboard({super.key, required this.urlTag});
+  const ProfessorDashboard({super.key, required this.urlTag, this.token});
 
   @override
   State<ProfessorDashboard> createState() => _ProfessorDashboardState();
@@ -76,6 +78,27 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
 
   Future<void> _loadSession() async {
     try {
+      // Validate creator token
+      if (widget.token == null || widget.token!.isEmpty) {
+        setState(() {
+          _error = 'Access denied. No creator token provided.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final isValid = await client.session.validateCreatorToken(
+        widget.urlTag,
+        widget.token!,
+      );
+      if (!isValid) {
+        setState(() {
+          _error = 'Access denied. Invalid creator token.';
+          _isLoading = false;
+        });
+        return;
+      }
+
       final liveSession = await client.session.getLiveSessionByTag(widget.urlTag);
       if (liveSession == null) {
         setState(() {

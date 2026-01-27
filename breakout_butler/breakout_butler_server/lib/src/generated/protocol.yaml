@@ -28,6 +28,7 @@ session:
   - getLiveSessionByTag:
   - getSession:
   - endLiveSession:
+  - validateCreatorToken:
   - getRooms:
 greeting:
   - hello:

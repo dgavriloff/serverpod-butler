@@ -22,6 +22,7 @@ abstract class LiveSession implements _i1.SerializableModel {
     required this.transcript,
     required this.startedAt,
     this.expiresAt,
+    this.creatorToken,
   });
 
   factory LiveSession({
@@ -32,6 +33,7 @@ abstract class LiveSession implements _i1.SerializableModel {
     required String transcript,
     required DateTime startedAt,
     DateTime? expiresAt,
+    String? creatorToken,
   }) = _LiveSessionImpl;
 
   factory LiveSession.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -47,6 +49,7 @@ abstract class LiveSession implements _i1.SerializableModel {
       expiresAt: jsonSerialization['expiresAt'] == null
           ? null
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['expiresAt']),
+      creatorToken: jsonSerialization['creatorToken'] as String?,
     );
   }
 
@@ -73,6 +76,9 @@ abstract class LiveSession implements _i1.SerializableModel {
   /// When this live session expires/ended
   DateTime? expiresAt;
 
+  /// Secret token for creator/professor access to the dashboard
+  String? creatorToken;
+
   /// Returns a shallow copy of this [LiveSession]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -84,6 +90,7 @@ abstract class LiveSession implements _i1.SerializableModel {
     String? transcript,
     DateTime? startedAt,
     DateTime? expiresAt,
+    String? creatorToken,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -96,6 +103,7 @@ abstract class LiveSession implements _i1.SerializableModel {
       'transcript': transcript,
       'startedAt': startedAt.toJson(),
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
+      if (creatorToken != null) 'creatorToken': creatorToken,
     };
   }
 
@@ -116,6 +124,7 @@ class _LiveSessionImpl extends LiveSession {
     required String transcript,
     required DateTime startedAt,
     DateTime? expiresAt,
+    String? creatorToken,
   }) : super._(
          id: id,
          sessionId: sessionId,
@@ -124,6 +133,7 @@ class _LiveSessionImpl extends LiveSession {
          transcript: transcript,
          startedAt: startedAt,
          expiresAt: expiresAt,
+         creatorToken: creatorToken,
        );
 
   /// Returns a shallow copy of this [LiveSession]
@@ -138,6 +148,7 @@ class _LiveSessionImpl extends LiveSession {
     String? transcript,
     DateTime? startedAt,
     Object? expiresAt = _Undefined,
+    Object? creatorToken = _Undefined,
   }) {
     return LiveSession(
       id: id is int? ? id : this.id,
@@ -147,6 +158,7 @@ class _LiveSessionImpl extends LiveSession {
       transcript: transcript ?? this.transcript,
       startedAt: startedAt ?? this.startedAt,
       expiresAt: expiresAt is DateTime? ? expiresAt : this.expiresAt,
+      creatorToken: creatorToken is String? ? creatorToken : this.creatorToken,
     );
   }
 }

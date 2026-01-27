@@ -461,6 +461,20 @@ class EndpointSession extends _i2.EndpointRef {
         {'urlTag': urlTag},
       );
 
+  /// Validate a creator token for a live session.
+  /// Returns true if the token matches the session's creator token.
+  _i3.Future<bool> validateCreatorToken(
+    String urlTag,
+    String token,
+  ) => caller.callServerEndpoint<bool>(
+    'session',
+    'validateCreatorToken',
+    {
+      'urlTag': urlTag,
+      'token': token,
+    },
+  );
+
   /// Get all rooms for a session
   _i3.Future<List<_i8.Room>> getRooms(int sessionId) =>
       caller.callServerEndpoint<List<_i8.Room>>(
