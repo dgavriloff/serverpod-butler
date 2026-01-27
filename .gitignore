@@ -79,3 +79,6 @@ coverage/
 
 # TLS certificates
 **/certs/
+
+# Serverpod passwords (secrets)
+**/config/passwords.yaml

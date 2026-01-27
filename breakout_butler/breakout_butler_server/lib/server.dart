@@ -10,13 +10,17 @@ import 'src/services/gemini_service.dart';
 import 'src/web/routes/app_config_route.dart';
 import 'src/web/routes/root.dart';
 
-// Gemini API key - in production, use environment variables or secrets
-const _geminiApiKey = 'AIzaSyBZl4DLpWgQ6s_vKbYiSF3Rogfe19pNZsI';
-
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
-  // Initialize Gemini AI service
-  GeminiService.initialize(_geminiApiKey);
+  // Initialize Gemini AI service from environment variable
+  final geminiApiKey = Platform.environment['GEMINI_API_KEY'];
+  if (geminiApiKey == null || geminiApiKey.isEmpty) {
+    throw StateError(
+      'GEMINI_API_KEY environment variable is required. '
+      'Set it before starting the server.',
+    );
+  }
+  GeminiService.initialize(geminiApiKey);
 
   // Initialize Serverpod and connect it with your generated code.
   final pod = Serverpod(args, Protocol(), Endpoints());
