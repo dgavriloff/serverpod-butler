@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
 
-/// Home screen for professors to create new sessions
+/// Home screen with join room and create room options
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -11,57 +11,71 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _urlTagController = TextEditingController();
-  final _roomCountController = TextEditingController(text: '4');
+  // Join form
+  final _joinRoomController = TextEditingController();
+  final _joinGroupController = TextEditingController();
 
-  bool _isLoading = false;
-  String? _error;
+  // Create form
+  final _createFormKey = GlobalKey<FormState>();
+  final _createTagController = TextEditingController();
+  final _createNameController = TextEditingController();
+  final _createRoomCountController = TextEditingController(text: '4');
+
+  bool _isCreating = false;
+  String? _createError;
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _urlTagController.dispose();
-    _roomCountController.dispose();
+    _joinRoomController.dispose();
+    _joinGroupController.dispose();
+    _createTagController.dispose();
+    _createNameController.dispose();
+    _createRoomCountController.dispose();
     super.dispose();
   }
 
-  Future<void> _createSession() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _joinRoom() {
+    final room = _joinRoomController.text.trim().toLowerCase();
+    final group = _joinGroupController.text.trim();
+    if (room.isEmpty || group.isEmpty) return;
+
+    Navigator.of(context).pushReplacementNamed('/$room/$group');
+  }
+
+  Future<void> _createRoom() async {
+    if (!_createFormKey.currentState!.validate()) return;
 
     setState(() {
-      _isLoading = true;
-      _error = null;
+      _isCreating = true;
+      _createError = null;
     });
 
     try {
-      // Create the session
+      final tag = _createTagController.text.trim().toLowerCase();
+      final name = _createNameController.text.trim();
+      final roomCount = int.parse(_createRoomCountController.text);
+
       final session = await client.session.createSession(
-        _nameController.text.trim(),
-        int.parse(_roomCountController.text),
+        name.isNotEmpty ? name : tag,
+        roomCount,
       );
 
-      // Start the live session with URL tag
       await client.session.startLiveSession(
         session.id!,
-        _urlTagController.text.trim().toLowerCase(),
+        tag,
       );
 
       if (mounted) {
-        // Navigate to professor dashboard
-        Navigator.of(context).pushReplacementNamed(
-          '/${_urlTagController.text.trim().toLowerCase()}',
-        );
+        Navigator.of(context).pushReplacementNamed('/$tag');
       }
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _createError = e.toString();
       });
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isCreating = false;
         });
       }
     }
@@ -98,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Create collaborative workspaces for your breakout rooms',
+                  'Collaborative workspaces for your breakout rooms',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -106,71 +120,117 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 48),
 
-                // Form
+                // Join Room Card
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Join a Room',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _joinRoomController,
+                          decoration: const InputDecoration(
+                            labelText: 'Room Name',
+                            hintText: 'e.g., psych101',
+                            prefixIcon: Icon(Icons.meeting_room_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'[a-zA-Z0-9\-_]')),
+                          ],
+                          onFieldSubmitted: (_) => _joinRoom(),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _joinGroupController,
+                          decoration: const InputDecoration(
+                            labelText: 'Group Number',
+                            hintText: 'e.g., 1',
+                            prefixIcon: Icon(Icons.group_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onFieldSubmitted: (_) => _joinRoom(),
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: _joinRoom,
+                          icon: const Icon(Icons.login),
+                          label: const Text('Join'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Create Room Card
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Form(
-                      key: _formKey,
+                      key: _createFormKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Start a New Session',
+                            'Create a Room',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
-                          const SizedBox(height: 24),
-
-                          // Session Name
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Session Name',
-                              hintText: 'e.g., Milgram Discussion',
-                              prefixIcon: Icon(Icons.label_outline),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter a session name';
-                              }
-                              return null;
-                            },
-                          ),
                           const SizedBox(height: 16),
-
-                          // URL Tag
                           TextFormField(
-                            controller: _urlTagController,
+                            controller: _createTagController,
                             decoration: const InputDecoration(
-                              labelText: 'URL Tag',
+                              labelText: 'Room Name',
                               hintText: 'e.g., psych101',
                               prefixIcon: Icon(Icons.link),
                               border: OutlineInputBorder(),
-                              helperText: 'Students will join at /psych101/1, /psych101/2, etc.',
+                              helperText: 'Students join at /psych101/1, /psych101/2, etc.',
                             ),
                             inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\-_]')),
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-Z0-9\-_]')),
                               LengthLimitingTextInputFormatter(30),
                             ],
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Please enter a URL tag';
+                                return 'Please enter a room name';
                               }
                               if (value.length < 3) {
-                                return 'URL tag must be at least 3 characters';
+                                return 'Room name must be at least 3 characters';
                               }
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
-
-                          // Room Count
+                          const SizedBox(height: 12),
                           TextFormField(
-                            controller: _roomCountController,
+                            controller: _createNameController,
                             decoration: const InputDecoration(
-                              labelText: 'Number of Rooms',
-                              prefixIcon: Icon(Icons.meeting_room_outlined),
+                              labelText: 'Display Name (optional)',
+                              hintText: 'e.g., Milgram Experiment Discussion',
+                              prefixIcon: Icon(Icons.label_outline),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _createRoomCountController,
+                            decoration: const InputDecoration(
+                              labelText: 'Number of Groups',
+                              prefixIcon: Icon(Icons.groups_outlined),
                               border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
@@ -185,32 +245,30 @@ class _HomeScreenState extends State<HomeScreen> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
 
-                          // Error
-                          if (_error != null)
+                          if (_createError != null)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.only(bottom: 12),
                               child: Text(
-                                _error!,
+                                _createError!,
                                 style: TextStyle(color: colorScheme.error),
                               ),
                             ),
 
-                          // Submit Button
-                          FilledButton.icon(
-                            onPressed: _isLoading ? null : _createSession,
-                            icon: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.rocket_launch),
-                            label: Text(_isLoading ? 'Creating...' : 'Start Session'),
+                          FilledButton.tonal(
+                            onPressed: _isCreating ? null : _createRoom,
                             style: FilledButton.styleFrom(
                               padding: const EdgeInsets.all(16),
                             ),
+                            child: _isCreating
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Text('Create Room'),
                           ),
                         ],
                       ),

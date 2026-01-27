@@ -2,18 +2,30 @@
 	# Use mkcert certificates
 }
 
-# HTTPS for Flutter app
+# Single origin: serve Flutter app + proxy API on same port (no CORS needed)
 https://192.168.254.19:8443, https://localhost:8443 {
 	tls /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2.pem /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2-key.pem
 
-	# Proxy to Flutter web server
-	reverse_proxy http://192.168.254.19:8082
-}
+	root * /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/breakout_butler_server/web/app
 
-# HTTPS for Serverpod API
-https://192.168.254.19:8444, https://localhost:8444 {
-	tls /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2.pem /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2-key.pem
+	# API: proxy POST requests to Serverpod
+	@post method POST
+	handle @post {
+		reverse_proxy http://192.168.254.19:8080
+	}
 
-	# Proxy to Serverpod
-	reverse_proxy http://192.168.254.19:8080
+	# WebSocket: proxy upgrade requests to Serverpod
+	@websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	handle @websocket {
+		reverse_proxy http://192.168.254.19:8080
+	}
+
+	# Static files: serve Flutter web build with SPA fallback
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
 }
