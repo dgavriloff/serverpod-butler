@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -30,9 +31,19 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   /// Current interim (partial) speech recognition text, shown in italic.
   String _interimText = '';
 
+  /// Whether we're using Web Speech API (true) or Gemini fallback (false).
+  bool _usingSpeechApi = false;
+
+  /// Whether Gemini is currently processing an audio chunk (fallback mode).
+  bool _isTranscribing = false;
+
+  /// Queue of audio chunks waiting for Gemini transcription (fallback mode).
+  final List<Uint8List> _audioQueue = [];
+
   StreamSubscription? _roomSubscription;
   StreamSubscription? _transcriptSubscription;
   StreamSubscription? _speechSubscription;
+  StreamSubscription? _audioChunkSubscription;
 
   final _transcriptController = TextEditingController();
   final _transcriptScrollController = ScrollController();
@@ -44,7 +55,8 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
     super.initState();
     if (kIsWeb) {
       _audioRecorder = AudioRecorderService();
-      _speechRecognition = SpeechRecognitionService();
+      // _speechRecognition is created lazily in _toggleRecording
+      // based on Web Speech API availability
     }
     _loadSession();
   }
@@ -54,6 +66,7 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
     _roomSubscription?.cancel();
     _transcriptSubscription?.cancel();
     _speechSubscription?.cancel();
+    _audioChunkSubscription?.cancel();
     _audioRecorder?.dispose();
     _speechRecognition?.dispose();
     _transcriptController.dispose();
@@ -157,30 +170,43 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
     }
   }
 
-  /// Toggle audio recording + speech recognition on/off
+  /// Toggle audio recording + transcription on/off.
+  /// Uses Web Speech API if available (live interim results),
+  /// otherwise falls back to MediaRecorder + Gemini server-side transcription.
   Future<void> _toggleRecording() async {
     debugPrint('[_toggleRecording] called, _isRecording=$_isRecording');
-    if (_audioRecorder == null || _speechRecognition == null || _liveSession == null) {
-      debugPrint('[_toggleRecording] ABORT: services or session is null');
+    if (_audioRecorder == null || _liveSession == null) {
+      debugPrint('[_toggleRecording] ABORT: audioRecorder or session is null');
       return;
     }
 
     if (_isRecording) {
-      // Stop both services
-      _speechRecognition!.stop();
+      // Stop everything
+      _speechRecognition?.stop();
       _speechSubscription?.cancel();
       _speechSubscription = null;
+      _audioChunkSubscription?.cancel();
+      _audioChunkSubscription = null;
       await _audioRecorder!.stopRecording();
+      _audioQueue.clear();
       setState(() {
         _isRecording = false;
         _interimText = '';
+        _isTranscribing = false;
       });
       debugPrint('[_toggleRecording] stopped');
     } else {
-      // Start visualizer (for frequency bars)
-      final vizError = await _audioRecorder!.startRecording();
+      // Detect which transcription mode to use
+      final speechApiAvailable = SpeechRecognitionService.isSupported;
+      _usingSpeechApi = speechApiAvailable;
+      debugPrint('[_toggleRecording] Web Speech API available: $speechApiAvailable');
+
+      // Start audio service (visualizer always, MediaRecorder only for fallback)
+      final vizError = await _audioRecorder!.startRecording(
+        enableRecorder: !speechApiAvailable,
+      );
       if (vizError != null) {
-        debugPrint('[_toggleRecording] visualizer error: $vizError');
+        debugPrint('[_toggleRecording] audio service error: $vizError');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(vizError), duration: const Duration(seconds: 5)),
@@ -189,52 +215,92 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
         return;
       }
 
-      // Start speech recognition
-      final speechError = _speechRecognition!.start();
-      if (speechError != null) {
-        debugPrint('[_toggleRecording] speech recognition error: $speechError');
-        await _audioRecorder!.stopRecording();
+      if (speechApiAvailable) {
+        // Primary path: Web Speech API
+        _speechRecognition ??= SpeechRecognitionService();
+        final speechError = _speechRecognition!.start();
+        if (speechError != null) {
+          debugPrint('[_toggleRecording] speech recognition error: $speechError');
+          await _audioRecorder!.stopRecording();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(speechError), duration: const Duration(seconds: 5)),
+            );
+          }
+          return;
+        }
+
+        // Listen to speech recognition results
+        _speechSubscription = _speechRecognition!.resultStream.listen(
+          (result) {
+            if (result.isFinal) {
+              final text = result.text.trim();
+              if (text.isNotEmpty && _liveSession != null) {
+                debugPrint('[speech] final: "$text"');
+                client.butler.addTranscriptText(_liveSession!.sessionId, text);
+              }
+              setState(() => _interimText = '');
+            } else {
+              setState(() => _interimText = result.text);
+              _scrollTranscriptToBottom();
+            }
+          },
+          onError: (error) {
+            debugPrint('[speech] stream error: $error');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Speech recognition: $error')),
+              );
+            }
+          },
+        );
+        debugPrint('[_toggleRecording] started with Web Speech API');
+      } else {
+        // Fallback path: MediaRecorder chunks → Gemini server-side transcription
+        _audioChunkSubscription = _audioRecorder!.audioStream.listen(
+          (chunk) {
+            _audioQueue.add(chunk);
+            _drainAudioQueue();
+          },
+        );
+        debugPrint('[_toggleRecording] started with Gemini fallback (MediaRecorder)');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(speechError), duration: const Duration(seconds: 5)),
+            const SnackBar(
+              content: Text('Using server-side transcription (Web Speech API not available in this browser).'),
+              duration: Duration(seconds: 4),
+            ),
           );
         }
-        return;
       }
 
       setState(() => _isRecording = true);
-
-      // Listen to speech recognition results
-      _speechSubscription = _speechRecognition!.resultStream.listen(
-        (result) {
-          if (result.isFinal) {
-            // Final result — send to server, clear interim text.
-            // The server broadcasts via Redis and our _transcriptSubscription
-            // will pick it up and add to _transcriptChunks.
-            final text = result.text.trim();
-            if (text.isNotEmpty && _liveSession != null) {
-              debugPrint('[speech] final: "$text"');
-              client.butler.addTranscriptText(_liveSession!.sessionId, text);
-            }
-            setState(() => _interimText = '');
-          } else {
-            // Interim result — show locally only, no server call
-            setState(() => _interimText = result.text);
-            _scrollTranscriptToBottom();
-          }
-        },
-        onError: (error) {
-          debugPrint('[speech] stream error: $error');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Speech recognition: $error')),
-            );
-          }
-        },
-      );
-
-      debugPrint('[_toggleRecording] started both services');
     }
+  }
+
+  /// Drain the audio queue one chunk at a time, sending each to Gemini.
+  Future<void> _drainAudioQueue() async {
+    if (_isTranscribing || _audioQueue.isEmpty || _liveSession == null) return;
+    _isTranscribing = true;
+
+    while (_audioQueue.isNotEmpty && _isRecording) {
+      final chunk = _audioQueue.removeAt(0);
+      try {
+        debugPrint('[gemini-fallback] sending ${chunk.length} bytes...');
+        final text = await client.butler.processAudio(
+          _liveSession!.sessionId,
+          ByteData.view(chunk.buffer),
+          'audio/webm;codecs=opus',
+        );
+        if (text.isNotEmpty) {
+          debugPrint('[gemini-fallback] transcribed: "$text"');
+        }
+      } catch (e) {
+        debugPrint('[gemini-fallback] error: $e');
+      }
+    }
+
+    _isTranscribing = false;
   }
 
   Future<void> _synthesizeAllRooms() async {
@@ -544,7 +610,10 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
                             height: 18,
                           ),
                           const SizedBox(width: 6),
-                          const Text('Listening...', style: TextStyle(fontSize: 10, color: Colors.red)),
+                          Text(
+                            _usingSpeechApi ? 'Listening...' : 'Transcribing (server)...',
+                            style: const TextStyle(fontSize: 10, color: Colors.red),
+                          ),
                         ],
                       ),
                   ],
