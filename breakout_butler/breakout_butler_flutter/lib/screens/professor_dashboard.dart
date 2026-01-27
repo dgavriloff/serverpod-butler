@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:breakout_butler_client/breakout_butler_client.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../main.dart';
+import '../services/audio_recorder_web.dart';
 
 /// Professor's dashboard showing all breakout rooms
 class ProfessorDashboard extends StatefulWidget {
@@ -22,15 +25,21 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   bool _isLoading = true;
   String? _error;
   bool _isRecording = false;
+  bool _isTranscribing = false;
 
   StreamSubscription? _roomSubscription;
   StreamSubscription? _transcriptSubscription;
+  StreamSubscription? _audioSubscription;
 
   final _transcriptController = TextEditingController();
+  AudioRecorderService? _audioRecorder;
 
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      _audioRecorder = AudioRecorderService();
+    }
     _loadSession();
   }
 
@@ -38,6 +47,8 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   void dispose() {
     _roomSubscription?.cancel();
     _transcriptSubscription?.cancel();
+    _audioSubscription?.cancel();
+    _audioRecorder?.dispose();
     _transcriptController.dispose();
     super.dispose();
   }
@@ -117,9 +128,78 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
       await client.butler.addTranscriptText(_liveSession!.sessionId, text);
       _transcriptController.clear();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  /// Toggle audio recording on/off
+  Future<void> _toggleRecording() async {
+    if (_audioRecorder == null || _liveSession == null) return;
+
+    if (_isRecording) {
+      // Stop recording
+      await _audioRecorder!.stopRecording();
+      _audioSubscription?.cancel();
+      _audioSubscription = null;
+      setState(() {
+        _isRecording = false;
+      });
+    } else {
+      // Start recording
+      final started = await _audioRecorder!.startRecording();
+      if (started) {
+        setState(() {
+          _isRecording = true;
+        });
+
+        // Listen to audio chunks and send to server for transcription
+        _audioSubscription = _audioRecorder!.audioStream.listen((audioData) {
+          _processAudioChunk(audioData);
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to start recording. Please check microphone permissions.'),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Send audio chunk to server for transcription
+  Future<void> _processAudioChunk(Uint8List audioData) async {
+    if (_liveSession == null || _isTranscribing) return;
+
+    setState(() {
+      _isTranscribing = true;
+    });
+
+    try {
+      // Send audio to server for Gemini transcription
+      final transcribedText = await client.butler.processAudio(
+        _liveSession!.sessionId,
+        audioData,
+        'audio/webm',
       );
+
+      if (transcribedText.isNotEmpty && mounted) {
+        // Transcript is automatically broadcast to all clients via the server
+        debugPrint('Transcribed: $transcribedText');
+      }
+    } catch (e) {
+      debugPrint('Transcription error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTranscribing = false;
+        });
+      }
     }
   }
 
@@ -402,24 +482,54 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
                   color: colorScheme.surfaceContainerHighest,
                   child: Row(
                     children: [
-                      Icon(Icons.mic, color: colorScheme.primary),
+                      Icon(
+                        _isRecording ? Icons.mic : Icons.mic_none,
+                        color: _isRecording ? Colors.red : colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Live Transcript',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Live Transcript',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          if (_isRecording)
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _isTranscribing ? 'Transcribing...' : 'Recording',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
                       const Spacer(),
-                      // Recording indicator (placeholder for actual mic capture)
-                      IconButton(
+                      // Recording button
+                      FilledButton.icon(
+                        onPressed: kIsWeb ? _toggleRecording : null,
                         icon: Icon(
                           _isRecording ? Icons.stop : Icons.fiber_manual_record,
-                          color: _isRecording ? Colors.red : colorScheme.outline,
+                          size: 16,
                         ),
-                        onPressed: () {
-                          setState(() => _isRecording = !_isRecording);
-                          // TODO: Implement actual audio capture
-                        },
-                        tooltip: _isRecording ? 'Stop recording' : 'Start recording',
+                        label: Text(_isRecording ? 'Stop' : 'Record'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _isRecording ? Colors.red : colorScheme.primary,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
                     ],
                   ),
