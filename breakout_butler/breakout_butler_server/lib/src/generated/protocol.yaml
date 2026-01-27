@@ -1,0 +1,33 @@
+emailIdp:
+  - login:
+  - startRegistration:
+  - verifyRegistrationCode:
+  - finishRegistration:
+  - startPasswordReset:
+  - verifyPasswordResetCode:
+  - finishPasswordReset:
+jwtRefresh:
+  - refreshAccessToken:
+butler:
+  - transcriptStream:
+  - processAudio:
+  - addTranscriptText:
+  - askButler:
+  - summarizeRoom:
+  - synthesizeAllRooms:
+  - extractAssignment:
+room:
+  - getRoom:
+  - updateRoomContent:
+  - roomUpdates:
+  - allRoomUpdates:
+  - getAllRooms:
+session:
+  - createSession:
+  - startLiveSession:
+  - getLiveSessionByTag:
+  - getSession:
+  - endLiveSession:
+  - getRooms:
+greeting:
+  - hello:

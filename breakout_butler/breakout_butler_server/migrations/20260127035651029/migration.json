@@ -1,0 +1,48 @@
+{
+  "__className__": "serverpod.DatabaseMigration",
+  "actions": [
+    {
+      "__className__": "serverpod.DatabaseMigrationAction",
+      "type": "alterTable",
+      "alterTable": {
+        "__className__": "serverpod.TableMigration",
+        "name": "class_session",
+        "schema": "public",
+        "addColumns": [],
+        "deleteColumns": [
+          "prompt"
+        ],
+        "modifyColumns": [],
+        "addIndexes": [],
+        "deleteIndexes": [],
+        "addForeignKeys": [],
+        "deleteForeignKeys": [],
+        "warnings": [
+          {
+            "__className__": "serverpod.DatabaseMigrationWarning",
+            "type": "columnDropped",
+            "message": "Column \"prompt\" of table \"class_session\" will be dropped.",
+            "table": "class_session",
+            "columns": [
+              "prompt"
+            ],
+            "destrucive": true
+          }
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "__className__": "serverpod.DatabaseMigrationWarning",
+      "type": "columnDropped",
+      "message": "Column \"prompt\" of table \"class_session\" will be dropped.",
+      "table": "class_session",
+      "columns": [
+        "prompt"
+      ],
+      "destrucive": true
+    }
+  ],
+  "migrationApiVersion": 1
+}

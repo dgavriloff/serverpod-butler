@@ -1,0 +1,34 @@
+# Production Caddyfile for Railway
+# Routes all traffic through a single port (Railway's PORT env var)
+# - POST requests → Serverpod API server (8080)
+# - WebSocket upgrades → Serverpod API server (8080)
+# - Everything else → Serverpod web server (8082) which serves Flutter app
+
+:{$PORT:8443} {
+	# API calls (Serverpod RPC is POST-only)
+	@api {
+		method POST
+	}
+	handle @api {
+		reverse_proxy localhost:8080
+	}
+
+	# WebSocket connections (for streaming)
+	@websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	handle @websocket {
+		reverse_proxy localhost:8080
+	}
+
+	# Insights API (optional, for Serverpod Studio)
+	handle /insights/* {
+		reverse_proxy localhost:8081
+	}
+
+	# Everything else → web server (Flutter app + static files)
+	handle {
+		reverse_proxy localhost:8082
+	}
+}

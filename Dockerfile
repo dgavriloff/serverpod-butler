@@ -1,6 +1,7 @@
 # =============================================================================
 # Multi-stage Dockerfile for Railway deployment
 # Builds Flutter web app + Serverpod server in a single image
+# Uses Caddy as reverse proxy to serve API + web through a single port
 # =============================================================================
 
 # Stage 1: Build Flutter web app
@@ -26,17 +27,20 @@ RUN dart pub get
 RUN dart compile exe bin/main.dart -o bin/server
 
 # Stage 3: Final runtime image
-FROM alpine:latest
+# Use Debian-based image (not Alpine) because Dart AOT binaries require glibc
+FROM debian:bookworm-slim
 
-ENV runmode=production
-ENV serverid=default
-ENV logging=normal
-ENV role=monolith
+RUN apt-get update && \
+    apt-get install -y ca-certificates curl debian-keyring debian-archive-keyring apt-transport-https && \
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list && \
+    apt-get update && \
+    apt-get install -y caddy && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy Dart runtime dependencies
-COPY --from=server-build /runtime/ /
+WORKDIR /app
 
-# Copy compiled server
+# Copy compiled server (Dart AOT executables are self-contained)
 COPY --from=server-build /app/bin/server server
 
 # Copy server config and resources
@@ -48,8 +52,15 @@ COPY --from=server-build /app/lib/src/generated/protocol.yaml lib/src/generated/
 # Copy Flutter web build into Serverpod's web/app/ directory
 COPY --from=flutter-build /app/breakout_butler_flutter/build/web/ web/app/
 
+# Copy production Caddyfile
+COPY Caddyfile.production /etc/caddy/Caddyfile
+
 EXPOSE 8080
 EXPOSE 8081
 EXPOSE 8082
 
-ENTRYPOINT ./server --mode=$runmode --server-id=$serverid --logging=$logging --role=$role
+# Start both Serverpod and Caddy
+# Serverpod runs in background, Caddy in foreground
+CMD ./server --mode production --server-id default --logging normal --role monolith & \
+    sleep 2 && \
+    caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
