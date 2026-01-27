@@ -52,7 +52,10 @@ class _TranscriptPanelState extends ConsumerState<TranscriptPanel> {
       children: [
         // Header
         Container(
-          padding: const EdgeInsets.all(SpSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpSpacing.md,
+            vertical: SpSpacing.sm,
+          ),
           decoration: const BoxDecoration(
             border: Border(bottom: BorderSide(color: SpColors.border)),
           ),
