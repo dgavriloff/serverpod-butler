@@ -109,13 +109,13 @@ class _ProfessorDashboardScreenState
     }
   }
 
-  void _onEndSession() async {
+  void _onCloseRoom() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('end session?', style: SpTypography.section),
+        title: const Text('close room?', style: SpTypography.section),
         content: const Text(
-          'this will end the live session for all participants.',
+          'this will close all rooms and end the session for all participants.',
           style: SpTypography.body,
         ),
         actions: [
@@ -125,7 +125,7 @@ class _ProfessorDashboardScreenState
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('end',
+            child: Text('close',
                 style: SpTypography.body.copyWith(color: SpColors.live)),
           ),
         ],
@@ -182,13 +182,20 @@ class _ProfessorDashboardScreenState
         onSegmentTap: (index) {
           if (index == 0) context.go('/');
         },
+        trailing: TextButton.icon(
+          onPressed: _onCloseRoom,
+          icon: const Icon(Icons.close, size: 16),
+          label: const Text('close room'),
+          style: TextButton.styleFrom(
+            foregroundColor: SpColors.live,
+          ),
+        ),
       ),
       body: Column(
         children: [
           DashboardActionBar(
             urlTag: widget.urlTag,
             sessionId: _sessionId!,
-            onEndSession: _onEndSession,
             onSynthesisResult: (answer) {
               setState(() => _synthesisResult = answer);
             },

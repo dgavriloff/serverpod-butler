@@ -14,13 +14,11 @@ class DashboardActionBar extends ConsumerWidget {
     super.key,
     required this.urlTag,
     required this.sessionId,
-    required this.onEndSession,
     required this.onSynthesisResult,
   });
 
   final String urlTag;
   final int sessionId;
-  final VoidCallback onEndSession;
   final void Function(String answer) onSynthesisResult;
 
   @override
@@ -74,12 +72,6 @@ class DashboardActionBar extends ConsumerWidget {
                       }
                     }
                   },
-          ),
-          const SizedBox(width: SpSpacing.sm),
-          SpSecondaryButton(
-            label: 'end session',
-            icon: Icons.stop_circle_outlined,
-            onPressed: onEndSession,
           ),
         ],
       ),
