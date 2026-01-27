@@ -3,8 +3,20 @@
 # - POST requests → Serverpod API server (8080)
 # - WebSocket upgrades → Serverpod API server (8080)
 # - Everything else → Serverpod web server (8082) which serves Flutter app
+#
+# IP Whitelisting (dev only):
+# Set ALLOWED_IPS env var to restrict access (e.g. "50.47.24.251/32")
+# Leave unset or empty for open access (production)
 
 :{$PORT:8443} {
+	# IP whitelist — block non-allowed IPs when ALLOWED_IPS is set
+	@blocked {
+		not remote_ip {$ALLOWED_IPS:0.0.0.0/0}
+	}
+	handle @blocked {
+		respond "Access denied" 403
+	}
+
 	# API calls (Serverpod RPC is POST-only)
 	@api {
 		method POST
