@@ -28,6 +28,12 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
   bool _isRecording = false;
   bool _isTranscribing = false;
 
+  /// Queue of audio chunks waiting to be transcribed.
+  /// Chunks arrive every 3s but Gemini can take 5-15s, so we queue them
+  /// instead of dropping them.
+  final List<Uint8List> _audioQueue = [];
+  bool _isProcessingQueue = false;
+
   StreamSubscription? _roomSubscription;
   StreamSubscription? _transcriptSubscription;
   StreamSubscription? _audioSubscription;
@@ -150,10 +156,11 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
       await _audioRecorder!.stopRecording();
       _audioSubscription?.cancel();
       _audioSubscription = null;
+      // Let the queue finish draining (don't clear it — those chunks were already recorded)
       setState(() {
         _isRecording = false;
       });
-      debugPrint('[_toggleRecording] stopped');
+      debugPrint('[_toggleRecording] stopped, ${_audioQueue.length} chunks still in queue');
     } else {
       debugPrint('[_toggleRecording] starting recording...');
       final error = await _audioRecorder!.startRecording();
@@ -183,43 +190,45 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
     }
   }
 
-  /// Send audio chunk to server for transcription
-  Future<void> _processAudioChunk(Uint8List audioData) async {
-    debugPrint('[_processAudioChunk] called, ${audioData.length} bytes, _isTranscribing=$_isTranscribing, sessionId=${_liveSession?.sessionId}');
-    if (_liveSession == null || _isTranscribing) {
-      debugPrint('[_processAudioChunk] SKIPPED (session=${_liveSession != null}, busy=$_isTranscribing)');
-      return;
+  /// Enqueue audio chunk for transcription.
+  /// Chunks are processed sequentially — no chunk is ever dropped.
+  void _processAudioChunk(Uint8List audioData) {
+    if (_liveSession == null) return;
+
+    _audioQueue.add(audioData);
+    debugPrint('[_processAudioChunk] queued chunk (${audioData.length} bytes), queue size: ${_audioQueue.length}');
+    _drainAudioQueue();
+  }
+
+  /// Process queued audio chunks one at a time.
+  Future<void> _drainAudioQueue() async {
+    if (_isProcessingQueue || _audioQueue.isEmpty || _liveSession == null) return;
+    _isProcessingQueue = true;
+
+    while (_audioQueue.isNotEmpty && _liveSession != null && mounted) {
+      final chunk = _audioQueue.removeAt(0);
+      debugPrint('[_drainAudioQueue] processing chunk (${chunk.length} bytes), ${_audioQueue.length} remaining');
+
+      if (mounted) {
+        setState(() => _isTranscribing = true);
+      }
+
+      try {
+        final transcribedText = await client.butler.processAudio(
+          _liveSession!.sessionId,
+          chunk.buffer.asByteData(),
+          'audio/webm',
+        );
+        debugPrint('[_drainAudioQueue] transcribed: "${transcribedText.length > 80 ? '${transcribedText.substring(0, 80)}...' : transcribedText}"');
+      } catch (e) {
+        debugPrint('[_drainAudioQueue] ERROR: $e');
+        // Don't spam the user with errors for every chunk — just log it
+      }
     }
 
-    setState(() {
-      _isTranscribing = true;
-    });
-
-    try {
-      debugPrint('[_processAudioChunk] calling client.butler.processAudio...');
-      final transcribedText = await client.butler.processAudio(
-        _liveSession!.sessionId,
-        audioData.buffer.asByteData(),
-        'audio/webm',
-      );
-      debugPrint('[_processAudioChunk] SUCCESS: "${transcribedText.length > 80 ? '${transcribedText.substring(0, 80)}...' : transcribedText}"');
-    } catch (e) {
-      debugPrint('[_processAudioChunk] ERROR: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Transcription error: $e'),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isTranscribing = false;
-        });
-      }
-      debugPrint('[_processAudioChunk] DONE, _isTranscribing reset to false');
+    _isProcessingQueue = false;
+    if (mounted) {
+      setState(() => _isTranscribing = false);
     }
   }
 
