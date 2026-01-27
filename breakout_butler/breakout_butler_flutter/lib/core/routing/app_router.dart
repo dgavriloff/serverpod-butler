@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/dashboard/screens/professor_dashboard_screen.dart';
 import '../../features/home/screens/home_screen.dart';
-import '../../screens/professor_dashboard.dart';
-import '../../screens/student_room.dart';
+import '../../features/student/screens/student_room_screen.dart';
 
 /// scratchpad app router — declarative, URL-based.
 ///
 /// Routes:
 ///   /                     → HomeScreen
-///   /:urlTag              → ProfessorDashboard
-///   /:urlTag/:roomNumber  → StudentRoom
+///   /:urlTag              → ProfessorDashboardScreen
+///   /:urlTag/:roomNumber  → StudentRoomScreen
 final appRouter = GoRouter(
   routes: [
     GoRoute(
@@ -22,7 +22,7 @@ final appRouter = GoRouter(
       builder: (context, state) {
         final urlTag = state.pathParameters['urlTag']!;
         final token = state.uri.queryParameters['token'];
-        return ProfessorDashboard(urlTag: urlTag, token: token);
+        return ProfessorDashboardScreen(urlTag: urlTag, token: token);
       },
       routes: [
         GoRoute(
@@ -30,7 +30,10 @@ final appRouter = GoRouter(
           builder: (context, state) {
             final urlTag = state.pathParameters['urlTag']!;
             final roomNumber = int.parse(state.pathParameters['roomNumber']!);
-            return StudentRoom(urlTag: urlTag, roomNumber: roomNumber);
+            return StudentRoomScreen(
+              urlTag: urlTag,
+              roomNumber: roomNumber,
+            );
           },
         ),
       ],
