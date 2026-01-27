@@ -1,0 +1,9 @@
+### Real-time update for room content (not stored in database)
+class: RoomUpdate
+fields:
+  ### Room number being updated
+  roomNumber: int
+  ### New content
+  content: String
+  ### Timestamp of update
+  timestamp: DateTime

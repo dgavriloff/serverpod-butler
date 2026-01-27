@@ -1,0 +1,21 @@
+### An active/live session with its URL tag
+class: LiveSession
+table: live_session
+fields:
+  ### The persistent session this live session refers to
+  sessionId: int, relation(parent=class_session)
+  ### The URL tag set by professor (e.g., "psych101")
+  urlTag: String
+  ### Whether the session is currently active
+  isActive: bool
+  ### Full accumulated transcript from butler
+  transcript: String
+  ### When this live session was started
+  startedAt: DateTime
+  ### When this live session expires/ended
+  expiresAt: DateTime?
+indexes:
+  ### URL tags must be unique among active sessions
+  url_tag_active_idx:
+    fields: urlTag, isActive
+    unique: true

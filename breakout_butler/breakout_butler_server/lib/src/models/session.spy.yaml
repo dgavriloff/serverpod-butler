@@ -1,0 +1,16 @@
+### A classroom session created by a professor
+class: ClassSession
+table: class_session
+fields:
+  ### Session name (e.g., "Milgram Discussion")
+  name: String
+  ### The prompt/instructions for breakout rooms
+  prompt: String
+  ### Number of breakout rooms
+  roomCount: int
+  ### When the session was created
+  createdAt: DateTime
+  ### Rooms belonging to this session
+  rooms: List<Room>?, relation(name=session_rooms)
+  ### Transcript chunks from this session
+  transcriptChunks: List<TranscriptChunk>?, relation(name=session_transcripts)

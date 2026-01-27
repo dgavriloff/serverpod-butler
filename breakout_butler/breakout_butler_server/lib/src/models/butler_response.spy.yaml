@@ -1,0 +1,9 @@
+### Response from the butler AI
+class: ButlerResponse
+fields:
+  ### The answer to the user's question
+  answer: String
+  ### Whether the response was successful
+  success: bool
+  ### Error message if not successful
+  error: String?

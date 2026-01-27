@@ -1,0 +1,10 @@
+### A chunk of transcribed audio from the professor
+class: TranscriptChunk
+table: transcript_chunk
+fields:
+  ### The session this transcript belongs to
+  sessionId: int, relation(name=session_transcripts, parent=class_session)
+  ### When this chunk was transcribed
+  timestamp: DateTime
+  ### The transcribed text
+  text: String

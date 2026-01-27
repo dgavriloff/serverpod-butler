@@ -1,0 +1,17 @@
+### A breakout room workspace
+class: Room
+table: room
+fields:
+  ### The session this room belongs to
+  sessionId: int, relation(name=session_rooms, parent=class_session)
+  ### Room number (matches Zoom breakout room number)
+  roomNumber: int
+  ### Collaborative text document content
+  content: String
+  ### Last updated timestamp
+  updatedAt: DateTime
+indexes:
+  ### Ensure unique room numbers within a session
+  session_room_unique_idx:
+    fields: sessionId, roomNumber
+    unique: true

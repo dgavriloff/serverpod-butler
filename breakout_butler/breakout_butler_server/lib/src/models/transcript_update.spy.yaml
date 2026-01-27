@@ -1,0 +1,7 @@
+### Real-time transcript update from butler (not stored in database)
+class: TranscriptUpdate
+fields:
+  ### New transcript text
+  text: String
+  ### Timestamp of transcription
+  timestamp: DateTime
