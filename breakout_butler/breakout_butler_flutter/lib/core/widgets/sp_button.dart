@@ -25,42 +25,35 @@ class SpPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = isLoading
-        ? SizedBox(
-            width: 80,
-            height: 14,
-            child: Container(
-              decoration: BoxDecoration(
-                color: SpColors.background.withValues(alpha: 0.3),
-                borderRadius: SpRadius.buttonBorder,
-              ),
+    if (isLoading) {
+      final loader = ElevatedButton(
+        onPressed: null,
+        child: SizedBox(
+          width: 80,
+          height: 14,
+          child: Container(
+            decoration: BoxDecoration(
+              color: SpColors.background.withValues(alpha: 0.3),
+              borderRadius: SpRadius.buttonBorder,
             ),
-          )
-        : icon != null
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: Icon(icon, size: 16),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(label),
-                ],
-              )
-            : Text(label);
-
-    final button = ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      child: child,
-    );
-
-    if (fullWidth) {
-      return SizedBox(width: double.infinity, child: button);
+          ),
+        ),
+      );
+      return fullWidth ? SizedBox(width: double.infinity, child: loader) : loader;
     }
-    return button;
+
+    final button = icon != null
+        ? ElevatedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 16),
+            label: Text(label),
+          )
+        : ElevatedButton(
+            onPressed: onPressed,
+            child: Text(label),
+          );
+
+    return fullWidth ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
 
@@ -83,42 +76,35 @@ class SpSecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = isLoading
-        ? SizedBox(
-            width: 80,
-            height: 14,
-            child: Container(
-              decoration: BoxDecoration(
-                color: SpColors.textPlaceholder.withValues(alpha: 0.3),
-                borderRadius: SpRadius.buttonBorder,
-              ),
+    if (isLoading) {
+      final loader = OutlinedButton(
+        onPressed: null,
+        child: SizedBox(
+          width: 80,
+          height: 14,
+          child: Container(
+            decoration: BoxDecoration(
+              color: SpColors.textPlaceholder.withValues(alpha: 0.3),
+              borderRadius: SpRadius.buttonBorder,
             ),
-          )
-        : icon != null
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: Icon(icon, size: 16),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(label),
-                ],
-              )
-            : Text(label);
-
-    final button = OutlinedButton(
-      onPressed: isLoading ? null : onPressed,
-      child: child,
-    );
-
-    if (fullWidth) {
-      return SizedBox(width: double.infinity, child: button);
+          ),
+        ),
+      );
+      return fullWidth ? SizedBox(width: double.infinity, child: loader) : loader;
     }
-    return button;
+
+    final button = icon != null
+        ? OutlinedButton.icon(
+            onPressed: onPressed,
+            icon: Icon(icon, size: 16),
+            label: Text(label),
+          )
+        : OutlinedButton(
+            onPressed: onPressed,
+            child: Text(label),
+          );
+
+    return fullWidth ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
 
