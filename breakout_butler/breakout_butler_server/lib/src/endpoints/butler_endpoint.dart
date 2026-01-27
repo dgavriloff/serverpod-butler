@@ -44,11 +44,15 @@ class ButlerEndpoint extends Endpoint {
     Uint8List audioData,
     String mimeType,
   ) async {
+    session.log('Processing audio: ${audioData.length} bytes, mimeType: $mimeType');
+
     // Transcribe using Gemini
     final transcribedText = await GeminiService.instance.transcribeAudio(
       audioData,
       mimeType,
     );
+
+    session.log('Transcribed text: "$transcribedText"');
 
     if (transcribedText.isNotEmpty) {
       await addTranscriptText(session, sessionId, transcribedText);
@@ -142,12 +146,6 @@ class ButlerEndpoint extends Endpoint {
         error: 'Error processing question: $e',
       );
     }
-  }
-
-  /// Get the current prompt/assignment for the session
-  Future<String> getSessionPrompt(Session session, int sessionId) async {
-    final classSession = await ClassSession.db.findById(session, sessionId);
-    return classSession?.prompt ?? '';
   }
 
   /// Summarize a specific room's content using Gemini

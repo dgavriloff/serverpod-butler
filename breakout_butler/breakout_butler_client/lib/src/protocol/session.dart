@@ -20,7 +20,6 @@ abstract class ClassSession implements _i1.SerializableModel {
   ClassSession._({
     this.id,
     required this.name,
-    required this.prompt,
     required this.roomCount,
     required this.createdAt,
     this.rooms,
@@ -30,7 +29,6 @@ abstract class ClassSession implements _i1.SerializableModel {
   factory ClassSession({
     int? id,
     required String name,
-    required String prompt,
     required int roomCount,
     required DateTime createdAt,
     List<_i2.Room>? rooms,
@@ -41,7 +39,6 @@ abstract class ClassSession implements _i1.SerializableModel {
     return ClassSession(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
-      prompt: jsonSerialization['prompt'] as String,
       roomCount: jsonSerialization['roomCount'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
@@ -67,9 +64,6 @@ abstract class ClassSession implements _i1.SerializableModel {
   /// Session name (e.g., "Milgram Discussion")
   String name;
 
-  /// The prompt/instructions for breakout rooms
-  String prompt;
-
   /// Number of breakout rooms
   int roomCount;
 
@@ -88,7 +82,6 @@ abstract class ClassSession implements _i1.SerializableModel {
   ClassSession copyWith({
     int? id,
     String? name,
-    String? prompt,
     int? roomCount,
     DateTime? createdAt,
     List<_i2.Room>? rooms,
@@ -100,7 +93,6 @@ abstract class ClassSession implements _i1.SerializableModel {
       '__className__': 'ClassSession',
       if (id != null) 'id': id,
       'name': name,
-      'prompt': prompt,
       'roomCount': roomCount,
       'createdAt': createdAt.toJson(),
       if (rooms != null) 'rooms': rooms?.toJson(valueToJson: (v) => v.toJson()),
@@ -123,7 +115,6 @@ class _ClassSessionImpl extends ClassSession {
   _ClassSessionImpl({
     int? id,
     required String name,
-    required String prompt,
     required int roomCount,
     required DateTime createdAt,
     List<_i2.Room>? rooms,
@@ -131,7 +122,6 @@ class _ClassSessionImpl extends ClassSession {
   }) : super._(
          id: id,
          name: name,
-         prompt: prompt,
          roomCount: roomCount,
          createdAt: createdAt,
          rooms: rooms,
@@ -145,7 +135,6 @@ class _ClassSessionImpl extends ClassSession {
   ClassSession copyWith({
     Object? id = _Undefined,
     String? name,
-    String? prompt,
     int? roomCount,
     DateTime? createdAt,
     Object? rooms = _Undefined,
@@ -154,7 +143,6 @@ class _ClassSessionImpl extends ClassSession {
     return ClassSession(
       id: id is int? ? id : this.id,
       name: name ?? this.name,
-      prompt: prompt ?? this.prompt,
       roomCount: roomCount ?? this.roomCount,
       createdAt: createdAt ?? this.createdAt,
       rooms: rooms is List<_i2.Room>?

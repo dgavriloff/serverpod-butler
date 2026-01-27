@@ -76,3 +76,6 @@ docker-compose.override.yaml
 
 # Test coverage
 coverage/
+
+# TLS certificates
+**/certs/

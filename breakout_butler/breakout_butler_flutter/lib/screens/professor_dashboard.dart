@@ -149,9 +149,9 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
         _isRecording = false;
       });
     } else {
-      // Start recording
-      final started = await _audioRecorder!.startRecording();
-      if (started) {
+      // Start recording - now returns error message or null on success
+      final error = await _audioRecorder!.startRecording();
+      if (error == null) {
         setState(() {
           _isRecording = true;
         });
@@ -163,8 +163,9 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to start recording. Please check microphone permissions.'),
+            SnackBar(
+              content: Text(error),
+              duration: const Duration(seconds: 5),
             ),
           );
         }
@@ -341,260 +342,265 @@ class _ProfessorDashboardState extends State<ProfessorDashboard> {
           ),
         ],
       ),
-      body: Row(
-        children: [
-          // Left side: Rooms grid
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 700;
+
+          if (isWide) {
+            // Desktop layout with side-by-side panels
+            return Row(
               children: [
-                // Prompt banner
+                Expanded(flex: 2, child: _buildRoomsPanel(colorScheme, roomCount)),
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  color: colorScheme.primaryContainer,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Prompt:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _classSession?.prompt ?? '',
-                        style: TextStyle(color: colorScheme.onPrimaryContainer),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Text(
-                            'Students join: /${widget.urlTag}/[room#]',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                            ),
-                          ),
-                          const Spacer(),
-                          FilledButton.tonalIcon(
-                            onPressed: _synthesizeAllRooms,
-                            icon: const Icon(Icons.auto_awesome, size: 16),
-                            label: const Text('Synthesize All Rooms'),
-                          ),
-                        ],
-                      ),
-                    ],
+                  width: 350,
+                  decoration: BoxDecoration(
+                    border: Border(left: BorderSide(color: colorScheme.outlineVariant)),
                   ),
-                ),
-
-                // Rooms grid
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 300,
-                        childAspectRatio: 1.2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                      itemCount: roomCount,
-                      itemBuilder: (context, index) {
-                        final roomNumber = index + 1;
-                        final content = _roomContents[roomNumber] ?? '';
-                        final hasContent = content.isNotEmpty;
-
-                        return Card(
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () => _showRoomDetail(roomNumber, content),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.meeting_room,
-                                        color: hasContent
-                                            ? colorScheme.primary
-                                            : colorScheme.outline,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Room $roomNumber',
-                                        style: Theme.of(context).textTheme.titleMedium,
-                                      ),
-                                      const Spacer(),
-                                      if (hasContent)
-                                        Icon(
-                                          Icons.edit_note,
-                                          size: 16,
-                                          color: colorScheme.primary,
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Expanded(
-                                    child: Text(
-                                      hasContent ? content : 'No activity yet...',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: hasContent
-                                            ? colorScheme.onSurface
-                                            : colorScheme.outline,
-                                      ),
-                                      maxLines: 6,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  child: _buildTranscriptPanel(colorScheme),
                 ),
               ],
-            ),
-          ),
-
-          // Right side: Transcript/Butler panel
-          Container(
-            width: 350,
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(color: colorScheme.outlineVariant),
-              ),
-            ),
-            child: Column(
+            );
+          } else {
+            // Mobile layout with bottom sheet for transcript
+            return Stack(
               children: [
-                // Transcript header
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  color: colorScheme.surfaceContainerHighest,
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isRecording ? Icons.mic : Icons.mic_none,
-                        color: _isRecording ? Colors.red : colorScheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
+                _buildRoomsPanel(colorScheme, roomCount),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildMobileTranscriptBar(colorScheme),
+                ),
+              ],
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildRoomsPanel(ColorScheme colorScheme, int roomCount) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header banner
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          color: colorScheme.primaryContainer,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              Text(
+                '/${widget.urlTag}/[room#]',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                ),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: _synthesizeAllRooms,
+                icon: const Icon(Icons.auto_awesome, size: 16),
+                label: const Text('Synthesize'),
+              ),
+            ],
+          ),
+        ),
+        // Rooms grid
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                childAspectRatio: 1.2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: roomCount,
+              itemBuilder: (context, index) {
+                final roomNumber = index + 1;
+                final content = _roomContents[roomNumber] ?? '';
+                final hasContent = content.isNotEmpty;
+
+                return Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => _showRoomDetail(roomNumber, content),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Live Transcript',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          if (_isRecording)
-                            Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _isTranscribing ? 'Transcribing...' : 'Recording',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                      const Spacer(),
-                      // Recording button
-                      FilledButton.icon(
-                        onPressed: kIsWeb ? _toggleRecording : null,
-                        icon: Icon(
-                          _isRecording ? Icons.stop : Icons.fiber_manual_record,
-                          size: 16,
-                        ),
-                        label: Text(_isRecording ? 'Stop' : 'Record'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _isRecording ? Colors.red : colorScheme.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Transcript content
-                Expanded(
-                  child: _transcriptChunks.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Row(
                             children: [
                               Icon(
-                                Icons.record_voice_over_outlined,
-                                size: 48,
-                                color: colorScheme.outline,
+                                Icons.meeting_room,
+                                color: hasContent ? colorScheme.primary : colorScheme.outline,
+                                size: 20,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'No transcript yet',
-                                style: TextStyle(color: colorScheme.outline),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Room $roomNumber',
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
+                              if (hasContent)
+                                Icon(Icons.edit_note, size: 14, color: colorScheme.primary),
                             ],
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _transcriptChunks.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Text(_transcriptChunks[index]),
-                            );
-                          },
-                        ),
-                ),
-
-                // Manual transcript input (for demo)
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _transcriptController,
-                          decoration: const InputDecoration(
-                            hintText: 'Add transcript text (for demo)...',
-                            border: OutlineInputBorder(),
-                            isDense: true,
+                          const SizedBox(height: 6),
+                          Expanded(
+                            child: Text(
+                              hasContent ? content : 'No activity...',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: hasContent ? colorScheme.onSurface : colorScheme.outline,
+                              ),
+                              maxLines: 5,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          onSubmitted: (_) => _addTranscript(),
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.send),
-                        onPressed: _addTranscript,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTranscriptPanel(ColorScheme colorScheme) {
+    return Column(
+      children: [
+        // Transcript header
+        Container(
+          padding: const EdgeInsets.all(12),
+          color: colorScheme.surfaceContainerHighest,
+          child: Row(
+            children: [
+              Icon(
+                _isRecording ? Icons.mic : Icons.mic_none,
+                color: _isRecording ? Colors.red : colorScheme.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Live Transcript', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    if (_isRecording)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                          const SizedBox(width: 4),
+                          Text(_isTranscribing ? 'Transcribing...' : 'Recording', style: const TextStyle(fontSize: 10, color: Colors.red)),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+              FilledButton.icon(
+                onPressed: kIsWeb ? _toggleRecording : null,
+                icon: Icon(_isRecording ? Icons.stop : Icons.fiber_manual_record, size: 14),
+                label: Text(_isRecording ? 'Stop' : 'Rec'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _isRecording ? Colors.red : colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Transcript content
+        Expanded(
+          child: _transcriptChunks.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.record_voice_over_outlined, size: 48, color: colorScheme.outline),
+                      const SizedBox(height: 8),
+                      Text('No transcript yet', style: TextStyle(color: colorScheme.outline)),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _transcriptChunks.length,
+                  itemBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(_transcriptChunks[index]),
+                  ),
+                ),
+        ),
+        // Manual transcript input
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _transcriptController,
+                  decoration: const InputDecoration(hintText: 'Add text...', border: OutlineInputBorder(), isDense: true),
+                  onSubmitted: (_) => _addTranscript(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(icon: const Icon(Icons.send), onPressed: _addTranscript),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileTranscriptBar(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, -2))],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            if (_isRecording)
+              Container(width: 8, height: 8, margin: const EdgeInsets.only(right: 8), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+            Expanded(
+              child: Text(
+                _transcriptChunks.isEmpty ? 'No transcript' : _transcriptChunks.last,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: kIsWeb ? _toggleRecording : null,
+              icon: Icon(_isRecording ? Icons.stop : Icons.mic, size: 16),
+              label: Text(_isRecording ? 'Stop' : 'Rec'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _isRecording ? Colors.red : colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

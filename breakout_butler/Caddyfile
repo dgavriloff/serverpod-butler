@@ -1,0 +1,19 @@
+{
+	# Use mkcert certificates
+}
+
+# HTTPS for Flutter app
+https://192.168.254.19:8443, https://localhost:8443 {
+	tls /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2.pem /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2-key.pem
+
+	# Proxy to Flutter web server
+	reverse_proxy http://192.168.254.19:8082
+}
+
+# HTTPS for Serverpod API
+https://192.168.254.19:8444, https://localhost:8444 {
+	tls /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2.pem /Users/denisgavriloff/Repos/hackathons/serverpod-butler/breakout_butler/certs/localhost+2-key.pem
+
+	# Proxy to Serverpod
+	reverse_proxy http://192.168.254.19:8080
+}

@@ -35,6 +35,7 @@ class GeminiService {
 
   /// Transcribe audio data to text
   Future<String> transcribeAudio(Uint8List audioData, String mimeType) async {
+    print('GeminiService: Transcribing ${audioData.length} bytes of $mimeType');
     try {
       final response = await _flashModel.generateContent([
         Content.multi([
@@ -44,9 +45,11 @@ class GeminiService {
           ),
         ]),
       ]);
-      return response.text?.trim() ?? '';
+      final text = response.text?.trim() ?? '';
+      print('GeminiService: Transcription result: "$text"');
+      return text;
     } catch (e) {
-      print('Transcription error: $e');
+      print('GeminiService: Transcription error: $e');
       return '';
     }
   }

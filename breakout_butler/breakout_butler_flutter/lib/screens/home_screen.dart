@@ -13,7 +13,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _promptController = TextEditingController();
   final _urlTagController = TextEditingController();
   final _roomCountController = TextEditingController(text: '4');
 
@@ -23,7 +22,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _promptController.dispose();
     _urlTagController.dispose();
     _roomCountController.dispose();
     super.dispose();
@@ -41,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // Create the session
       final session = await client.session.createSession(
         _nameController.text.trim(),
-        _promptController.text.trim(),
         int.parse(_roomCountController.text),
       );
 
@@ -162,26 +159,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               }
                               if (value.length < 3) {
                                 return 'URL tag must be at least 3 characters';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Prompt
-                          TextFormField(
-                            controller: _promptController,
-                            decoration: const InputDecoration(
-                              labelText: 'Breakout Room Prompt',
-                              hintText: 'What should students discuss?',
-                              prefixIcon: Icon(Icons.assignment_outlined),
-                              border: OutlineInputBorder(),
-                              alignLabelWithHint: true,
-                            ),
-                            maxLines: 3,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Please enter a prompt for the breakout rooms';
                               }
                               return null;
                             },

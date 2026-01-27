@@ -4,8 +4,6 @@ table: class_session
 fields:
   ### Session name (e.g., "Milgram Discussion")
   name: String
-  ### The prompt/instructions for breakout rooms
-  prompt: String
   ### Number of breakout rooms
   roomCount: int
   ### When the session was created

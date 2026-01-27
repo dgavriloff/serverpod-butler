@@ -267,28 +267,17 @@ class _StudentRoomState extends State<StudentRoom> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   color: colorScheme.primaryContainer,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.assignment, color: colorScheme.onPrimaryContainer),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Your Task:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
+                      Icon(Icons.tips_and_updates, color: colorScheme.onPrimaryContainer),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ask the Butler "What\'s my assignment?" to get your task from the lecture',
+                          style: TextStyle(
+                            color: colorScheme.onPrimaryContainer,
+                            fontSize: 14,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _classSession?.prompt ?? 'No prompt provided',
-                        style: TextStyle(
-                          color: colorScheme.onPrimaryContainer,
-                          fontSize: 16,
                         ),
                       ),
                     ],

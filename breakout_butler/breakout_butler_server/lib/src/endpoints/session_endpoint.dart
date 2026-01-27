@@ -7,12 +7,10 @@ class SessionEndpoint extends Endpoint {
   Future<ClassSession> createSession(
     Session session,
     String name,
-    String prompt,
     int roomCount,
   ) async {
     final classSession = ClassSession(
       name: name,
-      prompt: prompt,
       roomCount: roomCount,
       createdAt: DateTime.now(),
     );

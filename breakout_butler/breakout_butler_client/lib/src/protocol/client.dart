@@ -304,14 +304,6 @@ class EndpointButler extends _i2.EndpointRef {
     },
   );
 
-  /// Get the current prompt/assignment for the session
-  _i3.Future<String> getSessionPrompt(int sessionId) =>
-      caller.callServerEndpoint<String>(
-        'butler',
-        'getSessionPrompt',
-        {'sessionId': sessionId},
-      );
-
   /// Summarize a specific room's content using Gemini
   _i3.Future<_i7.ButlerResponse> summarizeRoom(
     int sessionId,
@@ -422,14 +414,12 @@ class EndpointSession extends _i2.EndpointRef {
   /// Create a new classroom session
   _i3.Future<_i10.ClassSession> createSession(
     String name,
-    String prompt,
     int roomCount,
   ) => caller.callServerEndpoint<_i10.ClassSession>(
     'session',
     'createSession',
     {
       'name': name,
-      'prompt': prompt,
       'roomCount': roomCount,
     },
   );

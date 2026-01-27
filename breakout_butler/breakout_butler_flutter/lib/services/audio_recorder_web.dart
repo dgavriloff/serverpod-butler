@@ -20,8 +20,21 @@ class AudioRecorderService {
   bool get isRecording => _isRecording;
 
   /// Start recording from microphone
-  Future<bool> startRecording() async {
+  /// Returns error message string on failure, null on success
+  Future<String?> startRecording() async {
     try {
+      // Check if we're on HTTPS or localhost (required for getUserMedia)
+      final location = web.window.location;
+      final isSecure = location.protocol == 'https:' ||
+                       location.hostname == 'localhost' ||
+                       location.hostname == '127.0.0.1';
+
+      if (!isSecure) {
+        return 'Microphone access requires HTTPS or localhost. '
+               'Please access the app via localhost on the server machine, '
+               'or set up HTTPS.';
+      }
+
       // Request microphone access
       final constraints = web.MediaStreamConstraints(
         audio: true.toJS,
@@ -50,10 +63,15 @@ class AudioRecorderService {
       _mediaRecorder!.start(3000);
       _isRecording = true;
 
-      return true;
+      return null; // Success
     } catch (e) {
-      print('Error starting recording: $e');
-      return false;
+      final errorStr = e.toString();
+      if (errorStr.contains('NotAllowedError') || errorStr.contains('Permission')) {
+        return 'Microphone permission denied. Please allow microphone access in your browser settings.';
+      } else if (errorStr.contains('NotFoundError')) {
+        return 'No microphone found. Please connect a microphone and try again.';
+      }
+      return 'Failed to start recording: $e';
     }
   }
 
