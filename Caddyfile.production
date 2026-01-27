@@ -4,8 +4,8 @@
 # - WebSocket upgrades → Serverpod API server (8080)
 # - Everything else → Serverpod web server (8082) which serves Flutter app
 #
-# IP Whitelisting (dev only):
-# Set ALLOWED_IPS env var to restrict access (e.g. "50.47.24.251/32")
+# PIN Protection (dev only):
+# Set DEV_PIN env var to enable a PIN entry gate (e.g. DEV_PIN=957142)
 # Leave unset or empty for open access (production)
 
 {
@@ -15,15 +15,76 @@
 }
 
 :{$PORT:8443} {
-	# IP whitelist — block non-allowed IPs when ALLOWED_IPS is set.
-	# Uses route block so directives execute in declaration order.
-	# The healthcheck path (/) is always allowed through.
 	route {
-		@blocked {
-			not client_ip {$ALLOWED_IPS:0.0.0.0/0}
-			not path /
+		# --- PIN auth gate (only active when DEV_PIN env var is set) ---
+
+		# Serve login page at /__auth
+		@authPage {
+			path /__auth
+			method GET
+			not query pin=*
 		}
-		respond @blocked "Access denied" 403
+		handle @authPage {
+			header Content-Type "text/html; charset=utf-8"
+			respond `<!DOCTYPE html>
+<html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dev Access</title>
+<style>
+body{font-family:system-ui;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#1a1a2e;color:#eee}
+.c{background:#16213e;padding:2rem;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.3);text-align:center;max-width:320px;width:90%}
+h2{margin:0 0 1rem;font-size:1.2rem}
+input{width:100%;padding:.75rem;font-size:1.2rem;border:2px solid #0f3460;border-radius:8px;background:#1a1a2e;color:#eee;text-align:center;letter-spacing:.3em;box-sizing:border-box}
+input:focus{outline:none;border-color:#e94560}
+button{margin-top:1rem;padding:.75rem 2rem;font-size:1rem;background:#e94560;color:#fff;border:none;border-radius:8px;cursor:pointer;width:100%}
+button:hover{background:#c73e54}
+.e{color:#e94560;margin-top:.75rem;font-size:.9rem;display:none}
+</style>
+</head><body>
+<div class="c">
+<h2>Enter PIN</h2>
+<form onsubmit="event.preventDefault();location.href='/__auth?pin='+document.getElementById('p').value">
+<input id="p" type="password" inputmode="numeric" pattern="[0-9]*" autofocus autocomplete="off" placeholder="------">
+<button type="submit">Unlock</button>
+</form>
+<div class="e" id="e">Wrong PIN</div>
+</div>
+<script>if(location.search.includes('wrong'))document.getElementById('e').style.display='block'</script>
+</body></html>` 200
+		}
+
+		# Validate PIN submitted as query param → set cookie + redirect
+		@pinCorrect {
+			path /__auth
+			query pin={$DEV_PIN:__disabled__}
+		}
+		handle @pinCorrect {
+			header Set-Cookie "dev_auth={$DEV_PIN:none}; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800"
+			redir /app/ 302
+		}
+
+		# Wrong PIN → redirect back with error
+		@pinWrong {
+			path /__auth
+			query pin=*
+			not query pin={$DEV_PIN:__disabled__}
+		}
+		handle @pinWrong {
+			redir /__auth?wrong 302
+		}
+
+		# Gate: redirect to login if DEV_PIN is set and cookie is missing
+		@needsAuth {
+			not path /
+			not path /__auth
+			not header Cookie *dev_auth={$DEV_PIN:__disabled__}*
+			expression `"{$DEV_PIN:}" != ""`
+		}
+		handle @needsAuth {
+			redir /__auth 302
+		}
+
+		# --- App routing (authenticated or no PIN set) ---
 
 		# API calls (Serverpod RPC is POST-only)
 		@api method POST
