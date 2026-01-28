@@ -6,7 +6,7 @@ import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/widgets/sp_button.dart';
-import '../widgets/home_hero.dart';
+import '../widgets/animated_pad_hero.dart';
 import '../widgets/join_session_card.dart';
 import '../widgets/landing_illustration.dart';
 import '../widgets/or_divider.dart';
@@ -107,7 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const HomeHero(),
+              const AnimatedPadHero(),
               const SizedBox(height: SpSpacing.lg),
               const JoinSessionCard(),
               const SizedBox(height: SpSpacing.lg),
@@ -163,7 +163,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     bottom: SpSpacing.xl,
                   ),
                   child: const Center(
-                    child: HomeHero(),
+                    child: AnimatedPadHero(),
                   ),
                 ),
               ),
