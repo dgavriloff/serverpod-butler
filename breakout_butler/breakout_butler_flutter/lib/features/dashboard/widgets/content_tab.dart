@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,7 +9,6 @@ import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_button.dart';
 import '../../../core/widgets/sp_highlight.dart';
-import '../../../core/widgets/sp_text_field.dart';
 import '../../../main.dart';
 import '../../transcript/providers/recording_providers.dart';
 import '../../transcript/providers/transcript_providers.dart';
@@ -26,12 +27,41 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   final _promptController = TextEditingController();
   final _transcriptController = TextEditingController();
   bool _isExtracting = false;
+  Timer? _promptSaveTimer;
+  bool _promptLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrompt();
+  }
+
+  Future<void> _loadPrompt() async {
+    try {
+      final prompt = await client.butler.getPrompt(widget.sessionId);
+      if (mounted && !_promptLoaded) {
+        _promptController.text = prompt;
+        _promptLoaded = true;
+      }
+    } catch (_) {
+      // Ignore errors loading prompt
+    }
+  }
 
   @override
   void dispose() {
+    _promptSaveTimer?.cancel();
     _promptController.dispose();
     _transcriptController.dispose();
     super.dispose();
+  }
+
+  void _onPromptChanged(String text) {
+    // Debounce saving prompt to server
+    _promptSaveTimer?.cancel();
+    _promptSaveTimer = Timer(const Duration(milliseconds: 500), () {
+      client.butler.setPrompt(widget.sessionId, text);
+    });
   }
 
   Future<void> _pullFromTranscript() async {
@@ -46,6 +76,8 @@ class _ContentTabState extends ConsumerState<ContentTab> {
       final result = await client.butler.extractAssignment(widget.sessionId);
       if (result != null && mounted) {
         _promptController.text = result;
+        // Save extracted prompt to server
+        await client.butler.setPrompt(widget.sessionId, result);
       }
     } finally {
       if (mounted) setState(() => _isExtracting = false);
@@ -115,40 +147,65 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   Widget _buildPromptSection(bool hasTranscript) {
     final canPull = hasTranscript && !_isExtracting;
 
-    return Padding(
-      padding: const EdgeInsets.all(SpSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row with button
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.all(SpSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SpHighlight(
-                child: Text('prompt', style: SpTypography.section),
+              Row(
+                children: [
+                  SpHighlight(
+                    child: Text('prompt', style: SpTypography.section),
+                  ),
+                  const Spacer(),
+                  SpSecondaryButton(
+                    label: 'pull from transcript',
+                    icon: Icons.auto_awesome,
+                    isLoading: _isExtracting,
+                    onPressed: canPull ? _pullFromTranscript : null,
+                  ),
+                ],
               ),
-              const Spacer(),
-              SpSecondaryButton(
-                label: 'pull from transcript',
-                icon: Icons.auto_awesome,
-                isLoading: _isExtracting,
-                onPressed: canPull ? _pullFromTranscript : null,
+              const SizedBox(height: SpSpacing.xs),
+              Text(
+                'assignment for students',
+                style:
+                    SpTypography.caption.copyWith(color: SpColors.textTertiary),
               ),
             ],
           ),
-          const SizedBox(height: SpSpacing.xs),
-          Text(
-            'context for the breakout session',
-            style: SpTypography.caption.copyWith(color: SpColors.textTertiary),
+        ),
+
+        const Divider(height: 1),
+
+        // Editable prompt
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: SpSpacing.md),
+            child: TextField(
+              controller: _promptController,
+              maxLines: null,
+              expands: true,
+              textAlignVertical: TextAlignVertical.top,
+              style: SpTypography.body,
+              decoration: InputDecoration(
+                hintText: 'what should students work on?',
+                hintStyle:
+                    SpTypography.body.copyWith(color: SpColors.textPlaceholder),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.all(SpSpacing.md),
+              ),
+              onChanged: _onPromptChanged,
+            ),
           ),
-          const SizedBox(height: SpSpacing.md),
-          SpTextField(
-            controller: _promptController,
-            hint: 'what should students work on?',
-            maxLines: 8,
-            minLines: 4,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

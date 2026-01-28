@@ -338,6 +338,27 @@ class EndpointButler extends _i2.EndpointRef {
     },
   );
 
+  /// Set the prompt for a session
+  _i3.Future<void> setPrompt(
+    int sessionId,
+    String prompt,
+  ) => caller.callServerEndpoint<void>(
+    'butler',
+    'setPrompt',
+    {
+      'sessionId': sessionId,
+      'prompt': prompt,
+    },
+  );
+
+  /// Get the current prompt for a session
+  _i3.Future<String> getPrompt(int sessionId) =>
+      caller.callServerEndpoint<String>(
+        'butler',
+        'getPrompt',
+        {'sessionId': sessionId},
+      );
+
   /// Try to extract assignment from transcript
   _i3.Future<String?> extractAssignment(int sessionId) =>
       caller.callServerEndpoint<String?>(

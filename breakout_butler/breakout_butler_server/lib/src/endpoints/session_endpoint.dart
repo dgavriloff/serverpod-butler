@@ -56,6 +56,7 @@ class SessionEndpoint extends Endpoint {
       urlTag: urlTag,
       isActive: true,
       transcript: '',
+      prompt: '',
       startedAt: DateTime.now(),
       creatorToken: token,
     );

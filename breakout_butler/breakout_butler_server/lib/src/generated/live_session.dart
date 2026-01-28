@@ -21,6 +21,7 @@ abstract class LiveSession
     required this.urlTag,
     required this.isActive,
     required this.transcript,
+    required this.prompt,
     required this.startedAt,
     this.expiresAt,
     this.creatorToken,
@@ -32,6 +33,7 @@ abstract class LiveSession
     required String urlTag,
     required bool isActive,
     required String transcript,
+    required String prompt,
     required DateTime startedAt,
     DateTime? expiresAt,
     String? creatorToken,
@@ -44,6 +46,7 @@ abstract class LiveSession
       urlTag: jsonSerialization['urlTag'] as String,
       isActive: jsonSerialization['isActive'] as bool,
       transcript: jsonSerialization['transcript'] as String,
+      prompt: jsonSerialization['prompt'] as String,
       startedAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['startedAt'],
       ),
@@ -73,6 +76,9 @@ abstract class LiveSession
   /// Full accumulated transcript from butler
   String transcript;
 
+  /// Professor's prompt/assignment for students
+  String prompt;
+
   /// When this live session was started
   DateTime startedAt;
 
@@ -94,6 +100,7 @@ abstract class LiveSession
     String? urlTag,
     bool? isActive,
     String? transcript,
+    String? prompt,
     DateTime? startedAt,
     DateTime? expiresAt,
     String? creatorToken,
@@ -107,6 +114,7 @@ abstract class LiveSession
       'urlTag': urlTag,
       'isActive': isActive,
       'transcript': transcript,
+      'prompt': prompt,
       'startedAt': startedAt.toJson(),
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
       if (creatorToken != null) 'creatorToken': creatorToken,
@@ -122,6 +130,7 @@ abstract class LiveSession
       'urlTag': urlTag,
       'isActive': isActive,
       'transcript': transcript,
+      'prompt': prompt,
       'startedAt': startedAt.toJson(),
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
       if (creatorToken != null) 'creatorToken': creatorToken,
@@ -167,6 +176,7 @@ class _LiveSessionImpl extends LiveSession {
     required String urlTag,
     required bool isActive,
     required String transcript,
+    required String prompt,
     required DateTime startedAt,
     DateTime? expiresAt,
     String? creatorToken,
@@ -176,6 +186,7 @@ class _LiveSessionImpl extends LiveSession {
          urlTag: urlTag,
          isActive: isActive,
          transcript: transcript,
+         prompt: prompt,
          startedAt: startedAt,
          expiresAt: expiresAt,
          creatorToken: creatorToken,
@@ -191,6 +202,7 @@ class _LiveSessionImpl extends LiveSession {
     String? urlTag,
     bool? isActive,
     String? transcript,
+    String? prompt,
     DateTime? startedAt,
     Object? expiresAt = _Undefined,
     Object? creatorToken = _Undefined,
@@ -201,6 +213,7 @@ class _LiveSessionImpl extends LiveSession {
       urlTag: urlTag ?? this.urlTag,
       isActive: isActive ?? this.isActive,
       transcript: transcript ?? this.transcript,
+      prompt: prompt ?? this.prompt,
       startedAt: startedAt ?? this.startedAt,
       expiresAt: expiresAt is DateTime? ? expiresAt : this.expiresAt,
       creatorToken: creatorToken is String? ? creatorToken : this.creatorToken,
@@ -228,6 +241,11 @@ class LiveSessionUpdateTable extends _i1.UpdateTable<LiveSessionTable> {
 
   _i1.ColumnValue<String, String> transcript(String value) => _i1.ColumnValue(
     table.transcript,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> prompt(String value) => _i1.ColumnValue(
+    table.prompt,
     value,
   );
 
@@ -269,6 +287,10 @@ class LiveSessionTable extends _i1.Table<int?> {
       'transcript',
       this,
     );
+    prompt = _i1.ColumnString(
+      'prompt',
+      this,
+    );
     startedAt = _i1.ColumnDateTime(
       'startedAt',
       this,
@@ -297,6 +319,9 @@ class LiveSessionTable extends _i1.Table<int?> {
   /// Full accumulated transcript from butler
   late final _i1.ColumnString transcript;
 
+  /// Professor's prompt/assignment for students
+  late final _i1.ColumnString prompt;
+
   /// When this live session was started
   late final _i1.ColumnDateTime startedAt;
 
@@ -313,6 +338,7 @@ class LiveSessionTable extends _i1.Table<int?> {
     urlTag,
     isActive,
     transcript,
+    prompt,
     startedAt,
     expiresAt,
     creatorToken,

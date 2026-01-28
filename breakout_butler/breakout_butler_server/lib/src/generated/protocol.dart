@@ -130,6 +130,12 @@ class Protocol extends _i1.SerializationManagerServer {
           dartType: 'String',
         ),
         _i2.ColumnDefinition(
+          name: 'prompt',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
           name: 'startedAt',
           columnType: _i2.ColumnType.timestampWithoutTimeZone,
           isNullable: false,

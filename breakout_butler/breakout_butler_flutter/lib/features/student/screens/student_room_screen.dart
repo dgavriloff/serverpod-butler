@@ -3,14 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/error_utils.dart';
-import '../../../core/layout/sp_three_panel_layout.dart';
+import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_breadcrumb_nav.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../../main.dart';
-import '../../session/providers/session_providers.dart';
-import '../widgets/scribe_panel.dart';
+import '../widgets/prompt_panel.dart';
 import '../widgets/collaborative_editor.dart';
 
 /// Student room screen — three-panel layout with collaborative editor
@@ -92,20 +91,46 @@ class _StudentRoomScreenState extends ConsumerState<StudentRoomScreen> {
       );
     }
 
-    return SpThreePanelLayout(
-      nav: SpBreadcrumbNav(
-        segments: ['breakoutpad', widget.urlTag, 'room ${widget.roomNumber}'],
-        onSegmentTap: (index) {
-          if (index == 0) context.go('/');
-          // index 1 would go to professor dashboard, but students
-          // don't have access — just ignore
-        },
+    return Scaffold(
+      body: Column(
+        children: [
+          // Nav bar
+          SpBreadcrumbNav(
+            segments: ['breakoutpad', widget.urlTag, 'room ${widget.roomNumber}'],
+            onSegmentTap: (index) {
+              if (index == 0) context.go('/');
+              // index 1 would go to professor dashboard, but students
+              // don't have access — just ignore
+            },
+          ),
+
+          // Two-pane layout: editor (left) + prompt (right)
+          Expanded(
+            child: Row(
+              children: [
+                // Left: Collaborative editor
+                Expanded(
+                  flex: 2,
+                  child: CollaborativeEditor(
+                    sessionId: _sessionId!,
+                    roomNumber: widget.roomNumber,
+                  ),
+                ),
+                // Divider
+                Container(
+                  width: 1,
+                  color: SpColors.border,
+                ),
+                // Right: Prompt panel
+                Expanded(
+                  flex: 1,
+                  child: PromptPanel(sessionId: _sessionId!),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      body: CollaborativeEditor(
-        sessionId: _sessionId!,
-        roomNumber: widget.roomNumber,
-      ),
-      sidebar: ScribePanel(sessionId: _sessionId!),
     );
   }
 }

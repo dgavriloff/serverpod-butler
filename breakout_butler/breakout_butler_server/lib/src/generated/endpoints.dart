@@ -411,6 +411,48 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['transcript'],
                   ),
         ),
+        'setPrompt': _i1.MethodConnector(
+          name: 'setPrompt',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'prompt': _i1.ParameterDescription(
+              name: 'prompt',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['butler'] as _i4.ButlerEndpoint).setPrompt(
+                session,
+                params['sessionId'],
+                params['prompt'],
+              ),
+        ),
+        'getPrompt': _i1.MethodConnector(
+          name: 'getPrompt',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['butler'] as _i4.ButlerEndpoint).getPrompt(
+                session,
+                params['sessionId'],
+              ),
+        ),
         'extractAssignment': _i1.MethodConnector(
           name: 'extractAssignment',
           params: {

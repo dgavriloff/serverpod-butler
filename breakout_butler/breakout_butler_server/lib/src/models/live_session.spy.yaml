@@ -10,6 +10,8 @@ fields:
   isActive: bool
   ### Full accumulated transcript from butler
   transcript: String
+  ### Professor's prompt/assignment for students
+  prompt: String
   ### When this live session was started
   startedAt: DateTime
   ### When this live session expires/ended
