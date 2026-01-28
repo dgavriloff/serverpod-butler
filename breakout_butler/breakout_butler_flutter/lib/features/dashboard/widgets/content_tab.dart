@@ -9,6 +9,7 @@ import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_button.dart';
 import '../../../core/widgets/sp_highlight.dart';
+import '../../../core/widgets/sp_skeleton.dart';
 import '../../../main.dart';
 import '../../transcript/providers/recording_providers.dart';
 import '../../transcript/providers/transcript_providers.dart';
@@ -26,14 +27,30 @@ class ContentTab extends ConsumerStatefulWidget {
 class _ContentTabState extends ConsumerState<ContentTab> {
   final _promptController = TextEditingController();
   final _transcriptController = TextEditingController();
+  final _promptFocusNode = FocusNode();
+  final _transcriptFocusNode = FocusNode();
   bool _isExtracting = false;
   Timer? _promptSaveTimer;
   bool _promptLoaded = false;
+  bool _promptHovered = false;
+  bool _promptFocused = false;
+  bool _transcriptHovered = false;
+  bool _transcriptFocused = false;
 
   @override
   void initState() {
     super.initState();
     _loadPrompt();
+    _promptFocusNode.addListener(_onPromptFocusChange);
+    _transcriptFocusNode.addListener(_onTranscriptFocusChange);
+  }
+
+  void _onPromptFocusChange() {
+    setState(() => _promptFocused = _promptFocusNode.hasFocus);
+  }
+
+  void _onTranscriptFocusChange() {
+    setState(() => _transcriptFocused = _transcriptFocusNode.hasFocus);
   }
 
   Future<void> _loadPrompt() async {
@@ -51,8 +68,12 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   @override
   void dispose() {
     _promptSaveTimer?.cancel();
+    _promptFocusNode.removeListener(_onPromptFocusChange);
+    _transcriptFocusNode.removeListener(_onTranscriptFocusChange);
     _promptController.dispose();
     _transcriptController.dispose();
+    _promptFocusNode.dispose();
+    _transcriptFocusNode.dispose();
     super.dispose();
   }
 
@@ -65,30 +86,21 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   }
 
   Future<void> _pullFromTranscript() async {
-    print('[ContentTab] _pullFromTranscript called');
     setState(() => _isExtracting = true);
     try {
       // Sync local transcript to server first
       final transcriptText = _transcriptController.text.trim();
-      print('[ContentTab] transcript text length: ${transcriptText.length}');
       if (transcriptText.isNotEmpty) {
-        print('[ContentTab] calling setTranscript...');
         await client.butler.setTranscript(widget.sessionId, transcriptText);
-        print('[ContentTab] setTranscript done');
       }
 
-      print('[ContentTab] calling extractAssignment...');
       final result = await client.butler.extractAssignment(widget.sessionId);
-      print('[ContentTab] extractAssignment result: ${result ?? "null"}');
       if (result != null && mounted) {
         _promptController.text = result;
-        // Save extracted prompt to server
-        print('[ContentTab] saving prompt to server...');
         await client.butler.setPrompt(widget.sessionId, result);
-        print('[ContentTab] prompt saved');
       }
-    } catch (e) {
-      print('[ContentTab] ERROR: $e');
+    } catch (_) {
+      // Ignore errors
     } finally {
       if (mounted) setState(() => _isExtracting = false);
     }
@@ -156,7 +168,8 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
   Widget _buildPromptSection(bool hasTranscript) {
     final canPull = hasTranscript && !_isExtracting;
-    print('[ContentTab] _buildPromptSection: hasTranscript=$hasTranscript, isExtracting=$_isExtracting, canPull=$canPull');
+    final isActive = _promptHovered || _promptFocused;
+    final headerText = Text('prompt', style: SpTypography.section);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,9 +182,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
             children: [
               Row(
                 children: [
-                  SpHighlight(
-                    child: Text('prompt', style: SpTypography.section),
-                  ),
+                  isActive ? SpHighlight(child: headerText) : headerText,
                   const Spacer(),
                   SpSecondaryButton(
                     label: 'pull from transcript',
@@ -193,28 +204,48 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
         const Divider(height: 1),
 
-        // Editable prompt
+        // Editable prompt (or skeleton when extracting)
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SpSpacing.md),
-            child: TextField(
-              controller: _promptController,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              style: SpTypography.body,
-              decoration: InputDecoration(
-                hintText: 'what should students work on?',
-                hintStyle:
-                    SpTypography.body.copyWith(color: SpColors.textPlaceholder),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.all(SpSpacing.md),
-              ),
-              onChanged: _onPromptChanged,
-            ),
-          ),
+          child: _isExtracting
+              ? Padding(
+                  padding: const EdgeInsets.all(SpSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SpSkeleton(width: double.infinity, height: 16),
+                      const SizedBox(height: SpSpacing.sm),
+                      SpSkeleton(width: double.infinity, height: 16),
+                      const SizedBox(height: SpSpacing.sm),
+                      SpSkeleton(width: 200, height: 16),
+                    ],
+                  ),
+                )
+              : MouseRegion(
+                  onEnter: (_) => setState(() => _promptHovered = true),
+                  onExit: (_) => setState(() => _promptHovered = false),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: SpSpacing.md),
+                    child: TextField(
+                      controller: _promptController,
+                      focusNode: _promptFocusNode,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      style: SpTypography.body,
+                      decoration: InputDecoration(
+                        hintText: 'what should students work on?',
+                        hintStyle: SpTypography.body
+                            .copyWith(color: SpColors.textPlaceholder),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(SpSpacing.md),
+                      ),
+                      onChanged: _onPromptChanged,
+                    ),
+                  ),
+                ),
         ),
       ],
     );
@@ -224,6 +255,10 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     TranscriptState transcriptState,
     bool isRecording,
   ) {
+    // When recording, always show highlight (it's active)
+    final isActive = isRecording || _transcriptHovered || _transcriptFocused;
+    final headerText = Text('transcript', style: SpTypography.section);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -235,9 +270,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
             children: [
               Row(
                 children: [
-                  SpHighlight(
-                    child: Text('transcript', style: SpTypography.section),
-                  ),
+                  isActive ? SpHighlight(child: headerText) : headerText,
                   if (isRecording) ...[
                     const SizedBox(width: SpSpacing.sm),
                     Container(
@@ -321,29 +354,34 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   }
 
   Widget _buildEditableTranscript() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: SpSpacing.md),
-      child: TextField(
-        controller: _transcriptController,
-        maxLines: null,
-        expands: true,
-        textAlignVertical: TextAlignVertical.top,
-        style: SpTypography.body,
-        decoration: InputDecoration(
-          hintText: 'paste or type lecture content here...',
-          hintStyle:
-              SpTypography.body.copyWith(color: SpColors.textPlaceholder),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.all(SpSpacing.md),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _transcriptHovered = true),
+      onExit: (_) => setState(() => _transcriptHovered = false),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: SpSpacing.md),
+        child: TextField(
+          controller: _transcriptController,
+          focusNode: _transcriptFocusNode,
+          maxLines: null,
+          expands: true,
+          textAlignVertical: TextAlignVertical.top,
+          style: SpTypography.body,
+          decoration: InputDecoration(
+            hintText: 'paste or type lecture content here...',
+            hintStyle:
+                SpTypography.body.copyWith(color: SpColors.textPlaceholder),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.all(SpSpacing.md),
+          ),
+          onChanged: (text) {
+            // Update transcript state when user edits
+            ref
+                .read(transcriptStateProvider(widget.sessionId).notifier)
+                .setFullText(text);
+          },
         ),
-        onChanged: (text) {
-          // Update transcript state when user edits
-          ref
-              .read(transcriptStateProvider(widget.sessionId).notifier)
-              .setFullText(text);
-        },
       ),
     );
   }
