@@ -6,7 +6,6 @@ import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_button.dart';
-import '../../../core/widgets/sp_highlight.dart';
 import '../../room/providers/room_providers.dart';
 import '../../scribe/providers/scribe_providers.dart';
 import 'room_card.dart';
@@ -53,10 +52,6 @@ class _RoomsTabState extends ConsumerState<RoomsTab> {
           ),
           child: Row(
             children: [
-              SpHighlight(
-                child: Text('rooms', style: SpTypography.section),
-              ),
-              const SizedBox(width: SpSpacing.md),
               Text(
                 '$activeCount of ${widget.roomCount} active',
                 style: SpTypography.caption.copyWith(
