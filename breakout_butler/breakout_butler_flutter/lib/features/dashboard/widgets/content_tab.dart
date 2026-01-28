@@ -65,20 +65,30 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   }
 
   Future<void> _pullFromTranscript() async {
+    print('[ContentTab] _pullFromTranscript called');
     setState(() => _isExtracting = true);
     try {
       // Sync local transcript to server first
       final transcriptText = _transcriptController.text.trim();
+      print('[ContentTab] transcript text length: ${transcriptText.length}');
       if (transcriptText.isNotEmpty) {
+        print('[ContentTab] calling setTranscript...');
         await client.butler.setTranscript(widget.sessionId, transcriptText);
+        print('[ContentTab] setTranscript done');
       }
 
+      print('[ContentTab] calling extractAssignment...');
       final result = await client.butler.extractAssignment(widget.sessionId);
+      print('[ContentTab] extractAssignment result: ${result ?? "null"}');
       if (result != null && mounted) {
         _promptController.text = result;
         // Save extracted prompt to server
+        print('[ContentTab] saving prompt to server...');
         await client.butler.setPrompt(widget.sessionId, result);
+        print('[ContentTab] prompt saved');
       }
+    } catch (e) {
+      print('[ContentTab] ERROR: $e');
     } finally {
       if (mounted) setState(() => _isExtracting = false);
     }
@@ -146,6 +156,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
   Widget _buildPromptSection(bool hasTranscript) {
     final canPull = hasTranscript && !_isExtracting;
+    print('[ContentTab] _buildPromptSection: hasTranscript=$hasTranscript, isExtracting=$_isExtracting, canPull=$canPull');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
