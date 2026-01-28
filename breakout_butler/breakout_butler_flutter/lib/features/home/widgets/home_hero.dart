@@ -6,37 +6,27 @@ import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_card.dart';
 
 /// Hero section for the home screen — title + subtitle + feature bullets
-/// wrapped in an SpCard.
-///
-/// [alignment] controls cross-axis: centered on mobile, left-aligned on desktop.
+/// wrapped in an SpCard. Always left-aligned.
 class HomeHero extends StatelessWidget {
-  const HomeHero({
-    super.key,
-    this.alignment = CrossAxisAlignment.center,
-  });
-
-  final CrossAxisAlignment alignment;
+  const HomeHero({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final textAlign =
-        alignment == CrossAxisAlignment.center ? TextAlign.center : TextAlign.left;
-
     return SpCard(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: alignment,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'breakoutpad',
             style: SpTypography.display,
-            textAlign: textAlign,
+            textAlign: TextAlign.left,
           ),
           const SizedBox(height: SpSpacing.sm),
           Text(
-            'collaborative workspaces for your class',
+            'instant collaborative surfaces',
             style: SpTypography.body.copyWith(color: SpColors.textSecondary),
-            textAlign: textAlign,
+            textAlign: TextAlign.left,
           ),
           const SizedBox(height: SpSpacing.lg),
           _FeatureBullet(

@@ -116,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     bottom: SpSpacing.xl,
                   ),
                   child: const Center(
-                    child: HomeHero(alignment: CrossAxisAlignment.start),
+                    child: HomeHero(),
                   ),
                 ),
               ),
