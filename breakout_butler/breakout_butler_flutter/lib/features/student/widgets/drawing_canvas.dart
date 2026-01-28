@@ -1,16 +1,21 @@
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:perfect_freehand/perfect_freehand.dart';
+import 'package:web/web.dart' as web;
 
 import '../../../core/theme/sp_colors.dart';
 
 /// Freehand drawing surface using [perfect_freehand].
 ///
 /// Each stroke is captured as a list of input points, then rendered as a
-/// filled polygon via [getStroke]. Client-only — no server persistence yet.
+/// filled polygon via [getStroke]. Persists to browser localStorage.
 class DrawingCanvas extends StatefulWidget {
-  const DrawingCanvas({super.key});
+  const DrawingCanvas({super.key, required this.storageKey});
+
+  /// Key used to persist strokes in localStorage (e.g. "drawing_1_2").
+  final String storageKey;
 
   @override
   State<DrawingCanvas> createState() => DrawingCanvasState();
@@ -27,6 +32,47 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     streamline: 0.5,
     simulatePressure: true,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromStorage();
+  }
+
+  // ── Persistence ──────────────────────────────────────────────────
+
+  void _loadFromStorage() {
+    try {
+      final json = web.window.localStorage.getItem(widget.storageKey);
+      if (json == null || json.isEmpty) return;
+      final list = jsonDecode(json) as List<dynamic>;
+      for (final strokeJson in list) {
+        final points = (strokeJson as List<dynamic>)
+            .map((p) => PointVector(
+                  (p[0] as num).toDouble(),
+                  (p[1] as num).toDouble(),
+                  (p[2] as num).toDouble(),
+                ))
+            .toList();
+        _strokes.add(_Stroke(points: points));
+      }
+    } catch (_) {
+      // Corrupt data — start fresh.
+    }
+  }
+
+  void _saveToStorage() {
+    try {
+      final data = _strokes
+          .map((s) => s.points.map((p) => [p.x, p.y, p.pressure]).toList())
+          .toList();
+      web.window.localStorage.setItem(widget.storageKey, jsonEncode(data));
+    } catch (_) {
+      // Storage full or unavailable — silent fail.
+    }
+  }
+
+  // ── Pointer handling ─────────────────────────────────────────────
 
   void _onPointerDown(PointerDownEvent event) {
     final point = PointVector(
@@ -59,16 +105,19 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       _strokes.add(_currentStroke!);
       _currentStroke = null;
     });
+    _saveToStorage();
   }
 
   void undo() {
     if (_strokes.isEmpty) return;
     setState(() => _strokes.removeLast());
+    _saveToStorage();
   }
 
   void clear() {
     if (_strokes.isEmpty) return;
     setState(() => _strokes.clear());
+    _saveToStorage();
   }
 
   bool get hasStrokes => _strokes.isNotEmpty;

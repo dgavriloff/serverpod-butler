@@ -7,7 +7,7 @@ import '../../../core/theme/sp_typography.dart';
 /// Write vs draw mode for the collaborative editor.
 enum EditorMode { write, draw }
 
-/// Bottom-right toggle: "write  draw" with underline on the active option.
+/// Bottom-right toggle: "write  draw" with yellow highlight on the active option.
 class EditorModeSelector extends StatelessWidget {
   const EditorModeSelector({
     super.key,
@@ -60,15 +60,32 @@ class _ModeLabel extends StatelessWidget {
           horizontal: SpSpacing.xs,
           vertical: SpSpacing.xs,
         ),
-        child: Text(
-          label,
-          style: SpTypography.body.copyWith(
-            color: isSelected ? SpColors.textPrimary : SpColors.textTertiary,
-            decoration:
-                isSelected ? TextDecoration.underline : TextDecoration.none,
-            decorationColor: SpColors.textPrimary,
-            decorationThickness: 2,
-          ),
+        child: Stack(
+          alignment: Alignment.bottomLeft,
+          children: [
+            // Yellow highlight underline (like breadcrumbs)
+            if (isSelected)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 1,
+                height: 6,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: SpColors.highlight.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+              ),
+            Text(
+              label,
+              style: SpTypography.body.copyWith(
+                color:
+                    isSelected ? SpColors.textPrimary : SpColors.textTertiary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
         ),
       ),
     );

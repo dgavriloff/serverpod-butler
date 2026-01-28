@@ -88,7 +88,7 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                   // Draw actions (left side, only in draw mode)
                   if (_mode == EditorMode.draw) ...[
                     _IconAction(
-                      icon: Icons.undo,
+                      icon: Icons.undo_rounded,
                       onTap: _canvasKey.currentState?.hasStrokes == true
                           ? () => setState(
                               () => _canvasKey.currentState?.undo())
@@ -96,7 +96,7 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                     ),
                     const SizedBox(width: SpSpacing.xs),
                     _IconAction(
-                      icon: Icons.delete_outline,
+                      icon: Icons.delete_forever_rounded,
                       onTap: _canvasKey.currentState?.hasStrokes == true
                           ? () => setState(
                               () => _canvasKey.currentState?.clear())
@@ -165,7 +165,11 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                   ),
 
                   // Draw mode
-                  DrawingCanvas(key: _canvasKey),
+                  DrawingCanvas(
+                    key: _canvasKey,
+                    storageKey:
+                        'drawing_${widget.sessionId}_${widget.roomNumber}',
+                  ),
                 ],
               ),
             ),
@@ -206,7 +210,7 @@ class _IconAction extends StatelessWidget {
         padding: const EdgeInsets.all(SpSpacing.xs),
         child: Icon(
           icon,
-          size: 16,
+          size: 18,
           color: enabled ? SpColors.textSecondary : SpColors.textPlaceholder,
         ),
       ),
