@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -9,19 +10,18 @@ import '../../../core/theme/sp_colors.dart';
 
 // ── JS interop for localStorage (WASM-safe) ────────────────────────
 
-@JS('localStorage.getItem')
-external JSString? _jsGetItem(JSString key);
+JSObject get _localStorage =>
+    globalContext.getProperty('localStorage'.toJS) as JSObject;
 
-@JS('localStorage.setItem')
-external void _jsSetItem(JSString key, JSString value);
+String? _storageGet(String key) {
+  final result =
+      _localStorage.callMethod('getItem'.toJS, key.toJS) as JSString?;
+  return result?.toDart;
+}
 
-@JS('localStorage.removeItem')
-external void _jsRemoveItem(JSString key);
-
-String? _storageGet(String key) => _jsGetItem(key.toJS)?.toDart;
-void _storageSet(String key, String value) =>
-    _jsSetItem(key.toJS, value.toJS);
-void _storageRemove(String key) => _jsRemoveItem(key.toJS);
+void _storageSet(String key, String value) {
+  _localStorage.callMethod('setItem'.toJS, key.toJS, value.toJS);
+}
 
 // ────────────────────────────────────────────────────────────────────
 
