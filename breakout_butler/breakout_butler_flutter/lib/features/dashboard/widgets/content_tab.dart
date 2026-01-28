@@ -8,6 +8,7 @@ import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_empty_state.dart';
 import '../../../core/widgets/sp_highlight.dart';
 import '../../../core/widgets/sp_text_field.dart';
+import '../../../main.dart';
 import '../../transcript/providers/transcript_providers.dart';
 
 /// Content tab: two-column layout with prompt (left) and transcript (right).
@@ -24,6 +25,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   final _promptController = TextEditingController();
   final _manualController = TextEditingController();
   final _scrollController = ScrollController();
+  bool _isExtracting = false;
 
   @override
   void dispose() {
@@ -42,6 +44,18 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     _manualController.clear();
   }
 
+  Future<void> _pullFromTranscript() async {
+    setState(() => _isExtracting = true);
+    try {
+      final result = await client.butler.extractAssignment(widget.sessionId);
+      if (result != null && mounted) {
+        _promptController.text = result;
+      }
+    } finally {
+      if (mounted) setState(() => _isExtracting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final transcriptState =
@@ -57,7 +71,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
           // Left column: Prompt
           Expanded(
             flex: 1,
-            child: _buildPromptSection(),
+            child: _buildPromptSection(transcriptState.hasContent),
           ),
           const VerticalDivider(width: 1),
           // Right column: Transcript
@@ -75,7 +89,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPromptSection(),
+          _buildPromptSection(transcriptState.hasContent),
           const SizedBox(height: SpSpacing.lg),
           SizedBox(
             height: 400,
@@ -86,14 +100,49 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     );
   }
 
-  Widget _buildPromptSection() {
+  Widget _buildPromptSection(bool hasTranscript) {
+    final canPull = hasTranscript && !_isExtracting;
+
     return Padding(
       padding: const EdgeInsets.all(SpSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SpHighlight(
-            child: Text('prompt', style: SpTypography.section),
+          // Header row with button
+          Row(
+            children: [
+              SpHighlight(
+                child: Text('prompt', style: SpTypography.section),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: canPull ? _pullFromTranscript : null,
+                icon: _isExtracting
+                    ? SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: SpColors.textTertiary,
+                        ),
+                      )
+                    : Icon(
+                        Icons.auto_awesome,
+                        size: 14,
+                        color: canPull
+                            ? SpColors.textSecondary
+                            : SpColors.textPlaceholder,
+                      ),
+                label: Text(
+                  'pull from transcript',
+                  style: SpTypography.caption.copyWith(
+                    color: canPull
+                        ? SpColors.textSecondary
+                        : SpColors.textPlaceholder,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: SpSpacing.xs),
           Text(
