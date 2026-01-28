@@ -30,6 +30,7 @@ class CollaborativeEditor extends ConsumerStatefulWidget {
 
 class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
   late final TextEditingController _controller;
+  final GlobalKey<DrawingCanvasState> _canvasKey = GlobalKey();
   bool _initialized = false;
   EditorMode _mode = EditorMode.write;
 
@@ -76,71 +77,97 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
         // ── Main content area ───────────────────────────────────────
         Column(
           children: [
-            // Save indicator (write mode only)
-            if (_mode == EditorMode.write)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: SpSpacing.lg,
-                  vertical: SpSpacing.xs,
-                ),
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: editorState.isSaving
-                            ? SpColors.textPlaceholder
-                            : SpColors.success,
-                      ),
+            // Status bar — save indicator + draw actions
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: SpSpacing.lg,
+                vertical: SpSpacing.xs,
+              ),
+              child: Row(
+                children: [
+                  // Draw actions (left side, only in draw mode)
+                  if (_mode == EditorMode.draw) ...[
+                    _IconAction(
+                      icon: Icons.undo,
+                      onTap: _canvasKey.currentState?.hasStrokes == true
+                          ? () => setState(
+                              () => _canvasKey.currentState?.undo())
+                          : null,
                     ),
                     const SizedBox(width: SpSpacing.xs),
-                    Text(
-                      editorState.isSaving ? 'saving...' : 'saved',
-                      style: SpTypography.caption.copyWith(
-                        color: SpColors.textTertiary,
-                      ),
+                    _IconAction(
+                      icon: Icons.delete_outline,
+                      onTap: _canvasKey.currentState?.hasStrokes == true
+                          ? () => setState(
+                              () => _canvasKey.currentState?.clear())
+                          : null,
                     ),
                   ],
-                ),
-              ),
 
-            // Editor or canvas
+                  const Spacer(),
+
+                  // Save indicator (always visible)
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: editorState.isSaving
+                          ? SpColors.textPlaceholder
+                          : SpColors.success,
+                    ),
+                  ),
+                  const SizedBox(width: SpSpacing.xs),
+                  Text(
+                    editorState.isSaving ? 'saving...' : 'saved',
+                    style: SpTypography.caption.copyWith(
+                      color: SpColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Editor + canvas — both kept alive via IndexedStack
             Expanded(
-              child: _mode == EditorMode.write
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: SpSpacing.md,
+              child: IndexedStack(
+                index: _mode == EditorMode.write ? 0 : 1,
+                children: [
+                  // Write mode
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: SpSpacing.md,
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      maxLines: null,
+                      expands: true,
+                      textAlignVertical: TextAlignVertical.top,
+                      style: SpTypography.body,
+                      decoration: const InputDecoration(
+                        hintText: 'start writing...',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.all(SpSpacing.md),
                       ),
-                      child: TextField(
-                        controller: _controller,
-                        maxLines: null,
-                        expands: true,
-                        textAlignVertical: TextAlignVertical.top,
-                        style: SpTypography.body,
-                        decoration: const InputDecoration(
-                          hintText: 'start writing...',
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.all(SpSpacing.md),
-                        ),
-                        onChanged: (text) {
-                          ref
-                              .read(roomEditorProvider(
-                                (
-                                  sessionId: widget.sessionId,
-                                  roomNumber: widget.roomNumber,
-                                ),
-                              ).notifier)
-                              .updateContent(text);
-                        },
-                      ),
-                    )
-                  : const DrawingCanvas(),
+                      onChanged: (text) {
+                        ref
+                            .read(roomEditorProvider(
+                              (
+                                sessionId: widget.sessionId,
+                                roomNumber: widget.roomNumber,
+                              ),
+                            ).notifier)
+                            .updateContent(text);
+                      },
+                    ),
+                  ),
+
+                  // Draw mode
+                  DrawingCanvas(key: _canvasKey),
+                ],
+              ),
             ),
           ],
         ),
@@ -155,6 +182,34 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Small icon button for canvas undo/clear actions.
+class _IconAction extends StatelessWidget {
+  const _IconAction({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(SpSpacing.xs),
+        child: Icon(
+          icon,
+          size: 16,
+          color: enabled ? SpColors.textSecondary : SpColors.textPlaceholder,
+        ),
+      ),
     );
   }
 }

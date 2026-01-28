@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:perfect_freehand/perfect_freehand.dart';
 
 import '../../../core/theme/sp_colors.dart';
-import '../../../core/theme/sp_spacing.dart';
 
 /// Freehand drawing surface using [perfect_freehand].
 ///
@@ -72,86 +71,21 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     setState(() => _strokes.clear());
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Canvas
-        Positioned.fill(
-          child: Listener(
-            onPointerDown: _onPointerDown,
-            onPointerMove: _onPointerMove,
-            onPointerUp: _onPointerUp,
-            child: CustomPaint(
-              painter: _StrokePainter(
-                strokes: _strokes,
-                currentStroke: _currentStroke,
-                options: _strokeOptions,
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
-        ),
-
-        // Undo + Clear buttons (top-right)
-        Positioned(
-          top: SpSpacing.sm,
-          right: SpSpacing.sm,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _CanvasAction(
-                icon: Icons.undo,
-                tooltip: 'undo',
-                onTap: _strokes.isNotEmpty ? undo : null,
-              ),
-              const SizedBox(width: SpSpacing.xs),
-              _CanvasAction(
-                icon: Icons.delete_outline,
-                tooltip: 'clear',
-                onTap: _strokes.isNotEmpty ? clear : null,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Small icon button for canvas actions.
-class _CanvasAction extends StatelessWidget {
-  const _CanvasAction({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback? onTap;
+  bool get hasStrokes => _strokes.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: SpColors.background,
-            border: Border.all(color: SpColors.border),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: enabled ? SpColors.textSecondary : SpColors.textPlaceholder,
-          ),
+    return Listener(
+      onPointerDown: _onPointerDown,
+      onPointerMove: _onPointerMove,
+      onPointerUp: _onPointerUp,
+      child: CustomPaint(
+        painter: _StrokePainter(
+          strokes: _strokes,
+          currentStroke: _currentStroke,
+          options: _strokeOptions,
         ),
+        child: const SizedBox.expand(),
       ),
     );
   }
