@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/sp_colors.dart';
-import '../../../core/theme/sp_spacing.dart';
-import '../../../core/theme/sp_typography.dart';
+import '../../../core/widgets/sp_status_indicator.dart';
 import '../../transcript/providers/recording_providers.dart';
 
 /// Compact record button for the nav bar.
+///
+/// Uses [SpLiveBadge] style when recording, outlined button when not.
 class RecordButton extends ConsumerWidget {
   const RecordButton({super.key, required this.sessionId});
 
@@ -16,36 +17,24 @@ class RecordButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(recordingControllerProvider(sessionId));
 
-    return TextButton.icon(
+    // When recording, show the live badge style
+    if (state.isRecording) {
+      return GestureDetector(
+        onTap: () =>
+            ref.read(recordingControllerProvider(sessionId).notifier).toggle(),
+        child: const SpLiveBadge(),
+      );
+    }
+
+    // When not recording, show outlined button
+    return OutlinedButton.icon(
       onPressed: () =>
           ref.read(recordingControllerProvider(sessionId).notifier).toggle(),
-      icon: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: state.isRecording ? SpColors.live : SpColors.textTertiary,
-        ),
-      ),
-      label: Text(
-        state.isRecording ? 'stop' : 'rec',
-        style: SpTypography.body.copyWith(
-          color: state.isRecording ? SpColors.live : SpColors.textSecondary,
-          fontWeight: state.isRecording ? FontWeight.w600 : FontWeight.w400,
-        ),
-      ),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(
-          horizontal: SpSpacing.md,
-          vertical: SpSpacing.sm,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-          side: BorderSide(
-            color: state.isRecording ? SpColors.live : SpColors.border,
-          ),
-        ),
+      icon: const Icon(Icons.fiber_manual_record, size: 12),
+      label: const Text('rec'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: SpColors.textSecondary,
+        side: const BorderSide(color: SpColors.border),
       ),
     );
   }

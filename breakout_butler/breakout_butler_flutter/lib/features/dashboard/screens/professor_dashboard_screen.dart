@@ -199,7 +199,11 @@ class _ProfessorDashboardScreenState
               index: _currentTab == DashboardTab.content ? 0 : 1,
               children: [
                 ContentTab(sessionId: _sessionId!),
-                RoomsTab(sessionId: _sessionId!, roomCount: _roomCount),
+                RoomsTab(
+                  sessionId: _sessionId!,
+                  roomCount: _roomCount,
+                  urlTag: widget.urlTag,
+                ),
               ],
             ),
           ),
