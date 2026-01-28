@@ -4,22 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/error_utils.dart';
-import '../../../core/layout/sp_breakpoints.dart';
-import '../../../core/layout/sp_three_panel_layout.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
-import '../../../core/widgets/sp_ai_card.dart';
 import '../../../core/widgets/sp_breadcrumb_nav.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../../main.dart';
 import '../../../services/cookie_web.dart';
 import '../../session/providers/session_providers.dart';
-import '../../transcript/widgets/mobile_transcript_bar.dart';
-import '../../transcript/widgets/transcript_panel.dart';
-import '../widgets/dashboard_action_bar.dart';
-import '../widgets/room_detail_sheet.dart';
-import '../widgets/rooms_grid.dart';
+import '../widgets/content_tab.dart';
+import '../widgets/dashboard_tab_bar.dart';
+import '../widgets/record_button.dart';
+import '../widgets/rooms_tab.dart';
 
 /// Professor dashboard screen — three-panel layout with rooms grid
 /// and transcript sidebar.
@@ -45,7 +41,7 @@ class _ProfessorDashboardScreenState
   bool _tokenValid = false;
   int? _sessionId;
   int _roomCount = 0;
-  String? _synthesisResult;
+  DashboardTab _currentTab = DashboardTab.content;
 
   @override
   void initState() {
@@ -141,17 +137,6 @@ class _ProfessorDashboardScreenState
     }
   }
 
-  void _onRoomTap(int roomNumber, String content) {
-    showDialog(
-      context: context,
-      builder: (_) => RoomDetailSheet(
-        sessionId: _sessionId!,
-        roomNumber: roomNumber,
-        content: content,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isValidating) {
@@ -175,57 +160,51 @@ class _ProfessorDashboardScreenState
       );
     }
 
-    final screenSize = screenSizeOf(context);
-
-    return SpThreePanelLayout(
-      nav: SpBreadcrumbNav(
-        segments: ['breakoutpad', widget.urlTag],
-        onSegmentTap: (index) {
-          if (index == 0) context.go('/');
-        },
-        trailing: OutlinedButton.icon(
-          onPressed: _onCloseRoom,
-          icon: const Icon(Icons.close, size: 16),
-          label: const Text('close room'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: SpColors.live,
-            side: const BorderSide(color: SpColors.border),
-          ),
-        ),
-      ),
+    return Scaffold(
       body: Column(
         children: [
-          DashboardActionBar(
-            urlTag: widget.urlTag,
-            sessionId: _sessionId!,
-            onSynthesisResult: (answer) {
-              setState(() => _synthesisResult = answer);
+          // ── Nav bar ────────────────────────────────────────────────
+          SpBreadcrumbNav(
+            segments: ['breakoutpad', widget.urlTag],
+            onSegmentTap: (index) {
+              if (index == 0) context.go('/');
             },
-          ),
-          if (_synthesisResult != null)
-            Padding(
-              padding: const EdgeInsets.all(SpSpacing.md),
-              child: SpAiCard(
-                header: 'synthesis',
-                child: Text(_synthesisResult!, style: SpTypography.body),
-              ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RecordButton(sessionId: _sessionId!),
+                const SizedBox(width: SpSpacing.sm),
+                OutlinedButton.icon(
+                  onPressed: _onCloseRoom,
+                  icon: const Icon(Icons.close, size: 16),
+                  label: const Text('close room'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SpColors.live,
+                    side: const BorderSide(color: SpColors.border),
+                  ),
+                ),
+              ],
             ),
+          ),
+
+          // ── Tab bar ────────────────────────────────────────────────
+          DashboardTabBar(
+            currentTab: _currentTab,
+            onChanged: (tab) => setState(() => _currentTab = tab),
+          ),
+
+          // ── Tab content ────────────────────────────────────────────
           Expanded(
-            child: RoomsGrid(
-              sessionId: _sessionId!,
-              roomCount: _roomCount,
-              onRoomTap: _onRoomTap,
+            child: IndexedStack(
+              index: _currentTab == DashboardTab.content ? 0 : 1,
+              children: [
+                ContentTab(sessionId: _sessionId!),
+                RoomsTab(sessionId: _sessionId!, roomCount: _roomCount),
+              ],
             ),
           ),
         ],
       ),
-      sidebar: TranscriptPanel(sessionId: _sessionId!),
-      mobileBottomNav: screenSize == SpScreenSize.mobile
-          ? MobileTranscriptBar(
-              sessionId: _sessionId!,
-              onExpand: null, // handled by FAB in SpThreePanelLayout
-            )
-          : null,
     );
   }
 }

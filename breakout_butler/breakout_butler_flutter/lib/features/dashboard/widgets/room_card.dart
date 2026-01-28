@@ -7,7 +7,7 @@ import '../../../core/widgets/sp_card.dart';
 import '../../../core/widgets/sp_highlight.dart';
 import '../../../core/widgets/sp_status_indicator.dart';
 
-/// Individual room card showing room number, content preview, and activity.
+/// Simplified room card: room number + activity indicator.
 class RoomCard extends StatefulWidget {
   const RoomCard({
     super.key,
@@ -34,7 +34,7 @@ class _RoomCardState extends State<RoomCard> {
     final numberText = Text(
       '${widget.roomNumber}',
       style: const TextStyle(
-        fontSize: 48,
+        fontSize: 36,
         fontWeight: FontWeight.w700,
         height: 1.0,
         color: SpColors.textSecondary,
@@ -50,27 +50,25 @@ class _RoomCardState extends State<RoomCard> {
         padding: const EdgeInsets.all(SpSpacing.md),
         child: Stack(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _hovered ? SpHighlight(child: numberText) : numberText,
-                const SizedBox(height: SpSpacing.xs),
-                Text('room ${widget.roomNumber}', style: SpTypography.overline),
-                const SizedBox(height: SpSpacing.sm),
-                Expanded(
-                  child: Text(
-                    hasContent ? widget.content : 'no activity yet',
+            // Centered content
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _hovered ? SpHighlight(child: numberText) : numberText,
+                  const SizedBox(height: SpSpacing.xs),
+                  Text(
+                    hasContent ? 'active' : 'waiting',
                     style: SpTypography.caption.copyWith(
                       color: hasContent
-                          ? SpColors.textTertiary
+                          ? SpColors.textSecondary
                           : SpColors.textPlaceholder,
                     ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            // Activity indicator
             if (hasContent)
               const Positioned(
                 top: 0,
