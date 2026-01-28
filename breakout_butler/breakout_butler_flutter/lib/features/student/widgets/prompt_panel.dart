@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,14 +10,36 @@ import '../../../core/widgets/sp_highlight.dart';
 import '../../prompt/providers/prompt_providers.dart';
 
 /// Panel showing the professor's prompt/assignment for the breakout session.
-class PromptPanel extends ConsumerWidget {
+class PromptPanel extends ConsumerStatefulWidget {
   const PromptPanel({super.key, required this.sessionId});
 
   final int sessionId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final promptAsync = ref.watch(promptProvider(sessionId));
+  ConsumerState<PromptPanel> createState() => _PromptPanelState();
+}
+
+class _PromptPanelState extends ConsumerState<PromptPanel> {
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-refresh prompt every 5 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      ref.invalidate(promptProvider(widget.sessionId));
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final promptAsync = ref.watch(promptProvider(widget.sessionId));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,26 +97,6 @@ class PromptPanel extends ConsumerWidget {
                 'error loading prompt',
                 style:
                     SpTypography.caption.copyWith(color: SpColors.textTertiary),
-              ),
-            ),
-          ),
-        ),
-
-        // Refresh button at bottom
-        Container(
-          padding: const EdgeInsets.all(SpSpacing.sm),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: SpColors.border)),
-          ),
-          child: Center(
-            child: TextButton.icon(
-              onPressed: () => ref.invalidate(promptProvider(sessionId)),
-              icon: const Icon(Icons.refresh, size: 16),
-              label: Text(
-                'refresh',
-                style: SpTypography.caption.copyWith(
-                  color: SpColors.textSecondary,
-                ),
               ),
             ),
           ),

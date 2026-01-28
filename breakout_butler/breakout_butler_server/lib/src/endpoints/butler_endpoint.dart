@@ -310,15 +310,31 @@ class ButlerEndpoint extends Endpoint {
     Session session,
     int sessionId,
   ) async {
+    print('[extractAssignment] START sessionId=$sessionId');
+
     final liveSession = await LiveSession.db.findFirstRow(
       session,
       where: (t) => t.sessionId.equals(sessionId) & t.isActive.equals(true),
     );
 
-    if (liveSession == null || liveSession.transcript.isEmpty) {
+    print('[extractAssignment] liveSession found: ${liveSession != null}');
+
+    if (liveSession == null) {
+      print('[extractAssignment] No active session found');
       return null;
     }
 
-    return await GeminiService.instance.extractAssignment(liveSession.transcript);
+    print('[extractAssignment] transcript length: ${liveSession.transcript.length}');
+
+    if (liveSession.transcript.isEmpty) {
+      print('[extractAssignment] Transcript is empty');
+      return null;
+    }
+
+    print('[extractAssignment] Calling Gemini...');
+    final result = await GeminiService.instance.extractAssignment(liveSession.transcript);
+    print('[extractAssignment] Result: ${result?.substring(0, result.length > 50 ? 50 : result.length) ?? "null"}');
+
+    return result;
   }
 }
