@@ -4,6 +4,10 @@ import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_card.dart';
+import '../../student/widgets/drawing_canvas.dart';
+
+/// Editor mode for the hero demo.
+enum _HeroMode { write, draw }
 
 /// Animated hero card that mimics a collaborative editor typing out the app
 /// title and features. Plays once on page load.
@@ -56,6 +60,10 @@ class _AnimatedPadHeroState extends State<AnimatedPadHero>
   bool _cursorVisible = true;
   int _cursorPosition = 0; // 0=title, 1=subtitle, 2/3/4=features, 5=done
 
+  // ── Interactive state (after animation) ────────────────────────────────
+  bool _animationComplete = false;
+  _HeroMode _mode = _HeroMode.write;
+
   @override
   void initState() {
     super.initState();
@@ -78,7 +86,13 @@ class _AnimatedPadHeroState extends State<AnimatedPadHero>
     _sequenceController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: _totalDuration),
-    )..addListener(_updateDisplay);
+    )
+      ..addListener(_updateDisplay)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          setState(() => _animationComplete = true);
+        }
+      });
 
     // Cursor blink controller
     _cursorController = AnimationController(
@@ -183,50 +197,70 @@ class _AnimatedPadHeroState extends State<AnimatedPadHero>
   @override
   Widget build(BuildContext context) {
     return SpCard(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.zero,
+      child: Stack(
         children: [
-          // Save indicator (top-right aligned)
-          Align(
-            alignment: Alignment.centerRight,
-            child: _SaveIndicator(
-              showSaving: _showSaving,
-              showSaved: _showSaved,
+          // ── Content layer ─────────────────────────────────────────────
+          Padding(
+            padding: SpSpacing.cardPadding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Save indicator (top-right aligned)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _SaveIndicator(
+                    showSaving: _showSaving,
+                    showSaved: _showSaved,
+                  ),
+                ),
+                const SizedBox(height: SpSpacing.sm),
+
+                // Title
+                _TypewriterText(
+                  text: _displayTitle,
+                  style: SpTypography.display,
+                  showCursor: _cursorPosition == 0 && _cursorVisible,
+                ),
+                const SizedBox(height: SpSpacing.sm),
+
+                // Subtitle
+                _TypewriterText(
+                  text: _displaySubtitle,
+                  style: SpTypography.body.copyWith(color: SpColors.textSecondary),
+                  showCursor: _cursorPosition == 1 && _cursorVisible,
+                ),
+                const SizedBox(height: SpSpacing.lg),
+
+                // Features
+                for (var i = 0; i < _features.length; i++) ...[
+                  if (i > 0) const SizedBox(height: SpSpacing.sm),
+                  _AnimatedFeatureBullet(
+                    icon: _features[i].icon,
+                    text: _displayFeatures[i],
+                    showCursor: _cursorPosition == (i + 2) && _cursorVisible,
+                  ),
+                ],
+
+                const SizedBox(height: SpSpacing.lg),
+
+                // Mode selector (interactive after animation)
+                _ModeSelector(
+                  currentMode: _mode,
+                  enabled: _animationComplete,
+                  onChanged: (mode) => setState(() => _mode = mode),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: SpSpacing.sm),
 
-          // Title
-          _TypewriterText(
-            text: _displayTitle,
-            style: SpTypography.display,
-            showCursor: _cursorPosition == 0 && _cursorVisible,
-          ),
-          const SizedBox(height: SpSpacing.sm),
-
-          // Subtitle
-          _TypewriterText(
-            text: _displaySubtitle,
-            style: SpTypography.body.copyWith(color: SpColors.textSecondary),
-            showCursor: _cursorPosition == 1 && _cursorVisible,
-          ),
-          const SizedBox(height: SpSpacing.lg),
-
-          // Features
-          for (var i = 0; i < _features.length; i++) ...[
-            if (i > 0) const SizedBox(height: SpSpacing.sm),
-            _AnimatedFeatureBullet(
-              icon: _features[i].icon,
-              text: _displayFeatures[i],
-              showCursor: _cursorPosition == (i + 2) && _cursorVisible,
+          // ── Drawing layer (on top, only active in draw mode) ──────────
+          Positioned.fill(
+            child: DrawingCanvas(
+              interactive: _animationComplete && _mode == _HeroMode.draw,
             ),
-          ],
-
-          const SizedBox(height: SpSpacing.lg),
-
-          // Static mode selector
-          const _StaticModeSelector(),
+          ),
         ],
       ),
     );
@@ -342,17 +376,59 @@ class _SaveIndicator extends StatelessWidget {
   }
 }
 
-/// Non-interactive write/draw toggle with "write" selected.
-class _StaticModeSelector extends StatelessWidget {
-  const _StaticModeSelector();
+/// Write/draw toggle — interactive after animation completes.
+class _ModeSelector extends StatelessWidget {
+  const _ModeSelector({
+    required this.currentMode,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final _HeroMode currentMode;
+  final bool enabled;
+  final ValueChanged<_HeroMode> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Write (selected)
-        Padding(
+        _ModeLabel(
+          label: 'write',
+          isSelected: currentMode == _HeroMode.write,
+          onTap: enabled ? () => onChanged(_HeroMode.write) : null,
+        ),
+        const SizedBox(width: SpSpacing.md),
+        _ModeLabel(
+          label: 'draw',
+          isSelected: currentMode == _HeroMode.draw,
+          onTap: enabled ? () => onChanged(_HeroMode.draw) : null,
+        ),
+      ],
+    );
+  }
+}
+
+/// Individual mode label with yellow highlight when selected.
+class _ModeLabel extends StatelessWidget {
+  const _ModeLabel({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: MouseRegion(
+        cursor: onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: SpSpacing.xs,
             vertical: SpSpacing.xs,
@@ -361,44 +437,30 @@ class _StaticModeSelector extends StatelessWidget {
             alignment: Alignment.bottomLeft,
             children: [
               // Yellow highlight underline
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 1,
-                height: 6,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: SpColors.highlight.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(1),
+              if (isSelected)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 1,
+                  height: 6,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: SpColors.highlight.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
                   ),
                 ),
-              ),
               Text(
-                'write',
+                label,
                 style: SpTypography.body.copyWith(
-                  color: SpColors.textPrimary,
-                  fontWeight: FontWeight.w600,
+                  color: isSelected ? SpColors.textPrimary : SpColors.textTertiary,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: SpSpacing.md),
-        // Draw (unselected)
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SpSpacing.xs,
-            vertical: SpSpacing.xs,
-          ),
-          child: Text(
-            'draw',
-            style: SpTypography.body.copyWith(
-              color: SpColors.textTertiary,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
