@@ -6,11 +6,13 @@ import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../room/providers/room_providers.dart';
+import 'drawing_canvas.dart';
+import 'editor_mode_selector.dart';
 
-/// Main collaborative text editor for a student room.
+/// Main collaborative editor for a student room.
 ///
-/// Expanded multi-line text field with save indicator.
-/// Reads and writes via [RoomEditorNotifier].
+/// Supports two modes: **write** (text) and **draw** (freehand canvas).
+/// A toggle in the bottom-right switches between them.
 class CollaborativeEditor extends ConsumerStatefulWidget {
   const CollaborativeEditor({
     super.key,
@@ -29,6 +31,7 @@ class CollaborativeEditor extends ConsumerStatefulWidget {
 class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
   late final TextEditingController _controller;
   bool _initialized = false;
+  EditorMode _mode = EditorMode.write;
 
   @override
   void initState() {
@@ -68,67 +71,87 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
       );
     }
 
-    return Column(
+    return Stack(
       children: [
-        // Save indicator
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SpSpacing.lg,
-            vertical: SpSpacing.xs,
-          ),
-          alignment: Alignment.centerRight,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        // ── Main content area ───────────────────────────────────────
+        Column(
+          children: [
+            // Save indicator (write mode only)
+            if (_mode == EditorMode.write)
               Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: editorState.isSaving
-                      ? SpColors.textPlaceholder
-                      : SpColors.success,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpSpacing.lg,
+                  vertical: SpSpacing.xs,
+                ),
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: editorState.isSaving
+                            ? SpColors.textPlaceholder
+                            : SpColors.success,
+                      ),
+                    ),
+                    const SizedBox(width: SpSpacing.xs),
+                    Text(
+                      editorState.isSaving ? 'saving...' : 'saved',
+                      style: SpTypography.caption.copyWith(
+                        color: SpColors.textTertiary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: SpSpacing.xs),
-              Text(
-                editorState.isSaving ? 'saving...' : 'saved',
-                style: SpTypography.caption.copyWith(
-                  color: SpColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
+
+            // Editor or canvas
+            Expanded(
+              child: _mode == EditorMode.write
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpSpacing.md,
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        maxLines: null,
+                        expands: true,
+                        textAlignVertical: TextAlignVertical.top,
+                        style: SpTypography.body,
+                        decoration: const InputDecoration(
+                          hintText: 'start writing...',
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.all(SpSpacing.md),
+                        ),
+                        onChanged: (text) {
+                          ref
+                              .read(roomEditorProvider(
+                                (
+                                  sessionId: widget.sessionId,
+                                  roomNumber: widget.roomNumber,
+                                ),
+                              ).notifier)
+                              .updateContent(text);
+                        },
+                      ),
+                    )
+                  : const DrawingCanvas(),
+            ),
+          ],
         ),
 
-        // Editor
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SpSpacing.md),
-            child: TextField(
-              controller: _controller,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              style: SpTypography.body,
-              decoration: const InputDecoration(
-                hintText: 'start writing...',
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: EdgeInsets.all(SpSpacing.md),
-              ),
-              onChanged: (text) {
-                ref
-                    .read(roomEditorProvider(
-                      (
-                        sessionId: widget.sessionId,
-                        roomNumber: widget.roomNumber,
-                      ),
-                    ).notifier)
-                    .updateContent(text);
-              },
-            ),
+        // ── Mode selector (bottom-right) ────────────────────────────
+        Positioned(
+          bottom: SpSpacing.sm,
+          right: SpSpacing.md,
+          child: EditorModeSelector(
+            currentMode: _mode,
+            onChanged: (mode) => setState(() => _mode = mode),
           ),
         ),
       ],
