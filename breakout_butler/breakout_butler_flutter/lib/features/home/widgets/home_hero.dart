@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
+import '../../../core/widgets/sp_card.dart';
 
-/// Hero section for the home screen — title + subtitle + feature bullets.
+/// Hero section for the home screen — title + subtitle + feature bullets
+/// wrapped in an SpCard.
 ///
 /// [alignment] controls cross-axis: centered on mobile, left-aligned on desktop.
 class HomeHero extends StatelessWidget {
@@ -20,37 +22,39 @@ class HomeHero extends StatelessWidget {
     final textAlign =
         alignment == CrossAxisAlignment.center ? TextAlign.center : TextAlign.left;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: alignment,
-      children: [
-        Text(
-          'breakoutpad',
-          style: SpTypography.display,
-          textAlign: textAlign,
-        ),
-        const SizedBox(height: SpSpacing.sm),
-        Text(
-          'collaborative workspaces for your class',
-          style: SpTypography.body.copyWith(color: SpColors.textSecondary),
-          textAlign: textAlign,
-        ),
-        const SizedBox(height: SpSpacing.lg),
-        _FeatureBullet(
-          icon: Icons.groups_outlined,
-          text: 'real-time breakout rooms',
-        ),
-        const SizedBox(height: SpSpacing.sm),
-        _FeatureBullet(
-          icon: Icons.auto_awesome_outlined,
-          text: 'ai-powered butler assistant',
-        ),
-        const SizedBox(height: SpSpacing.sm),
-        _FeatureBullet(
-          icon: Icons.flash_on_outlined,
-          text: 'zero setup, instant start',
-        ),
-      ],
+    return SpCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: alignment,
+        children: [
+          Text(
+            'breakoutpad',
+            style: SpTypography.display,
+            textAlign: textAlign,
+          ),
+          const SizedBox(height: SpSpacing.sm),
+          Text(
+            'collaborative workspaces for your class',
+            style: SpTypography.body.copyWith(color: SpColors.textSecondary),
+            textAlign: textAlign,
+          ),
+          const SizedBox(height: SpSpacing.lg),
+          _FeatureBullet(
+            icon: Icons.groups_outlined,
+            text: 'real-time breakout rooms',
+          ),
+          const SizedBox(height: SpSpacing.sm),
+          _FeatureBullet(
+            icon: Icons.auto_awesome_outlined,
+            text: 'ai-powered butler assistant',
+          ),
+          const SizedBox(height: SpSpacing.sm),
+          _FeatureBullet(
+            icon: Icons.flash_on_outlined,
+            text: 'zero setup, instant start',
+          ),
+        ],
+      ),
     );
   }
 }

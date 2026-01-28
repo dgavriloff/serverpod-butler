@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
-import '../widgets/create_session_card.dart';
+import '../../../core/widgets/sp_button.dart';
 import '../widgets/home_hero.dart';
 import '../widgets/join_session_card.dart';
+import '../widgets/landing_illustration.dart';
+import '../widgets/or_divider.dart';
 
 /// Home screen — split-screen on desktop/tablet, stacked on mobile.
 class HomeScreen extends ConsumerWidget {
@@ -18,26 +21,33 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: SpColors.background,
-      body: size == SpScreenSize.mobile ? _buildMobile() : _buildSplit(context),
+      body: size == SpScreenSize.mobile ? _buildMobile(context) : _buildSplit(context),
     );
   }
 
   /// Mobile: vertical stack, centered, scrollable.
-  Widget _buildMobile() {
+  Widget _buildMobile(BuildContext context) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(SpSpacing.md),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 500),
-          child: const Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              HomeHero(),
-              SizedBox(height: SpSpacing.lg),
-              JoinSessionCard(),
-              SizedBox(height: SpSpacing.lg),
-              CreateSessionCard(),
+              const HomeHero(),
+              const SizedBox(height: SpSpacing.lg),
+              const JoinSessionCard(),
+              const SizedBox(height: SpSpacing.lg),
+              const OrDivider(),
+              const SizedBox(height: SpSpacing.lg),
+              SpSecondaryButton(
+                label: 'create new session',
+                icon: Icons.add,
+                onPressed: () => context.go('/create'),
+                fullWidth: true,
+              ),
             ],
           ),
         ),
@@ -59,30 +69,43 @@ class HomeScreen extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ── Left pane: hero ──────────────────────────────────────
-          const Expanded(
+          // ── Left pane: illustration + hero card ───────────────
+          Expanded(
             flex: 55,
             child: Center(
-              child: HomeHero(alignment: CrossAxisAlignment.start),
+              child: Stack(
+                alignment: Alignment.center,
+                children: const [
+                  LandingIllustration(),
+                  HomeHero(alignment: CrossAxisAlignment.start),
+                ],
+              ),
             ),
           ),
 
           const SizedBox(width: SpSpacing.xxl),
 
-          // ── Right pane: cards ────────────────────────────────────
+          // ── Right pane: join card + or + create button ───────
           Expanded(
             flex: 45,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: SingleChildScrollView(
-                  child: const Column(
+                  child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      JoinSessionCard(),
-                      SizedBox(height: SpSpacing.lg),
-                      CreateSessionCard(),
+                      const JoinSessionCard(),
+                      const SizedBox(height: SpSpacing.lg),
+                      const OrDivider(),
+                      const SizedBox(height: SpSpacing.lg),
+                      SpSecondaryButton(
+                        label: 'create new session',
+                        icon: Icons.add,
+                        onPressed: () => context.go('/create'),
+                        fullWidth: true,
+                      ),
                     ],
                   ),
                 ),
