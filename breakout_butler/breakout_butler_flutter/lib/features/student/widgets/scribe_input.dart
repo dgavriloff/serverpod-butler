@@ -8,21 +8,21 @@ import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_ai_card.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../../core/widgets/sp_text_field.dart';
-import '../../butler/providers/butler_providers.dart';
+import '../../scribe/providers/scribe_providers.dart';
 
-/// Input field + inline response for asking the butler.
+/// Input field + inline response for asking the scribe.
 ///
 /// "ASK BUTLER" overline label. Response appears inline as [SpAiCard].
-class ButlerInput extends ConsumerStatefulWidget {
-  const ButlerInput({super.key, required this.sessionId});
+class ScribeInput extends ConsumerStatefulWidget {
+  const ScribeInput({super.key, required this.sessionId});
 
   final int sessionId;
 
   @override
-  ConsumerState<ButlerInput> createState() => _ButlerInputState();
+  ConsumerState<ScribeInput> createState() => _ScribeInputState();
 }
 
-class _ButlerInputState extends ConsumerState<ButlerInput> {
+class _ScribeInputState extends ConsumerState<ScribeInput> {
   final _controller = TextEditingController();
   String? _lastAnswer;
   bool _isAsking = false;
@@ -40,8 +40,8 @@ class _ButlerInputState extends ConsumerState<ButlerInput> {
     setState(() => _isAsking = true);
     try {
       final response = await ref
-          .read(butlerActionsProvider.notifier)
-          .askButler(widget.sessionId, question);
+          .read(scribeActionsProvider.notifier)
+          .askScribe(widget.sessionId, question);
       if (mounted) {
         setState(() {
           _lastAnswer = response.answer;
@@ -110,7 +110,7 @@ class _ButlerInputState extends ConsumerState<ButlerInput> {
           Padding(
             padding: const EdgeInsets.all(SpSpacing.sm),
             child: SpAiCard(
-              header: 'butler',
+              header: 'scribe',
               child: Text(_lastAnswer!, style: SpTypography.body),
             ),
           ),

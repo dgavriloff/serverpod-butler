@@ -9,7 +9,7 @@ import '../../transcript/providers/transcript_providers.dart';
 
 /// Scrollable list of transcript chunks from the lecture.
 ///
-/// Shown in the butler sidebar to give context for questions.
+/// Shown in the scribe sidebar to give context for questions.
 class LectureContext extends ConsumerWidget {
   const LectureContext({super.key, required this.sessionId});
 

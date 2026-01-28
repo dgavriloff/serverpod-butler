@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../main.dart';
 
-/// Butler AI actions — ask questions, summarize, synthesize.
+/// Scribe AI actions — ask questions, summarize, synthesize.
 ///
 /// Each action is tracked independently so multiple can be in-flight.
-class ButlerActionsNotifier extends StateNotifier<ButlerActionsState> {
-  ButlerActionsNotifier() : super(const ButlerActionsState());
+class ScribeActionsNotifier extends StateNotifier<ScribeActionsState> {
+  ScribeActionsNotifier() : super(const ScribeActionsState());
 
-  Future<ButlerResponse> askButler(int sessionId, String question) async {
+  Future<ButlerResponse> askScribe(int sessionId, String question) async {
     state = state.copyWith(isAsking: true);
     try {
       final response = await client.butler.askButler(sessionId, question);
@@ -58,8 +58,8 @@ class ButlerActionsNotifier extends StateNotifier<ButlerActionsState> {
   }
 }
 
-class ButlerActionsState {
-  const ButlerActionsState({
+class ScribeActionsState {
+  const ScribeActionsState({
     this.isAsking = false,
     this.isSummarizing = false,
     this.isSynthesizing = false,
@@ -73,13 +73,13 @@ class ButlerActionsState {
 
   bool get isLoading => isAsking || isSummarizing || isSynthesizing;
 
-  ButlerActionsState copyWith({
+  ScribeActionsState copyWith({
     bool? isAsking,
     bool? isSummarizing,
     bool? isSynthesizing,
     ButlerResponse? lastAnswer,
   }) {
-    return ButlerActionsState(
+    return ScribeActionsState(
       isAsking: isAsking ?? this.isAsking,
       isSummarizing: isSummarizing ?? this.isSummarizing,
       isSynthesizing: isSynthesizing ?? this.isSynthesizing,
@@ -88,7 +88,7 @@ class ButlerActionsState {
   }
 }
 
-final butlerActionsProvider =
-    StateNotifierProvider.autoDispose<ButlerActionsNotifier, ButlerActionsState>(
-  (ref) => ButlerActionsNotifier(),
+final scribeActionsProvider =
+    StateNotifierProvider.autoDispose<ScribeActionsNotifier, ScribeActionsState>(
+  (ref) => ScribeActionsNotifier(),
 );

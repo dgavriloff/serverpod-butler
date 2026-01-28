@@ -10,11 +10,11 @@ import '../../../core/widgets/sp_breadcrumb_nav.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../../main.dart';
 import '../../session/providers/session_providers.dart';
-import '../widgets/butler_panel.dart';
+import '../widgets/scribe_panel.dart';
 import '../widgets/collaborative_editor.dart';
 
 /// Student room screen — three-panel layout with collaborative editor
-/// and butler sidebar.
+/// and scribe sidebar.
 class StudentRoomScreen extends ConsumerStatefulWidget {
   const StudentRoomScreen({
     super.key,
@@ -105,7 +105,7 @@ class _StudentRoomScreenState extends ConsumerState<StudentRoomScreen> {
         sessionId: _sessionId!,
         roomNumber: widget.roomNumber,
       ),
-      sidebar: ButlerPanel(sessionId: _sessionId!),
+      sidebar: ScribePanel(sessionId: _sessionId!),
     );
   }
 }

@@ -36,7 +36,7 @@ class HomeHero extends StatelessWidget {
           const SizedBox(height: SpSpacing.sm),
           _FeatureBullet(
             icon: Icons.auto_awesome,
-            text: 'ai-powered butler assistant',
+            text: 'ai-powered scribe assistant',
           ),
           const SizedBox(height: SpSpacing.sm),
           _FeatureBullet(

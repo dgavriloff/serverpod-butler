@@ -7,9 +7,9 @@ import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_ai_card.dart';
 import '../../../core/widgets/sp_button.dart';
 import '../../../core/widgets/sp_skeleton.dart';
-import '../../butler/providers/butler_providers.dart';
+import '../../scribe/providers/scribe_providers.dart';
 
-/// Shows full room content + butler AI summary.
+/// Shows full room content + scribe AI summary.
 class RoomDetailSheet extends ConsumerStatefulWidget {
   const RoomDetailSheet({
     super.key,
@@ -34,7 +34,7 @@ class _RoomDetailSheetState extends ConsumerState<RoomDetailSheet> {
     setState(() => _isSummarizing = true);
     try {
       final response = await ref
-          .read(butlerActionsProvider.notifier)
+          .read(scribeActionsProvider.notifier)
           .summarizeRoom(widget.sessionId, widget.roomNumber);
       if (mounted) {
         setState(() {
@@ -70,7 +70,7 @@ class _RoomDetailSheetState extends ConsumerState<RoomDetailSheet> {
               const SizedBox(height: SpSpacing.lg),
               if (_summary != null)
                 SpAiCard(
-                  header: 'butler summary',
+                  header: 'scribe summary',
                   child: Text(_summary!, style: SpTypography.body),
                 )
               else if (_isSummarizing)
@@ -80,7 +80,7 @@ class _RoomDetailSheetState extends ConsumerState<RoomDetailSheet> {
                 )
               else
                 SpSecondaryButton(
-                  label: 'ask butler to summarize',
+                  label: 'ask scribe to summarize',
                   icon: Icons.auto_awesome,
                   onPressed: widget.content.isNotEmpty ? _summarize : null,
                 ),

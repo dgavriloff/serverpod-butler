@@ -6,7 +6,7 @@ import '../theme/sp_typography.dart';
 
 /// AI-styled card — cream background, left-border accent, sparkle header.
 ///
-/// Used for butler responses, AI insights, and generated content.
+/// Used for scribe responses, AI insights, and generated content.
 /// "intelligence at the periphery" — subtle, not center-stage.
 class SpAiCard extends StatelessWidget {
   const SpAiCard({

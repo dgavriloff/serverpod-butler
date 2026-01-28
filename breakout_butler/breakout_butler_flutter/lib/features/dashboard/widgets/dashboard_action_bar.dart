@@ -7,7 +7,7 @@ import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_button.dart';
-import '../../butler/providers/butler_providers.dart';
+import '../../scribe/providers/scribe_providers.dart';
 
 /// Horizontal action bar with session info and controls.
 class DashboardActionBar extends ConsumerWidget {
@@ -24,7 +24,7 @@ class DashboardActionBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final butlerState = ref.watch(butlerActionsProvider);
+    final scribeState = ref.watch(scribeActionsProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -56,13 +56,13 @@ class DashboardActionBar extends ConsumerWidget {
           SpSecondaryButton(
             label: 'synthesize',
             icon: Icons.auto_awesome,
-            isLoading: butlerState.isSynthesizing,
-            onPressed: butlerState.isSynthesizing
+            isLoading: scribeState.isSynthesizing,
+            onPressed: scribeState.isSynthesizing
                 ? null
                 : () async {
                     try {
                       final response = await ref
-                          .read(butlerActionsProvider.notifier)
+                          .read(scribeActionsProvider.notifier)
                           .synthesizeAllRooms(sessionId);
                       onSynthesisResult(response.answer);
                     } catch (e) {
