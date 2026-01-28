@@ -131,14 +131,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final rightPadding =
         size == SpScreenSize.desktop ? SpSpacing.xxl * 2 : SpSpacing.xl;
 
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
     return Stack(
       children: [
-        // ── Illustration: spans left half, edge-to-edge ──────────
+        // ── Illustration: extends past the 55% mark so dots bleed
+        //    behind the right pane (clipped by the pane on top).
         Positioned(
           left: 0,
           top: 0,
           bottom: 0,
-          width: MediaQuery.sizeOf(context).width * 0.55,
+          width: screenWidth * 0.62,
           child: LandingIllustration(mouseOffset: _currentOffset),
         ),
 
@@ -165,12 +168,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
 
-              // Right pane: cards + or + create button
+              // Right pane: cards + or + create button — with left shadow
               Expanded(
                 flex: 45,
-                child: Padding(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: SpColors.background,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 24,
+                        offset: Offset(-8, 0),
+                      ),
+                    ],
+                  ),
                   padding: EdgeInsets.only(
                     right: rightPadding,
+                    left: SpSpacing.lg,
                     top: SpSpacing.xl,
                     bottom: SpSpacing.xl,
                   ),

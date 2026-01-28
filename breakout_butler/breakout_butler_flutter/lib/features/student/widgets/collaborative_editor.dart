@@ -180,17 +180,17 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _IconAction(
-                        icon: Icons.undo_rounded,
+                      _TextAction(
+                        label: 'undo',
                         onTap:
                             _canvasKey.currentState?.hasStrokes == true
                                 ? () => setState(
                                     () => _canvasKey.currentState?.undo())
                                 : null,
                       ),
-                      const SizedBox(width: SpSpacing.xs),
-                      _IconAction(
-                        icon: Icons.delete_forever_rounded,
+                      const SizedBox(width: SpSpacing.sm),
+                      _TextAction(
+                        label: 'clear',
                         onTap:
                             _canvasKey.currentState?.hasStrokes == true
                                 ? () => setState(
@@ -214,14 +214,14 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
   }
 }
 
-/// Small icon button for canvas undo/clear actions.
-class _IconAction extends StatelessWidget {
-  const _IconAction({
-    required this.icon,
+/// Small text button for canvas undo/clear actions.
+class _TextAction extends StatelessWidget {
+  const _TextAction({
+    required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String label;
   final VoidCallback? onTap;
 
   @override
@@ -231,11 +231,15 @@ class _IconAction extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.all(SpSpacing.xs),
-        child: Icon(
-          icon,
-          size: 18,
-          color: enabled ? SpColors.textSecondary : SpColors.textPlaceholder,
+        padding: const EdgeInsets.symmetric(
+          horizontal: SpSpacing.xs,
+          vertical: SpSpacing.xs,
+        ),
+        child: Text(
+          label,
+          style: SpTypography.caption.copyWith(
+            color: enabled ? SpColors.textSecondary : SpColors.textPlaceholder,
+          ),
         ),
       ),
     );

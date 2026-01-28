@@ -56,9 +56,19 @@ class _DotPatternPainter extends CustomPainter {
       final shift = _maxShift * dot.depth;
       final dx = dot.rx * size.width + mouseOffset.dx * shift;
       final dy = dot.ry * size.height + mouseOffset.dy * shift;
+      final center = Offset(dx, dy);
 
+      // Shadow — larger/deeper dots cast a bigger, more offset shadow.
+      final shadowBlur = dot.radius * 0.8 * dot.depth;
+      final shadowOffset = Offset(dot.depth * 3, dot.depth * 4);
+      final shadowPaint = Paint()
+        ..color = const Color(0x0C000000)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, shadowBlur);
+      canvas.drawCircle(center + shadowOffset, dot.radius, shadowPaint);
+
+      // Dot fill
       final paint = Paint()..color = _colors[dot.colorIndex];
-      canvas.drawCircle(Offset(dx, dy), dot.radius, paint);
+      canvas.drawCircle(center, dot.radius, paint);
     }
   }
 
