@@ -15,6 +15,7 @@ class DrawingCanvas extends StatefulWidget {
     super.key,
     this.initialData = '',
     this.onChanged,
+    this.interactive = true,
   });
 
   /// JSON string of strokes loaded from server.
@@ -22,6 +23,10 @@ class DrawingCanvas extends StatefulWidget {
 
   /// Called with serialized JSON after each completed stroke or undo/clear.
   final ValueChanged<String>? onChanged;
+
+  /// Whether the canvas accepts pointer input. When false, displays strokes
+  /// but passes through all pointer events (for layering over text).
+  final bool interactive;
 
   @override
   State<DrawingCanvas> createState() => DrawingCanvasState();
@@ -139,18 +144,25 @@ class DrawingCanvasState extends State<DrawingCanvas> {
 
   @override
   Widget build(BuildContext context) {
+    final canvas = CustomPaint(
+      painter: _StrokePainter(
+        strokes: _strokes,
+        currentStroke: _currentStroke,
+        options: _strokeOptions,
+      ),
+      child: const SizedBox.expand(),
+    );
+
+    // When not interactive, pass through all pointer events
+    if (!widget.interactive) {
+      return IgnorePointer(child: canvas);
+    }
+
     return Listener(
       onPointerDown: _onPointerDown,
       onPointerMove: _onPointerMove,
       onPointerUp: _onPointerUp,
-      child: CustomPaint(
-        painter: _StrokePainter(
-          strokes: _strokes,
-          currentStroke: _currentStroke,
-          options: _strokeOptions,
-        ),
-        child: const SizedBox.expand(),
-      ),
+      child: canvas,
     );
   }
 }
@@ -175,11 +187,7 @@ class _StrokePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // White background
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = SpColors.background,
-    );
+    // Transparent background — text layer shows through beneath
 
     final paint = Paint()
       ..color = SpColors.textPrimary

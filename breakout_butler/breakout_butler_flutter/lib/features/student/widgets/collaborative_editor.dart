@@ -108,30 +108,52 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
               ),
             ),
 
-            // Editor + canvas — both kept alive via IndexedStack
+            // Layered editor: text underneath, drawing on top
             Expanded(
-              child: IndexedStack(
-                index: _mode == EditorMode.write ? 0 : 1,
+              child: Stack(
                 children: [
-                  // Write mode
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: SpSpacing.md,
-                    ),
-                    child: TextField(
-                      controller: _controller,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      style: SpTypography.body,
-                      decoration: const InputDecoration(
-                        hintText: 'start writing...',
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: EdgeInsets.all(SpSpacing.md),
+                  // ── Text layer (bottom) ──────────────────────────────────
+                  Positioned.fill(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpSpacing.md,
                       ),
-                      onChanged: (text) {
+                      child: TextField(
+                        controller: _controller,
+                        maxLines: null,
+                        expands: true,
+                        readOnly: _mode == EditorMode.draw,
+                        textAlignVertical: TextAlignVertical.top,
+                        style: SpTypography.body,
+                        decoration: InputDecoration(
+                          hintText:
+                              _mode == EditorMode.write ? 'start writing...' : null,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.all(SpSpacing.md),
+                        ),
+                        onChanged: (text) {
+                          ref
+                              .read(roomEditorProvider(
+                                (
+                                  sessionId: widget.sessionId,
+                                  roomNumber: widget.roomNumber,
+                                ),
+                              ).notifier)
+                              .updateContent(text);
+                        },
+                      ),
+                    ),
+                  ),
+
+                  // ── Drawing layer (top) ──────────────────────────────────
+                  Positioned.fill(
+                    child: DrawingCanvas(
+                      key: _canvasKey,
+                      initialData: editorState.drawingData,
+                      interactive: _mode == EditorMode.draw,
+                      onChanged: (json) {
                         ref
                             .read(roomEditorProvider(
                               (
@@ -139,25 +161,9 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                                 roomNumber: widget.roomNumber,
                               ),
                             ).notifier)
-                            .updateContent(text);
+                            .updateDrawing(json);
                       },
                     ),
-                  ),
-
-                  // Draw mode
-                  DrawingCanvas(
-                    key: _canvasKey,
-                    initialData: editorState.drawingData,
-                    onChanged: (json) {
-                      ref
-                          .read(roomEditorProvider(
-                            (
-                              sessionId: widget.sessionId,
-                              roomNumber: widget.roomNumber,
-                            ),
-                          ).notifier)
-                          .updateDrawing(json);
-                    },
                   ),
                 ],
               ),
