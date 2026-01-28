@@ -77,36 +77,16 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
         // ── Main content area ───────────────────────────────────────
         Column(
           children: [
-            // Status bar — save indicator + draw actions
+            // Save indicator (top-right)
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: SpSpacing.lg,
                 vertical: SpSpacing.xs,
               ),
+              alignment: Alignment.centerRight,
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Draw actions (left side, only in draw mode)
-                  if (_mode == EditorMode.draw) ...[
-                    _IconAction(
-                      icon: Icons.undo_rounded,
-                      onTap: _canvasKey.currentState?.hasStrokes == true
-                          ? () => setState(
-                              () => _canvasKey.currentState?.undo())
-                          : null,
-                    ),
-                    const SizedBox(width: SpSpacing.xs),
-                    _IconAction(
-                      icon: Icons.delete_forever_rounded,
-                      onTap: _canvasKey.currentState?.hasStrokes == true
-                          ? () => setState(
-                              () => _canvasKey.currentState?.clear())
-                          : null,
-                    ),
-                  ],
-
-                  const Spacer(),
-
-                  // Save indicator (always visible)
                   Container(
                     width: 6,
                     height: 6,
@@ -185,13 +165,48 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
           ],
         ),
 
-        // ── Mode selector (bottom-right) ────────────────────────────
+        // ── Mode selector + draw actions (bottom-left) ──────────────
         Positioned(
           bottom: SpSpacing.sm,
-          right: SpSpacing.md,
-          child: EditorModeSelector(
-            currentMode: _mode,
-            onChanged: (mode) => setState(() => _mode = mode),
+          left: SpSpacing.md,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Undo / clear (only in draw mode, above selector)
+              if (_mode == EditorMode.draw)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SpSpacing.xs),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _IconAction(
+                        icon: Icons.undo_rounded,
+                        onTap:
+                            _canvasKey.currentState?.hasStrokes == true
+                                ? () => setState(
+                                    () => _canvasKey.currentState?.undo())
+                                : null,
+                      ),
+                      const SizedBox(width: SpSpacing.xs),
+                      _IconAction(
+                        icon: Icons.delete_forever_rounded,
+                        onTap:
+                            _canvasKey.currentState?.hasStrokes == true
+                                ? () => setState(
+                                    () => _canvasKey.currentState?.clear())
+                                : null,
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Write / draw toggle
+              EditorModeSelector(
+                currentMode: _mode,
+                onChanged: (mode) => setState(() => _mode = mode),
+              ),
+            ],
           ),
         ),
       ],
