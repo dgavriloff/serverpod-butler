@@ -30,17 +30,17 @@ class HomeHero extends StatelessWidget {
           ),
           const SizedBox(height: SpSpacing.lg),
           _FeatureBullet(
-            icon: Icons.groups_outlined,
+            icon: Icons.groups,
             text: 'real-time breakout rooms',
           ),
           const SizedBox(height: SpSpacing.sm),
           _FeatureBullet(
-            icon: Icons.auto_awesome_outlined,
+            icon: Icons.auto_awesome,
             text: 'ai-powered butler assistant',
           ),
           const SizedBox(height: SpSpacing.sm),
           _FeatureBullet(
-            icon: Icons.flash_on_outlined,
+            icon: Icons.flash_on,
             text: 'zero setup, instant start',
           ),
         ],
