@@ -17,12 +17,14 @@ abstract class RoomUpdate implements _i1.SerializableModel {
   RoomUpdate._({
     required this.roomNumber,
     required this.content,
+    this.drawingData,
     required this.timestamp,
   });
 
   factory RoomUpdate({
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime timestamp,
   }) = _RoomUpdateImpl;
 
@@ -30,6 +32,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
     return RoomUpdate(
       roomNumber: jsonSerialization['roomNumber'] as int,
       content: jsonSerialization['content'] as String,
+      drawingData: jsonSerialization['drawingData'] as String?,
       timestamp: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['timestamp'],
       ),
@@ -42,6 +45,9 @@ abstract class RoomUpdate implements _i1.SerializableModel {
   /// New content
   String content;
 
+  /// Freehand drawing data (JSON array of strokes), null = unchanged
+  String? drawingData;
+
   /// Timestamp of update
   DateTime timestamp;
 
@@ -51,6 +57,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
   RoomUpdate copyWith({
     int? roomNumber,
     String? content,
+    String? drawingData,
     DateTime? timestamp,
   });
   @override
@@ -59,6 +66,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
       '__className__': 'RoomUpdate',
       'roomNumber': roomNumber,
       'content': content,
+      if (drawingData != null) 'drawingData': drawingData,
       'timestamp': timestamp.toJson(),
     };
   }
@@ -69,14 +77,18 @@ abstract class RoomUpdate implements _i1.SerializableModel {
   }
 }
 
+class _Undefined {}
+
 class _RoomUpdateImpl extends RoomUpdate {
   _RoomUpdateImpl({
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime timestamp,
   }) : super._(
          roomNumber: roomNumber,
          content: content,
+         drawingData: drawingData,
          timestamp: timestamp,
        );
 
@@ -87,11 +99,13 @@ class _RoomUpdateImpl extends RoomUpdate {
   RoomUpdate copyWith({
     int? roomNumber,
     String? content,
+    Object? drawingData = _Undefined,
     DateTime? timestamp,
   }) {
     return RoomUpdate(
       roomNumber: roomNumber ?? this.roomNumber,
       content: content ?? this.content,
+      drawingData: drawingData is String? ? drawingData : this.drawingData,
       timestamp: timestamp ?? this.timestamp,
     );
   }

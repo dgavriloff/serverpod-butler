@@ -19,6 +19,7 @@ butler:
 room:
   - getRoom:
   - updateRoomContent:
+  - updateRoomDrawing:
   - roomUpdates:
   - allRoomUpdates:
   - getAllRooms:

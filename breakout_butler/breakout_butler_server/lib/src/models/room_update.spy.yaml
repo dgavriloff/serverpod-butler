@@ -5,5 +5,7 @@ fields:
   roomNumber: int
   ### New content
   content: String
+  ### Freehand drawing data (JSON array of strokes), null = unchanged
+  drawingData: String?
   ### Timestamp of update
   timestamp: DateTime

@@ -43,6 +43,38 @@ class RoomEndpoint extends Endpoint {
     final update = RoomUpdate(
       roomNumber: roomNumber,
       content: content,
+      drawingData: room.drawingData,
+      timestamp: DateTime.now(),
+    );
+    session.messages.postMessage(_roomChannel(sessionId, roomNumber), update);
+
+    // Also broadcast to all-rooms channel for professor dashboard
+    session.messages.postMessage(_allRoomsChannel(sessionId), update);
+
+    return room;
+  }
+
+  /// Update room drawing data
+  Future<Room> updateRoomDrawing(
+    Session session,
+    int sessionId,
+    int roomNumber,
+    String drawingData,
+  ) async {
+    final room = await getRoom(session, sessionId, roomNumber);
+    if (room == null) {
+      throw Exception('Room not found');
+    }
+
+    room.drawingData = drawingData;
+    room.updatedAt = DateTime.now();
+    await Room.db.updateRow(session, room);
+
+    // Broadcast update to room-specific listeners
+    final update = RoomUpdate(
+      roomNumber: roomNumber,
+      content: room.content,
+      drawingData: drawingData,
       timestamp: DateTime.now(),
     );
     session.messages.postMessage(_roomChannel(sessionId, roomNumber), update);
@@ -65,6 +97,7 @@ class RoomEndpoint extends Endpoint {
       yield RoomUpdate(
         roomNumber: roomNumber,
         content: room.content,
+        drawingData: room.drawingData,
         timestamp: room.updatedAt,
       );
     }
@@ -95,6 +128,7 @@ class RoomEndpoint extends Endpoint {
       yield RoomUpdate(
         roomNumber: room.roomNumber,
         content: room.content,
+        drawingData: room.drawingData,
         timestamp: room.updatedAt,
       );
     }

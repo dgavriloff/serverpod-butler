@@ -19,6 +19,7 @@ abstract class Room implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     required this.sessionId,
     required this.roomNumber,
     required this.content,
+    this.drawingData,
     required this.updatedAt,
   });
 
@@ -27,6 +28,7 @@ abstract class Room implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     required int sessionId,
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime updatedAt,
   }) = _RoomImpl;
 
@@ -36,6 +38,7 @@ abstract class Room implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       sessionId: jsonSerialization['sessionId'] as int,
       roomNumber: jsonSerialization['roomNumber'] as int,
       content: jsonSerialization['content'] as String,
+      drawingData: jsonSerialization['drawingData'] as String?,
       updatedAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
@@ -58,6 +61,9 @@ abstract class Room implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
   /// Collaborative text document content
   String content;
 
+  /// Freehand drawing data (JSON array of strokes), null = no drawing
+  String? drawingData;
+
   /// Last updated timestamp
   DateTime updatedAt;
 
@@ -72,6 +78,7 @@ abstract class Room implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
     int? sessionId,
     int? roomNumber,
     String? content,
+    String? drawingData,
     DateTime? updatedAt,
   });
   @override
@@ -82,6 +89,7 @@ abstract class Room implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       'sessionId': sessionId,
       'roomNumber': roomNumber,
       'content': content,
+      if (drawingData != null) 'drawingData': drawingData,
       'updatedAt': updatedAt.toJson(),
     };
   }
@@ -94,6 +102,7 @@ abstract class Room implements _i1.TableRow<int?>, _i1.ProtocolSerialization {
       'sessionId': sessionId,
       'roomNumber': roomNumber,
       'content': content,
+      if (drawingData != null) 'drawingData': drawingData,
       'updatedAt': updatedAt.toJson(),
     };
   }
@@ -136,12 +145,14 @@ class _RoomImpl extends Room {
     required int sessionId,
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime updatedAt,
   }) : super._(
          id: id,
          sessionId: sessionId,
          roomNumber: roomNumber,
          content: content,
+         drawingData: drawingData,
          updatedAt: updatedAt,
        );
 
@@ -154,6 +165,7 @@ class _RoomImpl extends Room {
     int? sessionId,
     int? roomNumber,
     String? content,
+    Object? drawingData = _Undefined,
     DateTime? updatedAt,
   }) {
     return Room(
@@ -161,6 +173,7 @@ class _RoomImpl extends Room {
       sessionId: sessionId ?? this.sessionId,
       roomNumber: roomNumber ?? this.roomNumber,
       content: content ?? this.content,
+      drawingData: drawingData is String? ? drawingData : this.drawingData,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
@@ -181,6 +194,11 @@ class RoomUpdateTable extends _i1.UpdateTable<RoomTable> {
 
   _i1.ColumnValue<String, String> content(String value) => _i1.ColumnValue(
     table.content,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> drawingData(String? value) => _i1.ColumnValue(
+    table.drawingData,
     value,
   );
 
@@ -206,6 +224,10 @@ class RoomTable extends _i1.Table<int?> {
       'content',
       this,
     );
+    drawingData = _i1.ColumnString(
+      'drawingData',
+      this,
+    );
     updatedAt = _i1.ColumnDateTime(
       'updatedAt',
       this,
@@ -223,6 +245,9 @@ class RoomTable extends _i1.Table<int?> {
   /// Collaborative text document content
   late final _i1.ColumnString content;
 
+  /// Freehand drawing data (JSON array of strokes), null = no drawing
+  late final _i1.ColumnString drawingData;
+
   /// Last updated timestamp
   late final _i1.ColumnDateTime updatedAt;
 
@@ -232,6 +257,7 @@ class RoomTable extends _i1.Table<int?> {
     sessionId,
     roomNumber,
     content,
+    drawingData,
     updatedAt,
   ];
 }

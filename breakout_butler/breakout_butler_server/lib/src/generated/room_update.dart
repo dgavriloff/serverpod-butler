@@ -18,12 +18,14 @@ abstract class RoomUpdate
   RoomUpdate._({
     required this.roomNumber,
     required this.content,
+    this.drawingData,
     required this.timestamp,
   });
 
   factory RoomUpdate({
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime timestamp,
   }) = _RoomUpdateImpl;
 
@@ -31,6 +33,7 @@ abstract class RoomUpdate
     return RoomUpdate(
       roomNumber: jsonSerialization['roomNumber'] as int,
       content: jsonSerialization['content'] as String,
+      drawingData: jsonSerialization['drawingData'] as String?,
       timestamp: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['timestamp'],
       ),
@@ -43,6 +46,9 @@ abstract class RoomUpdate
   /// New content
   String content;
 
+  /// Freehand drawing data (JSON array of strokes), null = unchanged
+  String? drawingData;
+
   /// Timestamp of update
   DateTime timestamp;
 
@@ -52,6 +58,7 @@ abstract class RoomUpdate
   RoomUpdate copyWith({
     int? roomNumber,
     String? content,
+    String? drawingData,
     DateTime? timestamp,
   });
   @override
@@ -60,6 +67,7 @@ abstract class RoomUpdate
       '__className__': 'RoomUpdate',
       'roomNumber': roomNumber,
       'content': content,
+      if (drawingData != null) 'drawingData': drawingData,
       'timestamp': timestamp.toJson(),
     };
   }
@@ -70,6 +78,7 @@ abstract class RoomUpdate
       '__className__': 'RoomUpdate',
       'roomNumber': roomNumber,
       'content': content,
+      if (drawingData != null) 'drawingData': drawingData,
       'timestamp': timestamp.toJson(),
     };
   }
@@ -80,14 +89,18 @@ abstract class RoomUpdate
   }
 }
 
+class _Undefined {}
+
 class _RoomUpdateImpl extends RoomUpdate {
   _RoomUpdateImpl({
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime timestamp,
   }) : super._(
          roomNumber: roomNumber,
          content: content,
+         drawingData: drawingData,
          timestamp: timestamp,
        );
 
@@ -98,11 +111,13 @@ class _RoomUpdateImpl extends RoomUpdate {
   RoomUpdate copyWith({
     int? roomNumber,
     String? content,
+    Object? drawingData = _Undefined,
     DateTime? timestamp,
   }) {
     return RoomUpdate(
       roomNumber: roomNumber ?? this.roomNumber,
       content: content ?? this.content,
+      drawingData: drawingData is String? ? drawingData : this.drawingData,
       timestamp: timestamp ?? this.timestamp,
     );
   }

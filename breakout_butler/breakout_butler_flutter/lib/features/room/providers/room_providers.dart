@@ -64,33 +64,45 @@ final roomContentsProvider = StateNotifierProvider.autoDispose
   (ref, sessionId) => RoomContentsNotifier(ref, sessionId),
 );
 
-/// Manages local content editing + debounced save for a student room.
+/// Manages local content + drawing editing with debounced save for a student room.
 class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   RoomEditorNotifier(this._sessionId, this._roomNumber)
       : super(const RoomEditorState());
 
   final int _sessionId;
   final int _roomNumber;
-  Timer? _saveDebounce;
+  Timer? _contentDebounce;
+  Timer? _drawingDebounce;
   StreamSubscription<RoomUpdate>? _sub;
   String _lastSavedContent = '';
+  String _lastSavedDrawing = '';
 
   Future<void> init() async {
     // Load initial content
     final room = await client.room.getRoom(_sessionId, _roomNumber);
     if (room != null && mounted) {
       _lastSavedContent = room.content;
-      state = state.copyWith(content: room.content, loaded: true);
+      _lastSavedDrawing = room.drawingData ?? '';
+      state = state.copyWith(
+        content: room.content,
+        drawingData: room.drawingData ?? '',
+        loaded: true,
+      );
     } else if (mounted) {
-      state = state.copyWith(content: '', loaded: true);
+      state = state.copyWith(content: '', drawingData: '', loaded: true);
     }
 
     // Subscribe to remote updates
     _sub = client.room
         .roomUpdates(_sessionId, _roomNumber)
         .listen((update) {
-      if (mounted && update.content != _lastSavedContent) {
+      if (!mounted) return;
+      if (update.content != _lastSavedContent) {
         state = state.copyWith(content: update.content);
+      }
+      final remoteDrawing = update.drawingData ?? '';
+      if (remoteDrawing != _lastSavedDrawing) {
+        state = state.copyWith(drawingData: remoteDrawing);
       }
     });
   }
@@ -99,13 +111,23 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     if (!mounted) return;
     state = state.copyWith(content: content);
 
-    _saveDebounce?.cancel();
-    _saveDebounce = Timer(const Duration(milliseconds: 500), () {
-      _save(content);
+    _contentDebounce?.cancel();
+    _contentDebounce = Timer(const Duration(milliseconds: 500), () {
+      _saveContent(content);
     });
   }
 
-  Future<void> _save(String content) async {
+  void updateDrawing(String drawingData) {
+    if (!mounted) return;
+    state = state.copyWith(drawingData: drawingData);
+
+    _drawingDebounce?.cancel();
+    _drawingDebounce = Timer(const Duration(milliseconds: 500), () {
+      _saveDrawing(drawingData);
+    });
+  }
+
+  Future<void> _saveContent(String content) async {
     if (!mounted) return;
     state = state.copyWith(isSaving: true);
     try {
@@ -116,9 +138,22 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     }
   }
 
+  Future<void> _saveDrawing(String drawingData) async {
+    if (!mounted) return;
+    state = state.copyWith(isSaving: true);
+    try {
+      await client.room
+          .updateRoomDrawing(_sessionId, _roomNumber, drawingData);
+      _lastSavedDrawing = drawingData;
+    } finally {
+      if (mounted) state = state.copyWith(isSaving: false);
+    }
+  }
+
   @override
   void dispose() {
-    _saveDebounce?.cancel();
+    _contentDebounce?.cancel();
+    _drawingDebounce?.cancel();
     _sub?.cancel();
     super.dispose();
   }
@@ -127,21 +162,25 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 class RoomEditorState {
   const RoomEditorState({
     this.content = '',
+    this.drawingData = '',
     this.isSaving = false,
     this.loaded = false,
   });
 
   final String content;
+  final String drawingData;
   final bool isSaving;
   final bool loaded;
 
   RoomEditorState copyWith({
     String? content,
+    String? drawingData,
     bool? isSaving,
     bool? loaded,
   }) {
     return RoomEditorState(
       content: content ?? this.content,
+      drawingData: drawingData ?? this.drawingData,
       isSaving: isSaving ?? this.isSaving,
       loaded: loaded ?? this.loaded,
     );

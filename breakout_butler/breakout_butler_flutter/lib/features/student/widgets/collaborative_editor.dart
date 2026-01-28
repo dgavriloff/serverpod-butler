@@ -167,8 +167,17 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                   // Draw mode
                   DrawingCanvas(
                     key: _canvasKey,
-                    storageKey:
-                        'drawing_${widget.sessionId}_${widget.roomNumber}',
+                    initialData: editorState.drawingData,
+                    onChanged: (json) {
+                      ref
+                          .read(roomEditorProvider(
+                            (
+                              sessionId: widget.sessionId,
+                              roomNumber: widget.roomNumber,
+                            ),
+                          ).notifier)
+                          .updateDrawing(json);
+                    },
                   ),
                 ],
               ),

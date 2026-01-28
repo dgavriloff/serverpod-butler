@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:js_interop';
-import 'dart:js_interop_unsafe';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -8,32 +6,22 @@ import 'package:perfect_freehand/perfect_freehand.dart';
 
 import '../../../core/theme/sp_colors.dart';
 
-// ── JS interop for localStorage (WASM-safe) ────────────────────────
-
-JSObject get _localStorage =>
-    globalContext.getProperty('localStorage'.toJS) as JSObject;
-
-String? _storageGet(String key) {
-  final result =
-      _localStorage.callMethod('getItem'.toJS, key.toJS) as JSString?;
-  return result?.toDart;
-}
-
-void _storageSet(String key, String value) {
-  _localStorage.callMethod('setItem'.toJS, key.toJS, value.toJS);
-}
-
-// ────────────────────────────────────────────────────────────────────
-
 /// Freehand drawing surface using [perfect_freehand].
 ///
-/// Each stroke is captured as a list of input points, then rendered as a
-/// filled polygon via [getStroke]. Persists to browser localStorage.
+/// Strokes are serialized to JSON via [onChanged] for server persistence.
+/// Initial data is loaded from [initialData].
 class DrawingCanvas extends StatefulWidget {
-  const DrawingCanvas({super.key, required this.storageKey});
+  const DrawingCanvas({
+    super.key,
+    this.initialData = '',
+    this.onChanged,
+  });
 
-  /// Key used to persist strokes in localStorage (e.g. "drawing_1_2").
-  final String storageKey;
+  /// JSON string of strokes loaded from server.
+  final String initialData;
+
+  /// Called with serialized JSON after each completed stroke or undo/clear.
+  final ValueChanged<String>? onChanged;
 
   @override
   State<DrawingCanvas> createState() => DrawingCanvasState();
@@ -42,6 +30,7 @@ class DrawingCanvas extends StatefulWidget {
 class DrawingCanvasState extends State<DrawingCanvas> {
   final List<_Stroke> _strokes = [];
   _Stroke? _currentStroke;
+  bool _didLoadInitial = false;
 
   static final _strokeOptions = StrokeOptions(
     size: 4,
@@ -52,17 +41,27 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   );
 
   @override
-  void initState() {
-    super.initState();
-    _loadFromStorage();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didLoadInitial) {
+      _loadFromJson(widget.initialData);
+      _didLoadInitial = true;
+    }
   }
 
-  // ── Persistence ──────────────────────────────────────────────────
+  @override
+  void didUpdateWidget(DrawingCanvas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload if server pushed new drawing data
+    if (widget.initialData != oldWidget.initialData) {
+      _loadFromJson(widget.initialData);
+    }
+  }
 
-  void _loadFromStorage() {
+  void _loadFromJson(String json) {
+    _strokes.clear();
+    if (json.isEmpty) return;
     try {
-      final json = _storageGet(widget.storageKey);
-      if (json == null || json.isEmpty) return;
       final list = jsonDecode(json) as List<dynamic>;
       for (final strokeJson in list) {
         final points = (strokeJson as List<dynamic>)
@@ -79,16 +78,14 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     }
   }
 
-  void _saveToStorage() {
-    try {
-      final data = _strokes
-          .map((s) => s.points.map((p) => [p.x, p.y, p.pressure]).toList())
-          .toList();
-      _storageSet(widget.storageKey, jsonEncode(data));
-    } catch (_) {
-      // Storage full or unavailable — silent fail.
-    }
+  String _toJson() {
+    final data = _strokes
+        .map((s) => s.points.map((p) => [p.x, p.y, p.pressure]).toList())
+        .toList();
+    return jsonEncode(data);
   }
+
+  void _notifyChanged() => widget.onChanged?.call(_toJson());
 
   // ── Pointer handling ─────────────────────────────────────────────
 
@@ -123,19 +120,19 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       _strokes.add(_currentStroke!);
       _currentStroke = null;
     });
-    _saveToStorage();
+    _notifyChanged();
   }
 
   void undo() {
     if (_strokes.isEmpty) return;
     setState(() => _strokes.removeLast());
-    _saveToStorage();
+    _notifyChanged();
   }
 
   void clear() {
     if (_strokes.isEmpty) return;
     setState(() => _strokes.clear());
-    _saveToStorage();
+    _notifyChanged();
   }
 
   bool get hasStrokes => _strokes.isNotEmpty;

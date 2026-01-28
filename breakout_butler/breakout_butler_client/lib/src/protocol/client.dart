@@ -370,6 +370,21 @@ class EndpointRoom extends _i2.EndpointRef {
     },
   );
 
+  /// Update room drawing data
+  _i3.Future<_i8.Room> updateRoomDrawing(
+    int sessionId,
+    int roomNumber,
+    String drawingData,
+  ) => caller.callServerEndpoint<_i8.Room>(
+    'room',
+    'updateRoomDrawing',
+    {
+      'sessionId': sessionId,
+      'roomNumber': roomNumber,
+      'drawingData': drawingData,
+    },
+  );
+
   /// Stream real-time room updates for a specific room
   _i3.Stream<_i9.RoomUpdate> roomUpdates(
     int sessionId,

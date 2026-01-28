@@ -8,6 +8,8 @@ fields:
   roomNumber: int
   ### Collaborative text document content
   content: String
+  ### Freehand drawing data (JSON array of strokes), null = no drawing
+  drawingData: String?
   ### Last updated timestamp
   updatedAt: DateTime
 indexes:

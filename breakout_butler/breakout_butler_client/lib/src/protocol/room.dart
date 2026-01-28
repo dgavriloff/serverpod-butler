@@ -19,6 +19,7 @@ abstract class Room implements _i1.SerializableModel {
     required this.sessionId,
     required this.roomNumber,
     required this.content,
+    this.drawingData,
     required this.updatedAt,
   });
 
@@ -27,6 +28,7 @@ abstract class Room implements _i1.SerializableModel {
     required int sessionId,
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime updatedAt,
   }) = _RoomImpl;
 
@@ -36,6 +38,7 @@ abstract class Room implements _i1.SerializableModel {
       sessionId: jsonSerialization['sessionId'] as int,
       roomNumber: jsonSerialization['roomNumber'] as int,
       content: jsonSerialization['content'] as String,
+      drawingData: jsonSerialization['drawingData'] as String?,
       updatedAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
@@ -56,6 +59,9 @@ abstract class Room implements _i1.SerializableModel {
   /// Collaborative text document content
   String content;
 
+  /// Freehand drawing data (JSON array of strokes), null = no drawing
+  String? drawingData;
+
   /// Last updated timestamp
   DateTime updatedAt;
 
@@ -67,6 +73,7 @@ abstract class Room implements _i1.SerializableModel {
     int? sessionId,
     int? roomNumber,
     String? content,
+    String? drawingData,
     DateTime? updatedAt,
   });
   @override
@@ -77,6 +84,7 @@ abstract class Room implements _i1.SerializableModel {
       'sessionId': sessionId,
       'roomNumber': roomNumber,
       'content': content,
+      if (drawingData != null) 'drawingData': drawingData,
       'updatedAt': updatedAt.toJson(),
     };
   }
@@ -95,12 +103,14 @@ class _RoomImpl extends Room {
     required int sessionId,
     required int roomNumber,
     required String content,
+    String? drawingData,
     required DateTime updatedAt,
   }) : super._(
          id: id,
          sessionId: sessionId,
          roomNumber: roomNumber,
          content: content,
+         drawingData: drawingData,
          updatedAt: updatedAt,
        );
 
@@ -113,6 +123,7 @@ class _RoomImpl extends Room {
     int? sessionId,
     int? roomNumber,
     String? content,
+    Object? drawingData = _Undefined,
     DateTime? updatedAt,
   }) {
     return Room(
@@ -120,6 +131,7 @@ class _RoomImpl extends Room {
       sessionId: sessionId ?? this.sessionId,
       roomNumber: roomNumber ?? this.roomNumber,
       content: content ?? this.content,
+      drawingData: drawingData is String? ? drawingData : this.drawingData,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }

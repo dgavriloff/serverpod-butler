@@ -487,6 +487,37 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['content'],
                   ),
         ),
+        'updateRoomDrawing': _i1.MethodConnector(
+          name: 'updateRoomDrawing',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'roomNumber': _i1.ParameterDescription(
+              name: 'roomNumber',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'drawingData': _i1.ParameterDescription(
+              name: 'drawingData',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['room'] as _i5.RoomEndpoint).updateRoomDrawing(
+                    session,
+                    params['sessionId'],
+                    params['roomNumber'],
+                    params['drawingData'],
+                  ),
+        ),
         'getAllRooms': _i1.MethodConnector(
           name: 'getAllRooms',
           params: {
