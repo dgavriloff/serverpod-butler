@@ -2,39 +2,21 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-/// Abstract dot-pattern illustration for the landing page left pane.
+/// Abstract dot-pattern illustration for the landing page.
 ///
-/// Renders scattered circles in soft colors. Dots drift subtly in response
-/// to the mouse cursor position (parallax effect).
-class LandingIllustration extends StatefulWidget {
-  const LandingIllustration({super.key});
+/// Renders scattered circles in soft colors. Pass [mouseOffset] (normalized
+/// -1..1 from page center) for parallax movement.
+class LandingIllustration extends StatelessWidget {
+  const LandingIllustration({super.key, this.mouseOffset = Offset.zero});
 
-  @override
-  State<LandingIllustration> createState() => _LandingIllustrationState();
-}
-
-class _LandingIllustrationState extends State<LandingIllustration> {
-  /// Normalized mouse offset from center: (-1,-1) top-left to (1,1) bottom-right.
-  Offset _mouseOffset = Offset.zero;
+  /// Normalized mouse offset from page center: (-1,-1) to (1,1).
+  final Offset mouseOffset;
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onHover: (event) {
-        final size = context.size;
-        if (size == null || size.isEmpty) return;
-        setState(() {
-          _mouseOffset = Offset(
-            (event.localPosition.dx / size.width - 0.5) * 2.0,
-            (event.localPosition.dy / size.height - 0.5) * 2.0,
-          );
-        });
-      },
-      onExit: (_) => setState(() => _mouseOffset = Offset.zero),
-      child: CustomPaint(
-        painter: _DotPatternPainter(_mouseOffset),
-        child: const SizedBox.expand(),
-      ),
+    return CustomPaint(
+      painter: _DotPatternPainter(mouseOffset),
+      child: const SizedBox.expand(),
     );
   }
 }
@@ -54,7 +36,7 @@ class _DotPatternPainter extends CustomPainter {
       ry: _rng.nextDouble(),
       radius: 3.0 + _rng.nextDouble() * 24.0,
       colorIndex: _rng.nextInt(3),
-      // Depth: 0.0 = no movement, 1.0 = max parallax. Larger dots move more.
+      // Depth: 0.0 = no movement, 1.0 = max parallax.
       depth: 0.2 + _rng.nextDouble() * 0.8,
     );
   });
