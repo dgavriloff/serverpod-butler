@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_utils.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_ai_card.dart';
@@ -45,7 +46,7 @@ class _RoomDetailSheetState extends ConsumerState<RoomDetailSheet> {
       if (mounted) {
         setState(() => _isSummarizing = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('error: $e')),
+          SnackBar(content: Text(friendlyError(e))),
         );
       }
     }

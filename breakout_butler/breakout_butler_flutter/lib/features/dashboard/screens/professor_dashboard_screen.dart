@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/utils/error_utils.dart';
 import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/layout/sp_three_panel_layout.dart';
 import '../../../core/theme/sp_colors.dart';
@@ -103,7 +104,7 @@ class _ProfessorDashboardScreenState
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = friendlyError(e);
         _isValidating = false;
       });
     }

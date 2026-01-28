@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:serverpod_client/serverpod_client.dart';
+
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
+import '../../../core/utils/error_utils.dart';
 import '../../../core/widgets/sp_button.dart';
 import '../../../core/widgets/sp_card.dart';
 import '../../../core/widgets/sp_text_field.dart';
@@ -81,8 +84,15 @@ class _CreateSessionCardState extends ConsumerState<CreateSessionCard> {
       context.go('/$tag');
     } catch (e) {
       if (!mounted) return;
+      String message;
+      if (e is ServerpodClientInternalServerError) {
+        // Server throws 500 when the URL tag is already in use.
+        message = 'session tag "$tag" is already in use';
+      } else {
+        message = friendlyError(e);
+      }
       setState(() {
-        _createError = e.toString();
+        _createError = message;
         _isCreating = false;
       });
     }

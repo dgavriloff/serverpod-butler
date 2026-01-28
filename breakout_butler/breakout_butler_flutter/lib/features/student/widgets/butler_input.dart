@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/error_utils.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
@@ -52,7 +53,7 @@ class _ButlerInputState extends ConsumerState<ButlerInput> {
       if (mounted) {
         setState(() => _isAsking = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('error: $e')),
+          SnackBar(content: Text(friendlyError(e))),
         );
       }
     }

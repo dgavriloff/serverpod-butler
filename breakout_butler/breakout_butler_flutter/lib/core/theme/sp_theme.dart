@@ -119,6 +119,15 @@ ThemeData buildBreakoutpadTheme() {
       ),
     ),
 
+    // ── Snackbar ────────────────────────────────────────────────────
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: SpColors.textPrimary,
+      contentTextStyle: SpTypography.body.copyWith(color: SpColors.background),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: SpRadius.buttonBorder),
+      elevation: 0,
+    ),
+
     // ── Bottom Sheet ────────────────────────────────────────────────
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: SpColors.background,
