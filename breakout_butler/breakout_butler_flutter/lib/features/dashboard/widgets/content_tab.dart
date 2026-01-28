@@ -5,10 +5,11 @@ import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
-import '../../../core/widgets/sp_empty_state.dart';
+import '../../../core/widgets/sp_button.dart';
 import '../../../core/widgets/sp_highlight.dart';
 import '../../../core/widgets/sp_text_field.dart';
 import '../../../main.dart';
+import '../../transcript/providers/recording_providers.dart';
 import '../../transcript/providers/transcript_providers.dart';
 
 /// Content tab: two-column layout with prompt (left) and transcript (right).
@@ -23,25 +24,14 @@ class ContentTab extends ConsumerStatefulWidget {
 
 class _ContentTabState extends ConsumerState<ContentTab> {
   final _promptController = TextEditingController();
-  final _manualController = TextEditingController();
-  final _scrollController = ScrollController();
+  final _transcriptController = TextEditingController();
   bool _isExtracting = false;
 
   @override
   void dispose() {
     _promptController.dispose();
-    _manualController.dispose();
-    _scrollController.dispose();
+    _transcriptController.dispose();
     super.dispose();
-  }
-
-  void _addManualText() {
-    final text = _manualController.text.trim();
-    if (text.isEmpty) return;
-    ref
-        .read(transcriptStateProvider(widget.sessionId).notifier)
-        .addManualText(text);
-    _manualController.clear();
   }
 
   Future<void> _pullFromTranscript() async {
@@ -60,8 +50,18 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   Widget build(BuildContext context) {
     final transcriptState =
         ref.watch(transcriptStateProvider(widget.sessionId));
+    final recordingState =
+        ref.watch(recordingControllerProvider(widget.sessionId));
     final screenSize = screenSizeOf(context);
     final isWide = screenSize != SpScreenSize.mobile;
+
+    // Sync transcript controller when not recording and chunks change
+    if (!recordingState.isRecording) {
+      final fullText = transcriptState.fullText;
+      if (_transcriptController.text != fullText) {
+        _transcriptController.text = fullText;
+      }
+    }
 
     // Two-column on tablet/desktop, stacked on mobile
     if (isWide) {
@@ -77,7 +77,10 @@ class _ContentTabState extends ConsumerState<ContentTab> {
           // Right column: Transcript
           Expanded(
             flex: 1,
-            child: _buildTranscriptSection(transcriptState),
+            child: _buildTranscriptSection(
+              transcriptState,
+              recordingState.isRecording,
+            ),
           ),
         ],
       );
@@ -93,7 +96,10 @@ class _ContentTabState extends ConsumerState<ContentTab> {
           const SizedBox(height: SpSpacing.lg),
           SizedBox(
             height: 400,
-            child: _buildTranscriptSection(transcriptState),
+            child: _buildTranscriptSection(
+              transcriptState,
+              recordingState.isRecording,
+            ),
           ),
         ],
       ),
@@ -115,32 +121,11 @@ class _ContentTabState extends ConsumerState<ContentTab> {
                 child: Text('prompt', style: SpTypography.section),
               ),
               const Spacer(),
-              TextButton.icon(
+              SpSecondaryButton(
+                label: 'pull from transcript',
+                icon: Icons.auto_awesome,
+                isLoading: _isExtracting,
                 onPressed: canPull ? _pullFromTranscript : null,
-                icon: _isExtracting
-                    ? SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: SpColors.textTertiary,
-                        ),
-                      )
-                    : Icon(
-                        Icons.auto_awesome,
-                        size: 14,
-                        color: canPull
-                            ? SpColors.textSecondary
-                            : SpColors.textPlaceholder,
-                      ),
-                label: Text(
-                  'pull from transcript',
-                  style: SpTypography.caption.copyWith(
-                    color: canPull
-                        ? SpColors.textSecondary
-                        : SpColors.textPlaceholder,
-                  ),
-                ),
               ),
             ],
           ),
@@ -161,7 +146,10 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     );
   }
 
-  Widget _buildTranscriptSection(TranscriptState transcriptState) {
+  Widget _buildTranscriptSection(
+    TranscriptState transcriptState,
+    bool isRecording,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -171,12 +159,38 @@ class _ContentTabState extends ConsumerState<ContentTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SpHighlight(
-                child: Text('transcript', style: SpTypography.section),
+              Row(
+                children: [
+                  SpHighlight(
+                    child: Text('transcript', style: SpTypography.section),
+                  ),
+                  if (isRecording) ...[
+                    const SizedBox(width: SpSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpSpacing.xs,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: SpColors.live.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'recording',
+                        style: SpTypography.caption.copyWith(
+                          color: SpColors.live,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: SpSpacing.xs),
               Text(
-                'lecture content from recording or manual entry',
+                isRecording
+                    ? 'listening to lecture...'
+                    : 'type or record lecture content',
                 style:
                     SpTypography.caption.copyWith(color: SpColors.textTertiary),
               ),
@@ -186,64 +200,75 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
         const Divider(height: 1),
 
-        // Transcript content
+        // Transcript content - editable when not recording
         Expanded(
-          child: transcriptState.hasContent
-              ? ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(SpSpacing.md),
-                  itemCount: transcriptState.chunks.length +
-                      (transcriptState.interimText.isNotEmpty ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index < transcriptState.chunks.length) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: SpSpacing.sm),
-                        child: Text(
-                          transcriptState.chunks[index],
-                          style: SpTypography.body,
-                        ),
-                      );
-                    }
-                    // Interim text
-                    return Text(
-                      transcriptState.interimText,
-                      style: SpTypography.body.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: SpColors.textTertiary,
-                      ),
-                    );
-                  },
-                )
-              : const SpEmptyState(
-                  icon: Icons.record_voice_over_outlined,
-                  message: 'no transcript yet',
-                ),
-        ),
-
-        // Manual input
-        Container(
-          padding: const EdgeInsets.all(SpSpacing.sm),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: SpColors.border)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: SpTextField(
-                  controller: _manualController,
-                  hint: 'add text...',
-                  onSubmitted: (_) => _addManualText(),
-                ),
-              ),
-              const SizedBox(width: SpSpacing.sm),
-              IconButton(
-                icon: const Icon(Icons.send, size: 20),
-                onPressed: _addManualText,
-              ),
-            ],
-          ),
+          child: isRecording
+              ? _buildLiveTranscript(transcriptState)
+              : _buildEditableTranscript(),
         ),
       ],
+    );
+  }
+
+  Widget _buildLiveTranscript(TranscriptState transcriptState) {
+    if (!transcriptState.hasContent) {
+      return Center(
+        child: Text(
+          'waiting for speech...',
+          style: SpTypography.caption.copyWith(color: SpColors.textPlaceholder),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(SpSpacing.md),
+      itemCount: transcriptState.chunks.length +
+          (transcriptState.interimText.isNotEmpty ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index < transcriptState.chunks.length) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: SpSpacing.sm),
+            child: Text(
+              transcriptState.chunks[index],
+              style: SpTypography.body,
+            ),
+          );
+        }
+        // Interim text
+        return Text(
+          transcriptState.interimText,
+          style: SpTypography.body.copyWith(
+            fontStyle: FontStyle.italic,
+            color: SpColors.textTertiary,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEditableTranscript() {
+    return Padding(
+      padding: const EdgeInsets.all(SpSpacing.md),
+      child: TextField(
+        controller: _transcriptController,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        style: SpTypography.body,
+        decoration: InputDecoration(
+          hintText: 'paste or type lecture content here...',
+          hintStyle:
+              SpTypography.body.copyWith(color: SpColors.textPlaceholder),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+        onChanged: (text) {
+          // Update transcript state when user edits
+          ref
+              .read(transcriptStateProvider(widget.sessionId).notifier)
+              .setFullText(text);
+        },
+      ),
     );
   }
 }

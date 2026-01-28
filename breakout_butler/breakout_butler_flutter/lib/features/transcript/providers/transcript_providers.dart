@@ -43,6 +43,13 @@ class TranscriptStateNotifier extends StateNotifier<TranscriptState> {
     }
   }
 
+  /// Set the full transcript text (replaces all chunks with a single chunk).
+  void setFullText(String text) {
+    if (mounted) {
+      state = state.copyWith(chunks: text.isEmpty ? [] : [text]);
+    }
+  }
+
   Future<void> addManualText(String text) async {
     if (text.trim().isEmpty) return;
     await client.butler.addTranscriptText(_sessionId, text);
