@@ -1,11 +1,29 @@
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:perfect_freehand/perfect_freehand.dart';
-import 'package:web/web.dart' as web;
 
 import '../../../core/theme/sp_colors.dart';
+
+// ── JS interop for localStorage (WASM-safe) ────────────────────────
+
+@JS('localStorage.getItem')
+external JSString? _jsGetItem(JSString key);
+
+@JS('localStorage.setItem')
+external void _jsSetItem(JSString key, JSString value);
+
+@JS('localStorage.removeItem')
+external void _jsRemoveItem(JSString key);
+
+String? _storageGet(String key) => _jsGetItem(key.toJS)?.toDart;
+void _storageSet(String key, String value) =>
+    _jsSetItem(key.toJS, value.toJS);
+void _storageRemove(String key) => _jsRemoveItem(key.toJS);
+
+// ────────────────────────────────────────────────────────────────────
 
 /// Freehand drawing surface using [perfect_freehand].
 ///
@@ -43,7 +61,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
 
   void _loadFromStorage() {
     try {
-      final json = web.window.localStorage.getItem(widget.storageKey);
+      final json = _storageGet(widget.storageKey);
       if (json == null || json.isEmpty) return;
       final list = jsonDecode(json) as List<dynamic>;
       for (final strokeJson in list) {
@@ -66,7 +84,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       final data = _strokes
           .map((s) => s.points.map((p) => [p.x, p.y, p.pressure]).toList())
           .toList();
-      web.window.localStorage.setItem(widget.storageKey, jsonEncode(data));
+      _storageSet(widget.storageKey, jsonEncode(data));
     } catch (_) {
       // Storage full or unavailable — silent fail.
     }
