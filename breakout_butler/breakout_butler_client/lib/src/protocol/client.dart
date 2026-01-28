@@ -325,6 +325,19 @@ class EndpointButler extends _i2.EndpointRef {
         {'sessionId': sessionId},
       );
 
+  /// Set the entire transcript (replaces existing content)
+  _i3.Future<void> setTranscript(
+    int sessionId,
+    String transcript,
+  ) => caller.callServerEndpoint<void>(
+    'butler',
+    'setTranscript',
+    {
+      'sessionId': sessionId,
+      'transcript': transcript,
+    },
+  );
+
   /// Try to extract assignment from transcript
   _i3.Future<String?> extractAssignment(int sessionId) =>
       caller.callServerEndpoint<String?>(

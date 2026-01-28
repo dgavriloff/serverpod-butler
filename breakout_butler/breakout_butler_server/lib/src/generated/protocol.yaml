@@ -15,6 +15,7 @@ butler:
   - askButler:
   - summarizeRoom:
   - synthesizeAllRooms:
+  - setTranscript:
   - extractAssignment:
 room:
   - getRoom:

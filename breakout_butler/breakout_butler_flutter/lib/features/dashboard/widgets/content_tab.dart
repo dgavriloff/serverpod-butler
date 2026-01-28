@@ -37,6 +37,12 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   Future<void> _pullFromTranscript() async {
     setState(() => _isExtracting = true);
     try {
+      // Sync local transcript to server first
+      final transcriptText = _transcriptController.text.trim();
+      if (transcriptText.isNotEmpty) {
+        await client.butler.setTranscript(widget.sessionId, transcriptText);
+      }
+
       final result = await client.butler.extractAssignment(widget.sessionId);
       if (result != null && mounted) {
         _promptController.text = result;
@@ -248,7 +254,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
   Widget _buildEditableTranscript() {
     return Padding(
-      padding: const EdgeInsets.all(SpSpacing.md),
+      padding: const EdgeInsets.symmetric(horizontal: SpSpacing.md),
       child: TextField(
         controller: _transcriptController,
         maxLines: null,
@@ -260,7 +266,9 @@ class _ContentTabState extends ConsumerState<ContentTab> {
           hintStyle:
               SpTypography.body.copyWith(color: SpColors.textPlaceholder),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.all(SpSpacing.md),
         ),
         onChanged: (text) {
           // Update transcript state when user edits

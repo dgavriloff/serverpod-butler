@@ -254,6 +254,25 @@ class ButlerEndpoint extends Endpoint {
     }
   }
 
+  /// Set the entire transcript (replaces existing content)
+  Future<void> setTranscript(
+    Session session,
+    int sessionId,
+    String transcript,
+  ) async {
+    final liveSession = await LiveSession.db.findFirstRow(
+      session,
+      where: (t) => t.sessionId.equals(sessionId) & t.isActive.equals(true),
+    );
+
+    if (liveSession == null) {
+      throw Exception('No active live session found');
+    }
+
+    liveSession.transcript = transcript;
+    await LiveSession.db.updateRow(session, liveSession);
+  }
+
   /// Try to extract assignment from transcript
   Future<String?> extractAssignment(
     Session session,

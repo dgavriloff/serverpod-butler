@@ -386,6 +386,31 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['sessionId'],
                   ),
         ),
+        'setTranscript': _i1.MethodConnector(
+          name: 'setTranscript',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'transcript': _i1.ParameterDescription(
+              name: 'transcript',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['butler'] as _i4.ButlerEndpoint).setTranscript(
+                    session,
+                    params['sessionId'],
+                    params['transcript'],
+                  ),
+        ),
         'extractAssignment': _i1.MethodConnector(
           name: 'extractAssignment',
           params: {
