@@ -7,7 +7,14 @@ Serverpod monorepo with three packages:
 - `breakout_butler_client` - Generated client library
 - `breakout_butler_flutter` - Flutter web frontend
 
-## LAN Deployment & Networking
+## Development Environment
+
+**IMPORTANT: Do NOT run local servers.** The only dev environment is Railway:
+- Dev URL: `https://serverpod-butler-dev.up.railway.app/app`
+- To deploy: build Flutter, commit pre-built files, push to `dev` branch
+- Railway auto-deploys on push to `dev`
+
+## LAN Deployment & Networking (Legacy)
 
 ### Architecture
 ```
