@@ -102,6 +102,8 @@ SUMMARY:'''),
 
   /// Extract the main assignment/prompt from transcript
   Future<String?> extractAssignment(String transcript) async {
+    print('[GeminiService.extractAssignment] transcript length: ${transcript.length}');
+    print('[GeminiService.extractAssignment] transcript preview: ${transcript.substring(0, transcript.length > 200 ? 200 : transcript.length)}');
     try {
       final response = await _flashModel.generateContent([
         Content.text('''
@@ -113,12 +115,15 @@ $transcript
 ASSIGNMENT:'''),
       ]);
       final result = response.text?.trim() ?? '';
+      print('[GeminiService.extractAssignment] Gemini raw response: "$result"');
       if (result == 'NO_ASSIGNMENT' || result.isEmpty) {
+        print('[GeminiService.extractAssignment] Returning null (NO_ASSIGNMENT or empty)');
         return null;
       }
+      print('[GeminiService.extractAssignment] Returning result');
       return result;
     } catch (e) {
-      print('Extract assignment error: $e');
+      print('[GeminiService.extractAssignment] ERROR: $e');
       return null;
     }
   }
