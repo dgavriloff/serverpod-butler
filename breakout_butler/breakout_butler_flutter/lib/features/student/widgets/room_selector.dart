@@ -34,14 +34,11 @@ class _RoomSelectorState extends State<RoomSelector> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: Padding(
-          padding: const EdgeInsets.all(SpSpacing.xl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
+      child: Padding(
+        padding: const EdgeInsets.all(SpSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
               // Header
               Text('join a room', style: SpTypography.pageTitle),
               const SizedBox(height: SpSpacing.xs),
@@ -90,7 +87,6 @@ class _RoomSelectorState extends State<RoomSelector> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
