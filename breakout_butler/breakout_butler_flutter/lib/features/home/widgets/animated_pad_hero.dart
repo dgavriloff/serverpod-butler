@@ -257,8 +257,11 @@ class _AnimatedPadHeroState extends State<AnimatedPadHero>
 
           // ── Drawing layer (on top, only active in draw mode) ──────────
           Positioned.fill(
-            child: DrawingCanvas(
-              interactive: _animationComplete && _mode == _HeroMode.draw,
+            child: IgnorePointer(
+              ignoring: !(_animationComplete && _mode == _HeroMode.draw),
+              child: DrawingCanvas(
+                interactive: _animationComplete && _mode == _HeroMode.draw,
+              ),
             ),
           ),
         ],
