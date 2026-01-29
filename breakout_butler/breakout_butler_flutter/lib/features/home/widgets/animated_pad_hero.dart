@@ -198,70 +198,80 @@ class _AnimatedPadHeroState extends State<AnimatedPadHero>
   Widget build(BuildContext context) {
     return SpCard(
       padding: EdgeInsets.zero,
-      child: Stack(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Content layer ─────────────────────────────────────────────
-          Padding(
-            padding: SpSpacing.cardPadding,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Save indicator (top-right aligned)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _SaveIndicator(
-                    showSaving: _showSaving,
-                    showSaved: _showSaved,
+          // ── Main content with drawing overlay ─────────────────────────
+          Stack(
+            children: [
+              // Content layer
+              Padding(
+                padding: SpSpacing.cardPadding.copyWith(bottom: 0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Save indicator (top-right aligned)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _SaveIndicator(
+                        showSaving: _showSaving,
+                        showSaved: _showSaved,
+                      ),
+                    ),
+                    const SizedBox(height: SpSpacing.sm),
+
+                    // Title
+                    _TypewriterText(
+                      text: _displayTitle,
+                      style: SpTypography.display,
+                      showCursor: _cursorPosition == 0 && _cursorVisible,
+                    ),
+                    const SizedBox(height: SpSpacing.sm),
+
+                    // Subtitle
+                    _TypewriterText(
+                      text: _displaySubtitle,
+                      style: SpTypography.body.copyWith(color: SpColors.textSecondary),
+                      showCursor: _cursorPosition == 1 && _cursorVisible,
+                    ),
+                    const SizedBox(height: SpSpacing.lg),
+
+                    // Features
+                    for (var i = 0; i < _features.length; i++) ...[
+                      if (i > 0) const SizedBox(height: SpSpacing.sm),
+                      _AnimatedFeatureBullet(
+                        icon: _features[i].icon,
+                        text: _displayFeatures[i],
+                        showCursor: _cursorPosition == (i + 2) && _cursorVisible,
+                      ),
+                    ],
+
+                    const SizedBox(height: SpSpacing.lg),
+                  ],
+                ),
+              ),
+
+              // Drawing layer (on top, only active in draw mode)
+              Positioned.fill(
+                child: IgnorePointer(
+                  ignoring: !(_animationComplete && _mode == _HeroMode.draw),
+                  child: DrawingCanvas(
+                    interactive: _animationComplete && _mode == _HeroMode.draw,
                   ),
                 ),
-                const SizedBox(height: SpSpacing.sm),
-
-                // Title
-                _TypewriterText(
-                  text: _displayTitle,
-                  style: SpTypography.display,
-                  showCursor: _cursorPosition == 0 && _cursorVisible,
-                ),
-                const SizedBox(height: SpSpacing.sm),
-
-                // Subtitle
-                _TypewriterText(
-                  text: _displaySubtitle,
-                  style: SpTypography.body.copyWith(color: SpColors.textSecondary),
-                  showCursor: _cursorPosition == 1 && _cursorVisible,
-                ),
-                const SizedBox(height: SpSpacing.lg),
-
-                // Features
-                for (var i = 0; i < _features.length; i++) ...[
-                  if (i > 0) const SizedBox(height: SpSpacing.sm),
-                  _AnimatedFeatureBullet(
-                    icon: _features[i].icon,
-                    text: _displayFeatures[i],
-                    showCursor: _cursorPosition == (i + 2) && _cursorVisible,
-                  ),
-                ],
-
-                const SizedBox(height: SpSpacing.lg),
-
-                // Mode selector (interactive after animation)
-                _ModeSelector(
-                  currentMode: _mode,
-                  enabled: _animationComplete,
-                  onChanged: (mode) => setState(() => _mode = mode),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
 
-          // ── Drawing layer (on top, only active in draw mode) ──────────
-          Positioned.fill(
-            child: IgnorePointer(
-              ignoring: !(_animationComplete && _mode == _HeroMode.draw),
-              child: DrawingCanvas(
-                interactive: _animationComplete && _mode == _HeroMode.draw,
-              ),
+          // ── Mode selector (outside stack, always clickable) ───────────
+          Padding(
+            padding: SpSpacing.cardPadding.copyWith(top: 0),
+            child: _ModeSelector(
+              currentMode: _mode,
+              enabled: _animationComplete,
+              onChanged: (mode) => setState(() => _mode = mode),
             ),
           ),
         ],
