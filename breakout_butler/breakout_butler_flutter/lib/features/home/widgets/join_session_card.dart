@@ -8,7 +8,7 @@ import '../../../core/widgets/sp_button.dart';
 import '../../../core/widgets/sp_card.dart';
 import '../../../core/widgets/sp_text_field.dart';
 
-/// Card that lets a student join an existing room by name + group number.
+/// Card that lets a student join a session by tag.
 class JoinSessionCard extends StatefulWidget {
   const JoinSessionCard({super.key});
 
@@ -17,21 +17,18 @@ class JoinSessionCard extends StatefulWidget {
 }
 
 class _JoinSessionCardState extends State<JoinSessionCard> {
-  final _roomController = TextEditingController();
-  final _groupController = TextEditingController();
+  final _tagController = TextEditingController();
 
   @override
   void dispose() {
-    _roomController.dispose();
-    _groupController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
   void _submit() {
-    final roomName = _roomController.text.trim().toLowerCase();
-    final groupNumber = _groupController.text.trim();
-    if (roomName.isEmpty || groupNumber.isEmpty) return;
-    context.go('/$roomName/$groupNumber');
+    final tag = _tagController.text.trim().toLowerCase();
+    if (tag.isEmpty) return;
+    context.go('/$tag');
   }
 
   @override
@@ -41,27 +38,16 @@ class _JoinSessionCardState extends State<JoinSessionCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('join a room', style: SpTypography.section),
+          Text('join a session', style: SpTypography.section),
           const SizedBox(height: SpSpacing.md),
           SpTextField(
-            controller: _roomController,
-            label: 'room name',
+            controller: _tagController,
+            label: 'session tag',
             hint: 'e.g., psych101',
-            textInputAction: TextInputAction.next,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\-_]')),
-            ],
-          ),
-          const SizedBox(height: SpSpacing.sm),
-          SpTextField(
-            controller: _groupController,
-            label: 'group number',
-            hint: 'e.g., 1',
-            keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
             inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
+              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\-_]')),
             ],
           ),
           const SizedBox(height: SpSpacing.md),
