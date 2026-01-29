@@ -53,23 +53,26 @@ class _RoomSelectorState extends State<RoomSelector> {
               ),
               const SizedBox(height: SpSpacing.xl),
 
-              // Room grid using existing RoomCard
-              Wrap(
-                spacing: SpSpacing.md,
-                runSpacing: SpSpacing.md,
-                alignment: WrapAlignment.center,
+              // Room cards inline
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: List.generate(widget.roomCount, (index) {
                   final roomNumber = index + 1;
                   final isSelected = _selectedRoom == roomNumber;
 
-                  return SizedBox(
-                    width: 120,
-                    height: 100,
-                    child: RoomCard(
-                      roomNumber: roomNumber,
-                      isSelected: isSelected,
-                      showActivity: false,
-                      onTap: () => setState(() => _selectedRoom = roomNumber),
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      right: index < widget.roomCount - 1 ? SpSpacing.md : 0,
+                    ),
+                    child: SizedBox(
+                      width: 140,
+                      height: 120,
+                      child: RoomCard(
+                        roomNumber: roomNumber,
+                        isSelected: isSelected,
+                        showActivity: false,
+                        onTap: () => setState(() => _selectedRoom = roomNumber),
+                      ),
                     ),
                   );
                 }),
@@ -77,8 +80,8 @@ class _RoomSelectorState extends State<RoomSelector> {
 
               const SizedBox(height: SpSpacing.xl),
 
-              // Join button
-              SpPrimaryButton(
+              // Join button (secondary style like dashboard)
+              SpSecondaryButton(
                 label: _selectedRoom != null
                     ? 'join room $_selectedRoom'
                     : 'select a room',
