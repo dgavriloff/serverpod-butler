@@ -28,37 +28,32 @@ class _RoomsTabState extends ConsumerState<RoomsTab> {
   Widget build(BuildContext context) {
     final roomStates = ref.watch(roomContentsProvider(widget.sessionId));
 
-    return Column(
-      children: [
-        // Rooms grid
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 280,
-                childAspectRatio: 1.2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: widget.roomCount,
-              itemBuilder: (context, index) {
-                final roomNumber = index + 1;
-                final roomState = roomStates[roomNumber];
-                final content = roomState?.content ?? '';
-                final occupantCount = roomState?.occupantCount ?? 0;
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(SpSpacing.lg),
+        child: Wrap(
+          spacing: SpSpacing.md,
+          runSpacing: SpSpacing.md,
+          alignment: WrapAlignment.center,
+          children: List.generate(widget.roomCount, (index) {
+            final roomNumber = index + 1;
+            final roomState = roomStates[roomNumber];
+            final content = roomState?.content ?? '';
+            final occupantCount = roomState?.occupantCount ?? 0;
 
-                return RoomCard(
-                  roomNumber: roomNumber,
-                  content: content,
-                  occupantCount: occupantCount,
-                  onTap: () => _showRoomDetail(roomNumber, content),
-                );
-              },
-            ),
-          ),
+            return SizedBox(
+              width: 220,
+              height: 180,
+              child: RoomCard(
+                roomNumber: roomNumber,
+                content: content,
+                occupantCount: occupantCount,
+                onTap: () => _showRoomDetail(roomNumber, content),
+              ),
+            );
+          }),
         ),
-      ],
+      ),
     );
   }
 

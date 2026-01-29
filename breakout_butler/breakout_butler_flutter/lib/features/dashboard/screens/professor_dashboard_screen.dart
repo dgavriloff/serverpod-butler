@@ -186,13 +186,13 @@ class _ProfessorDashboardScreenState
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RecordButton(sessionId: _sessionId!),
-                const SizedBox(width: SpSpacing.sm),
                 if (_currentTab == DashboardTab.rooms)
                   Padding(
                     padding: const EdgeInsets.only(right: SpSpacing.sm),
                     child: _SynthesizeButton(sessionId: _sessionId!),
                   ),
+                RecordButton(sessionId: _sessionId!),
+                const SizedBox(width: SpSpacing.sm),
                 OutlinedButton.icon(
                   onPressed: _onCloseRoom,
                   icon: const Icon(Icons.close, size: 16),
