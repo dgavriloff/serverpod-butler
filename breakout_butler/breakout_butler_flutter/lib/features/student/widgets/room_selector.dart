@@ -63,27 +63,13 @@ class _RoomSelectorState extends State<RoomSelector> {
                   final isSelected = _selectedRoom == roomNumber;
 
                   return SizedBox(
-                    width: 140,
-                    height: 140,
-                    child: Stack(
-                      children: [
-                        RoomCard(
-                          roomNumber: roomNumber,
-                          content: isSelected ? 'selected' : '',
-                          onTap: () =>
-                              setState(() => _selectedRoom = roomNumber),
-                        ),
-                        if (isSelected)
-                          Positioned(
-                            top: SpSpacing.sm,
-                            right: SpSpacing.sm,
-                            child: Icon(
-                              Icons.check_circle,
-                              color: SpColors.highlight,
-                              size: 20,
-                            ),
-                          ),
-                      ],
+                    width: 120,
+                    height: 100,
+                    child: RoomCard(
+                      roomNumber: roomNumber,
+                      isSelected: isSelected,
+                      showActivity: false,
+                      onTap: () => setState(() => _selectedRoom = roomNumber),
                     ),
                   );
                 }),

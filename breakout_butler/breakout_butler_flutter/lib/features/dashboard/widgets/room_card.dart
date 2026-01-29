@@ -12,13 +12,17 @@ class RoomCard extends StatefulWidget {
   const RoomCard({
     super.key,
     required this.roomNumber,
-    required this.content,
+    this.content,
     this.onTap,
+    this.isSelected = false,
+    this.showActivity = true,
   });
 
   final int roomNumber;
-  final String content;
+  final String? content;
   final VoidCallback? onTap;
+  final bool isSelected;
+  final bool showActivity;
 
   @override
   State<RoomCard> createState() => _RoomCardState();
@@ -29,7 +33,8 @@ class _RoomCardState extends State<RoomCard> {
 
   @override
   Widget build(BuildContext context) {
-    final hasContent = widget.content.isNotEmpty;
+    final hasContent = widget.content?.isNotEmpty ?? false;
+    final showHighlight = _hovered || widget.isSelected;
 
     final numberText = Text(
       '${widget.roomNumber}',
@@ -53,25 +58,27 @@ class _RoomCardState extends State<RoomCard> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _hovered ? SpHighlight(child: numberText) : numberText,
+                showHighlight ? SpHighlight(child: numberText) : numberText,
                 const SizedBox(height: SpSpacing.xs),
                 Text('room ${widget.roomNumber}', style: SpTypography.overline),
-                const SizedBox(height: SpSpacing.sm),
-                Expanded(
-                  child: Text(
-                    hasContent ? widget.content : 'no activity yet',
-                    style: SpTypography.caption.copyWith(
-                      color: hasContent
-                          ? SpColors.textTertiary
-                          : SpColors.textPlaceholder,
+                if (widget.showActivity) ...[
+                  const SizedBox(height: SpSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      hasContent ? widget.content! : 'no activity yet',
+                      style: SpTypography.caption.copyWith(
+                        color: hasContent
+                            ? SpColors.textTertiary
+                            : SpColors.textPlaceholder,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                ],
               ],
             ),
-            if (hasContent)
+            if (hasContent && widget.showActivity)
               const Positioned(
                 top: 0,
                 right: 0,
