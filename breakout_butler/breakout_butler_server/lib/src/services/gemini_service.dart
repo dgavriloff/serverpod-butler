@@ -100,27 +100,28 @@ SUMMARY:'''),
     }
   }
 
-  /// Extract the main assignment/prompt from transcript
+  /// Extract or generate an assignment/prompt from transcript content
   Future<String?> extractAssignment(String transcript) async {
-    print('[GeminiService.extractAssignment] transcript length: ${transcript.length}');
-    print('[GeminiService.extractAssignment] transcript preview: ${transcript.substring(0, transcript.length > 200 ? 200 : transcript.length)}');
+    if (transcript.trim().isEmpty) return null;
+
     try {
       final response = await _flashModel.generateContent([
         Content.text('''
-From this lecture transcript, extract the main assignment or task the professor wants students to work on in their breakout rooms. If no clear assignment is found, return "NO_ASSIGNMENT".
+You are helping a professor create a breakout room assignment for students.
 
-TRANSCRIPT:
+Based on the content below, do ONE of the following:
+1. If there's an explicit assignment, task, or question mentioned, extract it
+2. If there's no explicit assignment but there's educational content, generate a thoughtful discussion question or task that students could work on related to the main topics
+
+Keep the assignment concise (2-4 sentences max). Focus on what students should discuss, analyze, or produce.
+
+CONTENT:
 $transcript
 
-ASSIGNMENT:'''),
+ASSIGNMENT FOR STUDENTS:'''),
       ]);
       final result = response.text?.trim() ?? '';
-      print('[GeminiService.extractAssignment] Gemini raw response: "$result"');
-      if (result == 'NO_ASSIGNMENT' || result.isEmpty) {
-        print('[GeminiService.extractAssignment] Returning null (NO_ASSIGNMENT or empty)');
-        return null;
-      }
-      print('[GeminiService.extractAssignment] Returning result');
+      if (result.isEmpty) return null;
       return result;
     } catch (e) {
       print('[GeminiService.extractAssignment] ERROR: $e');
