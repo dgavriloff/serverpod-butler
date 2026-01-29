@@ -12,6 +12,7 @@ import '../../../core/widgets/sp_skeleton.dart';
 import '../../../main.dart';
 import '../../../services/cookie_web.dart';
 import '../../session/providers/session_providers.dart';
+import '../../student/widgets/room_selector.dart';
 import '../widgets/content_tab.dart';
 import '../widgets/dashboard_tab_bar.dart';
 import '../widgets/record_button.dart';
@@ -38,7 +39,7 @@ class _ProfessorDashboardScreenState
     extends ConsumerState<ProfessorDashboardScreen> {
   bool _isValidating = true;
   String? _error;
-  bool _tokenValid = false;
+  bool _isTeacher = false;
   int? _sessionId;
   int _roomCount = 0;
   DashboardTab _currentTab = DashboardTab.content;
@@ -51,31 +52,7 @@ class _ProfessorDashboardScreenState
 
   Future<void> _validateAndLoad() async {
     try {
-      // Resolve creator token: cookie first, then URL query param fallback
-      final token =
-          CookieService.get('creator_${widget.urlTag}') ?? widget.token;
-
-      if (token == null || token.isEmpty) {
-        setState(() {
-          _error = 'access denied. no creator token found.';
-          _isValidating = false;
-        });
-        return;
-      }
-
-      final isValid = await client.session.validateCreatorToken(
-        widget.urlTag,
-        token,
-      );
-      if (!isValid) {
-        setState(() {
-          _error = 'access denied. invalid creator token.';
-          _isValidating = false;
-        });
-        return;
-      }
-
-      // Token valid — now load session data
+      // Load session data first (needed for both teacher and student)
       final liveSession =
           await client.session.getLiveSessionByTag(widget.urlTag);
       if (liveSession == null) {
@@ -89,11 +66,23 @@ class _ProfessorDashboardScreenState
       final classSession =
           await client.session.getSession(liveSession.sessionId);
 
+      // Check if user is the teacher (has valid creator token)
+      final token =
+          CookieService.get('creator_${widget.urlTag}') ?? widget.token;
+
+      bool isTeacher = false;
+      if (token != null && token.isNotEmpty) {
+        isTeacher = await client.session.validateCreatorToken(
+          widget.urlTag,
+          token,
+        );
+      }
+
       // Open streaming connection for real-time updates
       await client.openStreamingConnection();
 
       setState(() {
-        _tokenValid = true;
+        _isTeacher = isTeacher;
         _isValidating = false;
         _sessionId = liveSession.sessionId;
         _roomCount = classSession?.roomCount ?? 0;
@@ -160,6 +149,29 @@ class _ProfessorDashboardScreenState
       );
     }
 
+    // Student view: show room selector
+    if (!_isTeacher) {
+      return Scaffold(
+        body: Column(
+          children: [
+            SpBreadcrumbNav(
+              segments: ['breakoutpad', widget.urlTag],
+              onSegmentTap: (index) {
+                if (index == 0) context.go('/');
+              },
+            ),
+            Expanded(
+              child: RoomSelector(
+                urlTag: widget.urlTag,
+                roomCount: _roomCount,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Teacher view: professor dashboard
     return Scaffold(
       body: Column(
         children: [
