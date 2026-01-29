@@ -177,79 +177,80 @@ class _ContentTabState extends ConsumerState<ContentTab> {
         // Header
         Padding(
           padding: const EdgeInsets.all(SpSpacing.md),
-          child: SizedBox(
-            width: double.infinity,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    isActive ? SpHighlight(child: headerText) : headerText,
-                    const SizedBox(height: SpSpacing.xs),
-                    Text(
-                      'assignment for students',
-                      style:
-                          SpTypography.caption.copyWith(color: SpColors.textTertiary),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                SpSecondaryButton(
-                  label: 'pull from transcript',
-                  icon: Icons.auto_awesome,
-                  isLoading: _isExtracting,
-                  onPressed: canPull ? _pullFromTranscript : null,
-                ),
-              ],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              isActive ? SpHighlight(child: headerText) : headerText,
+              const SizedBox(height: SpSpacing.xs),
+              Text(
+                'assignment for students',
+                style:
+                    SpTypography.caption.copyWith(color: SpColors.textTertiary),
+              ),
+            ],
           ),
         ),
 
         const Divider(height: 1),
 
-        // Editable prompt (or skeleton when extracting)
+        // Editable prompt with floating button
         Expanded(
-          child: _isExtracting
-              ? Padding(
-                  padding: const EdgeInsets.all(SpSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SpSkeleton(width: double.infinity, height: 16),
-                      const SizedBox(height: SpSpacing.sm),
-                      SpSkeleton(width: double.infinity, height: 16),
-                      const SizedBox(height: SpSpacing.sm),
-                      SpSkeleton(width: 200, height: 16),
-                    ],
-                  ),
-                )
-              : MouseRegion(
-                  onEnter: (_) => setState(() => _promptHovered = true),
-                  onExit: (_) => setState(() => _promptHovered = false),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: SpSpacing.md),
-                    child: TextField(
-                      controller: _promptController,
-                      focusNode: _promptFocusNode,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      style: SpTypography.body,
-                      decoration: InputDecoration(
-                        hintText: 'what should students work on?',
-                        hintStyle: SpTypography.body
-                            .copyWith(color: SpColors.textPlaceholder),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(SpSpacing.md),
+          child: Stack(
+            children: [
+              // Text field takes full area
+              _isExtracting
+                  ? Padding(
+                      padding: const EdgeInsets.all(SpSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SpSkeleton(width: double.infinity, height: 16),
+                          const SizedBox(height: SpSpacing.sm),
+                          SpSkeleton(width: double.infinity, height: 16),
+                          const SizedBox(height: SpSpacing.sm),
+                          SpSkeleton(width: 200, height: 16),
+                        ],
                       ),
-                      onChanged: _onPromptChanged,
+                    )
+                  : MouseRegion(
+                      onEnter: (_) => setState(() => _promptHovered = true),
+                      onExit: (_) => setState(() => _promptHovered = false),
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: SpSpacing.md),
+                        child: TextField(
+                          controller: _promptController,
+                          focusNode: _promptFocusNode,
+                          maxLines: null,
+                          expands: true,
+                          textAlignVertical: TextAlignVertical.top,
+                          style: SpTypography.body,
+                          decoration: InputDecoration(
+                            hintText: 'what should students work on?',
+                            hintStyle: SpTypography.body
+                                .copyWith(color: SpColors.textPlaceholder),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(SpSpacing.md),
+                          ),
+                          onChanged: _onPromptChanged,
+                        ),
+                      ),
                     ),
-                  ),
+              // Floating button in top-right
+              Positioned(
+                top: SpSpacing.sm,
+                right: SpSpacing.md,
+                child: SpSecondaryButton(
+                  label: 'pull from transcript',
+                  icon: Icons.auto_awesome,
+                  isLoading: _isExtracting,
+                  onPressed: canPull ? _pullFromTranscript : null,
                 ),
+              ),
+            ],
+          ),
         ),
       ],
     );
