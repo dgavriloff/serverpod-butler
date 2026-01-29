@@ -61,13 +61,15 @@ files from `breakout_butler_server/web/app/`.
 After ANY Flutter code change, you MUST rebuild and commit the output:
 ```bash
 cd breakout_butler/breakout_butler_flutter
-flutter build web --base-href /app/
+flutter build web --base-href /app/ --no-tree-shake-icons
 cp -r build/web/* ../breakout_butler_server/web/app/
 git add breakout_butler/breakout_butler_server/web/app/
 ```
 If you skip this step, Railway will deploy stale frontend code.
 
-**Note:** We do NOT use `--wasm` because `flutter_markdown` (used for rendering AI responses) is incompatible with WASM compilation.
+**Note:** We do NOT use `--wasm` because `flutter_markdown` is incompatible with WASM compilation.
+
+**Note:** We use `--no-tree-shake-icons` because Flutter's icon tree-shaking on web has bugs that cause some icons to not render.
 
 ### Serverpod Development Config
 - `breakout_butler_server/config/development.yaml`
