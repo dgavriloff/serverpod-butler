@@ -80,37 +80,45 @@ class _RoomCardState extends State<RoomCard> {
               ],
             ),
             // Occupant count badge (top-right)
-            if (widget.showActivity && widget.occupantCount > 0)
+            if (widget.showActivity)
               Positioned(
                 top: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: SpSpacing.xs,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: SpColors.success.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.person,
-                        size: 12,
-                        color: SpColors.success,
+                child: Builder(
+                  builder: (context) {
+                    final hasOccupants = widget.occupantCount > 0;
+                    final color = hasOccupants
+                        ? SpColors.success
+                        : SpColors.textPlaceholder;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: SpSpacing.xs,
+                        vertical: 2,
                       ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${widget.occupantCount}',
-                        style: SpTypography.caption.copyWith(
-                          color: SpColors.success,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.person,
+                            size: 12,
+                            color: color,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${widget.occupantCount}',
+                            style: SpTypography.caption.copyWith(
+                              color: color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
           ],
