@@ -25,7 +25,6 @@ class CreateSessionScreen extends ConsumerStatefulWidget {
 
 class _CreateSessionScreenState extends ConsumerState<CreateSessionScreen> {
   final _tagController = TextEditingController();
-  final _displayNameController = TextEditingController();
   final _groupCountController = TextEditingController(text: '4');
 
   bool _isCreating = false;
@@ -34,14 +33,12 @@ class _CreateSessionScreenState extends ConsumerState<CreateSessionScreen> {
   @override
   void dispose() {
     _tagController.dispose();
-    _displayNameController.dispose();
     _groupCountController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final tag = _tagController.text.trim().toLowerCase();
-    final displayName = _displayNameController.text.trim();
     final groupCountText = _groupCountController.text.trim();
 
     if (tag.length < 3 || tag.length > 30) {
@@ -66,10 +63,7 @@ class _CreateSessionScreenState extends ConsumerState<CreateSessionScreen> {
     });
 
     try {
-      final session = await client.session.createSession(
-        displayName.isNotEmpty ? displayName : tag,
-        groupCount,
-      );
+      final session = await client.session.createSession(tag, groupCount);
 
       final liveSession = await client.session.startLiveSession(
         session.id!,
@@ -147,13 +141,6 @@ class _CreateSessionScreenState extends ConsumerState<CreateSessionScreen> {
                               RegExp(r'[a-zA-Z0-9\-_]')),
                           LengthLimitingTextInputFormatter(30),
                         ],
-                      ),
-                      const SizedBox(height: SpSpacing.sm),
-                      SpTextField(
-                        controller: _displayNameController,
-                        label: 'display name',
-                        hint: 'optional',
-                        textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: SpSpacing.sm),
                       SpTextField(

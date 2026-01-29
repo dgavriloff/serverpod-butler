@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/dashboard/screens/professor_dashboard_screen.dart';
 import '../../features/home/screens/create_session_screen.dart';
 import '../../features/home/screens/home_screen.dart';
+import '../../features/home/screens/join_session_screen.dart';
 import '../../features/student/screens/student_room_screen.dart';
 
 /// Tracks the previous route depth for animation direction.
@@ -65,6 +66,14 @@ final appRouter = GoRouter(
         context: context,
         state: state,
         child: const CreateSessionScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/join',
+      pageBuilder: (context, state) => _buildPage(
+        context: context,
+        state: state,
+        child: const JoinSessionScreen(),
       ),
     ),
     GoRoute(

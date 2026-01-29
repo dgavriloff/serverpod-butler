@@ -7,7 +7,7 @@ import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/widgets/sp_button.dart';
 import '../widgets/animated_pad_hero.dart';
-import '../widgets/join_session_card.dart';
+import '../widgets/create_session_card.dart';
 import '../widgets/landing_illustration.dart';
 import '../widgets/or_divider.dart';
 
@@ -109,14 +109,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             children: [
               const AnimatedPadHero(),
               const SizedBox(height: SpSpacing.lg),
-              const JoinSessionCard(),
+              const CreateSessionCard(),
               const SizedBox(height: SpSpacing.lg),
               const OrDivider(),
               const SizedBox(height: SpSpacing.lg),
               SpSecondaryButton(
-                label: 'create new session',
-                icon: Icons.add,
-                onPressed: () => context.go('/create'),
+                label: 'join a session',
+                icon: Icons.login,
+                onPressed: () => context.go('/join'),
                 fullWidth: true,
               ),
             ],
@@ -196,14 +196,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const JoinSessionCard(),
+                            const CreateSessionCard(),
                             const SizedBox(height: SpSpacing.lg),
                             const OrDivider(),
                             const SizedBox(height: SpSpacing.lg),
                             SpSecondaryButton(
-                              label: 'create new session',
-                              icon: Icons.add,
-                              onPressed: () => context.go('/create'),
+                              label: 'join a session',
+                              icon: Icons.login,
+                              onPressed: () => context.go('/join'),
                               fullWidth: true,
                             ),
                           ],
