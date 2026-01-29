@@ -9,6 +9,8 @@ Serverpod monorepo with three packages:
 
 ## Development Environment
 
+**IMPORTANT: Do NOT push to main until explicitly told to do so.** Only push to `dev` branch by default.
+
 **IMPORTANT: Do NOT run local servers.** The only dev environment is Railway:
 - Dev URL: `https://serverpod-butler-dev.up.railway.app/app`
 - To deploy: build Flutter, commit pre-built files, push to `dev` branch
