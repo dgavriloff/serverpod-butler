@@ -177,29 +177,32 @@ class _ContentTabState extends ConsumerState<ContentTab> {
         // Header
         Padding(
           padding: const EdgeInsets.all(SpSpacing.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  isActive ? SpHighlight(child: headerText) : headerText,
-                  const SizedBox(height: SpSpacing.xs),
-                  Text(
-                    'assignment for students',
-                    style:
-                        SpTypography.caption.copyWith(color: SpColors.textTertiary),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              SpSecondaryButton(
-                label: 'pull from transcript',
-                icon: Icons.auto_awesome,
-                isLoading: _isExtracting,
-                onPressed: canPull ? _pullFromTranscript : null,
-              ),
-            ],
+          child: SizedBox(
+            width: double.infinity,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    isActive ? SpHighlight(child: headerText) : headerText,
+                    const SizedBox(height: SpSpacing.xs),
+                    Text(
+                      'assignment for students',
+                      style:
+                          SpTypography.caption.copyWith(color: SpColors.textTertiary),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                SpSecondaryButton(
+                  label: 'pull from transcript',
+                  icon: Icons.auto_awesome,
+                  isLoading: _isExtracting,
+                  onPressed: canPull ? _pullFromTranscript : null,
+                ),
+              ],
+            ),
           ),
         ),
 
