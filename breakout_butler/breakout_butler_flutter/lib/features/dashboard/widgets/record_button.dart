@@ -27,29 +27,24 @@ class RecordButton extends ConsumerWidget {
       );
     }
 
-    // When not recording, show outlined button (or icon only on mobile)
-    if (compact) {
-      return IconButton(
-        onPressed: () =>
-            ref.read(recordingControllerProvider(sessionId).notifier).toggle(),
-        icon: const Icon(Icons.fiber_manual_record, size: 16),
-        style: IconButton.styleFrom(
-          foregroundColor: SpColors.textSecondary,
-          side: const BorderSide(color: SpColors.border),
-        ),
-        tooltip: 'record',
-      );
-    }
-
-    return OutlinedButton.icon(
+    // When not recording, show outlined button (icon only on mobile)
+    return OutlinedButton(
       onPressed: () =>
           ref.read(recordingControllerProvider(sessionId).notifier).toggle(),
-      icon: const Icon(Icons.fiber_manual_record, size: 12),
-      label: const Text('rec'),
       style: OutlinedButton.styleFrom(
         foregroundColor: SpColors.textSecondary,
         side: const BorderSide(color: SpColors.border),
       ),
+      child: compact
+          ? const Icon(Icons.fiber_manual_record, size: 12)
+          : const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.fiber_manual_record, size: 12),
+                SizedBox(width: 8),
+                Text('rec'),
+              ],
+            ),
     );
   }
 }

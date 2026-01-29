@@ -66,6 +66,7 @@ class SpSecondaryButton extends StatelessWidget {
     this.isLoading = false,
     this.fullWidth = false,
     this.icon,
+    this.iconOnly = false,
   });
 
   final String label;
@@ -73,6 +74,7 @@ class SpSecondaryButton extends StatelessWidget {
   final bool isLoading;
   final bool fullWidth;
   final IconData? icon;
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +82,7 @@ class SpSecondaryButton extends StatelessWidget {
       final loader = OutlinedButton(
         onPressed: null,
         child: SizedBox(
-          width: 80,
+          width: iconOnly ? 16 : 80,
           height: 14,
           child: Container(
             decoration: BoxDecoration(
@@ -93,16 +95,24 @@ class SpSecondaryButton extends StatelessWidget {
       return fullWidth ? SizedBox(width: double.infinity, child: loader) : loader;
     }
 
-    final button = icon != null
-        ? OutlinedButton.icon(
-            onPressed: onPressed,
-            icon: Icon(icon, size: 16),
-            label: Text(label),
-          )
-        : OutlinedButton(
-            onPressed: onPressed,
-            child: Text(label),
-          );
+    final Widget button;
+    if (iconOnly && icon != null) {
+      button = OutlinedButton(
+        onPressed: onPressed,
+        child: Icon(icon, size: 16),
+      );
+    } else if (icon != null) {
+      button = OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 16),
+        label: Text(label),
+      );
+    } else {
+      button = OutlinedButton(
+        onPressed: onPressed,
+        child: Text(label),
+      );
+    }
 
     return fullWidth ? SizedBox(width: double.infinity, child: button) : button;
   }

@@ -196,26 +196,23 @@ class _ProfessorDashboardScreenState
                   ),
                 RecordButton(sessionId: _sessionId!, compact: isMobile),
                 const SizedBox(width: SpSpacing.sm),
-                if (isMobile)
-                  IconButton(
-                    onPressed: _onCloseRoom,
-                    icon: const Icon(Icons.close, size: 20),
-                    style: IconButton.styleFrom(
-                      foregroundColor: SpColors.live,
-                      side: const BorderSide(color: SpColors.border),
-                    ),
-                    tooltip: 'close room',
-                  )
-                else
-                  OutlinedButton.icon(
-                    onPressed: _onCloseRoom,
-                    icon: const Icon(Icons.close, size: 16),
-                    label: const Text('close room'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: SpColors.live,
-                      side: const BorderSide(color: SpColors.border),
-                    ),
+                OutlinedButton(
+                  onPressed: _onCloseRoom,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SpColors.live,
+                    side: const BorderSide(color: SpColors.border),
                   ),
+                  child: isMobile
+                      ? const Icon(Icons.close, size: 16)
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.close, size: 16),
+                            SizedBox(width: 8),
+                            Text('close room'),
+                          ],
+                        ),
+                ),
               ],
             ),
           ),
@@ -279,26 +276,22 @@ class _SynthesizeButton extends ConsumerWidget {
             }
           };
 
-    if (compact) {
-      return IconButton(
-        onPressed: onPressed,
-        icon: icon,
-        style: IconButton.styleFrom(
-          foregroundColor: SpColors.aiAccent,
-          side: const BorderSide(color: SpColors.border),
-        ),
-        tooltip: 'synthesize',
-      );
-    }
-
-    return OutlinedButton.icon(
+    return OutlinedButton(
       onPressed: onPressed,
-      icon: icon,
-      label: const Text('synthesize'),
       style: OutlinedButton.styleFrom(
         foregroundColor: SpColors.aiAccent,
         side: const BorderSide(color: SpColors.border),
       ),
+      child: compact
+          ? icon
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                icon,
+                const SizedBox(width: 8),
+                const Text('synthesize'),
+              ],
+            ),
     );
   }
 }
