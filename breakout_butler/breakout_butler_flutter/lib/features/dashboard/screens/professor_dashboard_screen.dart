@@ -108,14 +108,21 @@ class _ProfessorDashboardScreenState
           style: SpTypography.body,
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context, false),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: SpColors.textSecondary,
+              side: const BorderSide(color: SpColors.border),
+            ),
             child: const Text('cancel'),
           ),
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('close',
-                style: SpTypography.body.copyWith(color: SpColors.live)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: SpColors.live,
+              side: const BorderSide(color: SpColors.live),
+            ),
+            child: const Text('close'),
           ),
         ],
       ),
