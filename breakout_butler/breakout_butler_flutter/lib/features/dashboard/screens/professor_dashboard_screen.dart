@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/utils/error_utils.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
@@ -174,6 +175,8 @@ class _ProfessorDashboardScreenState
     }
 
     // Teacher view: professor dashboard
+    final isMobile = screenSizeOf(context) == SpScreenSize.mobile;
+
     return Scaffold(
       body: Column(
         children: [
@@ -189,19 +192,30 @@ class _ProfessorDashboardScreenState
                 if (_currentTab == DashboardTab.rooms)
                   Padding(
                     padding: const EdgeInsets.only(right: SpSpacing.sm),
-                    child: _SynthesizeButton(sessionId: _sessionId!),
+                    child: _SynthesizeButton(sessionId: _sessionId!, compact: isMobile),
                   ),
-                RecordButton(sessionId: _sessionId!),
+                RecordButton(sessionId: _sessionId!, compact: isMobile),
                 const SizedBox(width: SpSpacing.sm),
-                OutlinedButton.icon(
-                  onPressed: _onCloseRoom,
-                  icon: const Icon(Icons.close, size: 16),
-                  label: const Text('close room'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: SpColors.live,
-                    side: const BorderSide(color: SpColors.border),
+                if (isMobile)
+                  IconButton(
+                    onPressed: _onCloseRoom,
+                    icon: const Icon(Icons.close, size: 20),
+                    style: IconButton.styleFrom(
+                      foregroundColor: SpColors.live,
+                      side: const BorderSide(color: SpColors.border),
+                    ),
+                    tooltip: 'close room',
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: _onCloseRoom,
+                    icon: const Icon(Icons.close, size: 16),
+                    label: const Text('close room'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: SpColors.live,
+                      side: const BorderSide(color: SpColors.border),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -234,35 +248,52 @@ class _ProfessorDashboardScreenState
 
 /// Synthesize button that shows in nav header on rooms tab.
 class _SynthesizeButton extends ConsumerWidget {
-  const _SynthesizeButton({required this.sessionId});
+  const _SynthesizeButton({required this.sessionId, this.compact = false});
 
   final int sessionId;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scribeState = ref.watch(scribeActionsProvider);
 
+    final icon = scribeState.isSynthesizing
+        ? const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : const Icon(Icons.auto_awesome, size: 16);
+
+    final onPressed = scribeState.isSynthesizing
+        ? null
+        : () async {
+            final response = await ref
+                .read(scribeActionsProvider.notifier)
+                .synthesizeAllRooms(sessionId);
+            if (context.mounted) {
+              showDialog(
+                context: context,
+                builder: (_) => SynthesisDialog(result: response.answer),
+              );
+            }
+          };
+
+    if (compact) {
+      return IconButton(
+        onPressed: onPressed,
+        icon: icon,
+        style: IconButton.styleFrom(
+          foregroundColor: SpColors.aiAccent,
+          side: const BorderSide(color: SpColors.border),
+        ),
+        tooltip: 'synthesize',
+      );
+    }
+
     return OutlinedButton.icon(
-      onPressed: scribeState.isSynthesizing
-          ? null
-          : () async {
-              final response = await ref
-                  .read(scribeActionsProvider.notifier)
-                  .synthesizeAllRooms(sessionId);
-              if (context.mounted) {
-                showDialog(
-                  context: context,
-                  builder: (_) => SynthesisDialog(result: response.answer),
-                );
-              }
-            },
-      icon: scribeState.isSynthesizing
-          ? const SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.auto_awesome, size: 16),
+      onPressed: onPressed,
+      icon: icon,
       label: const Text('synthesize'),
       style: OutlinedButton.styleFrom(
         foregroundColor: SpColors.aiAccent,

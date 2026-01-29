@@ -9,9 +9,10 @@ import '../../transcript/providers/recording_providers.dart';
 ///
 /// Uses [SpLiveBadge] style when recording, outlined button when not.
 class RecordButton extends ConsumerWidget {
-  const RecordButton({super.key, required this.sessionId});
+  const RecordButton({super.key, required this.sessionId, this.compact = false});
 
   final int sessionId;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,7 +27,20 @@ class RecordButton extends ConsumerWidget {
       );
     }
 
-    // When not recording, show outlined button
+    // When not recording, show outlined button (or icon only on mobile)
+    if (compact) {
+      return IconButton(
+        onPressed: () =>
+            ref.read(recordingControllerProvider(sessionId).notifier).toggle(),
+        icon: const Icon(Icons.fiber_manual_record, size: 16),
+        style: IconButton.styleFrom(
+          foregroundColor: SpColors.textSecondary,
+          side: const BorderSide(color: SpColors.border),
+        ),
+        tooltip: 'record',
+      );
+    }
+
     return OutlinedButton.icon(
       onPressed: () =>
           ref.read(recordingControllerProvider(sessionId).notifier).toggle(),

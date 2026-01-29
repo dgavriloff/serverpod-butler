@@ -146,23 +146,20 @@ class _ContentTabState extends ConsumerState<ContentTab> {
       );
     }
 
-    // Mobile: stacked
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(SpSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPromptSection(transcriptState.hasContent),
-          const SizedBox(height: SpSpacing.lg),
-          SizedBox(
-            height: 400,
-            child: _buildTranscriptSection(
-              transcriptState,
-              recordingState.isRecording,
-            ),
+    // Mobile: stacked with explicit heights
+    return Column(
+      children: [
+        Expanded(
+          child: _buildPromptSection(transcriptState.hasContent),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: _buildTranscriptSection(
+            transcriptState,
+            recordingState.isRecording,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
