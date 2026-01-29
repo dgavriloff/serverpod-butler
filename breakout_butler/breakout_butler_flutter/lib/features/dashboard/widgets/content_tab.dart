@@ -175,31 +175,34 @@ class _ContentTabState extends ConsumerState<ContentTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header
-        Padding(
-          padding: const EdgeInsets.all(SpSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(SpSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   isActive ? SpHighlight(child: headerText) : headerText,
-                  const Spacer(),
-                  SpSecondaryButton(
-                    label: 'pull from transcript',
-                    icon: Icons.auto_awesome,
-                    isLoading: _isExtracting,
-                    onPressed: canPull ? _pullFromTranscript : null,
+                  const SizedBox(height: SpSpacing.xs),
+                  Text(
+                    'assignment for students',
+                    style:
+                        SpTypography.caption.copyWith(color: SpColors.textTertiary),
                   ),
                 ],
               ),
-              const SizedBox(height: SpSpacing.xs),
-              Text(
-                'assignment for students',
-                style:
-                    SpTypography.caption.copyWith(color: SpColors.textTertiary),
+            ),
+            Positioned(
+              top: SpSpacing.sm,
+              right: SpSpacing.md,
+              child: SpSecondaryButton(
+                label: 'pull from transcript',
+                icon: Icons.auto_awesome,
+                isLoading: _isExtracting,
+                onPressed: canPull ? _pullFromTranscript : null,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
 
         const Divider(height: 1),
