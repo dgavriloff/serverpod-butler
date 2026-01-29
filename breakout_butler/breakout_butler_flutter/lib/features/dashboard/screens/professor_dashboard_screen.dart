@@ -11,12 +11,14 @@ import '../../../core/widgets/sp_breadcrumb_nav.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../../main.dart';
 import '../../../services/cookie_web.dart';
+import '../../scribe/providers/scribe_providers.dart';
 import '../../session/providers/session_providers.dart';
 import '../../student/widgets/room_selector.dart';
 import '../widgets/content_tab.dart';
 import '../widgets/dashboard_tab_bar.dart';
 import '../widgets/record_button.dart';
 import '../widgets/rooms_tab.dart';
+import '../widgets/synthesis_dialog.dart';
 
 /// Professor dashboard screen — three-panel layout with rooms grid
 /// and transcript sidebar.
@@ -186,6 +188,11 @@ class _ProfessorDashboardScreenState
               children: [
                 RecordButton(sessionId: _sessionId!),
                 const SizedBox(width: SpSpacing.sm),
+                if (_currentTab == DashboardTab.rooms)
+                  Padding(
+                    padding: const EdgeInsets.only(right: SpSpacing.sm),
+                    child: _SynthesizeButton(sessionId: _sessionId!),
+                  ),
                 OutlinedButton.icon(
                   onPressed: _onCloseRoom,
                   icon: const Icon(Icons.close, size: 16),
@@ -220,6 +227,46 @@ class _ProfessorDashboardScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Synthesize button that shows in nav header on rooms tab.
+class _SynthesizeButton extends ConsumerWidget {
+  const _SynthesizeButton({required this.sessionId});
+
+  final int sessionId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scribeState = ref.watch(scribeActionsProvider);
+
+    return OutlinedButton.icon(
+      onPressed: scribeState.isSynthesizing
+          ? null
+          : () async {
+              final response = await ref
+                  .read(scribeActionsProvider.notifier)
+                  .synthesizeAllRooms(sessionId);
+              if (context.mounted) {
+                showDialog(
+                  context: context,
+                  builder: (_) => SynthesisDialog(result: response.answer),
+                );
+              }
+            },
+      icon: scribeState.isSynthesizing
+          ? const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.auto_awesome, size: 16),
+      label: const Text('synthesize'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: SpColors.aiAccent,
+        side: const BorderSide(color: SpColors.border),
       ),
     );
   }
