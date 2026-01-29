@@ -45,24 +45,21 @@ class _RoomSelectorState extends State<RoomSelector> {
             ),
             const SizedBox(height: SpSpacing.xl),
 
-            // Room cards inline - tap to join directly
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            // Room cards - wrap on smaller screens
+            Wrap(
+              spacing: SpSpacing.md,
+              runSpacing: SpSpacing.md,
+              alignment: WrapAlignment.center,
               children: List.generate(widget.roomCount, (index) {
                 final roomNumber = index + 1;
 
-                return Padding(
-                  padding: EdgeInsets.only(
-                    right: index < widget.roomCount - 1 ? SpSpacing.md : 0,
-                  ),
-                  child: SizedBox(
-                    width: 140,
-                    height: 120,
-                    child: RoomCard(
-                      roomNumber: roomNumber,
-                      showActivity: false,
-                      onTap: () => _joinRoom(roomNumber),
-                    ),
+                return SizedBox(
+                  width: 140,
+                  height: 120,
+                  child: RoomCard(
+                    roomNumber: roomNumber,
+                    showActivity: false,
+                    onTap: () => _joinRoom(roomNumber),
                   ),
                 );
               }),
