@@ -48,11 +48,11 @@ class RecordButton extends ConsumerWidget {
         side: const BorderSide(color: SpColors.border),
       ),
       child: compact
-          ? const Icon(Icons.mic, size: 16)
+          ? Icon(Icons.mic_none, size: 18, color: SpColors.textSecondary)
           : const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.mic, size: 16),
+                Icon(Icons.mic_none, size: 16),
                 SizedBox(width: 8),
                 Text('rec'),
               ],
