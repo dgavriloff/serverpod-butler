@@ -6,6 +6,7 @@ import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_ai_card.dart';
 import '../../../core/widgets/sp_button.dart';
+import '../../../core/widgets/sp_markdown.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../scribe/providers/scribe_providers.dart';
 
@@ -71,7 +72,7 @@ class _RoomDetailSheetState extends ConsumerState<RoomDetailSheet> {
               if (_summary != null)
                 SpAiCard(
                   header: 'scribe summary',
-                  child: Text(_summary!, style: SpTypography.body),
+                  child: SpMarkdown(data: _summary!),
                 )
               else if (_isSummarizing)
                 const SpAiCard(

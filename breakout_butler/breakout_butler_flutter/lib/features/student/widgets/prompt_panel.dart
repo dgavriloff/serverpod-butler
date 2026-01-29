@@ -7,6 +7,7 @@ import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_highlight.dart';
+import '../../../core/widgets/sp_markdown.dart';
 import '../../prompt/providers/prompt_providers.dart';
 
 /// Panel showing the professor's prompt/assignment for the breakout session.
@@ -83,7 +84,7 @@ class _PromptPanelState extends ConsumerState<PromptPanel> {
                   )
                 : SingleChildScrollView(
                     padding: const EdgeInsets.all(SpSpacing.md),
-                    child: Text(prompt, style: SpTypography.body),
+                    child: SpMarkdown(data: prompt),
                   ),
             loading: () => const Center(
               child: SizedBox(

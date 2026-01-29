@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
+import '../../../core/widgets/sp_markdown.dart';
 
 /// Dialog that displays the AI synthesis result from all rooms.
 class SynthesisDialog extends StatelessWidget {
@@ -42,7 +43,7 @@ class SynthesisDialog extends StatelessWidget {
               const SizedBox(height: SpSpacing.md),
               Flexible(
                 child: SingleChildScrollView(
-                  child: Text(result, style: SpTypography.body),
+                  child: SpMarkdown(data: result),
                 ),
               ),
             ],
