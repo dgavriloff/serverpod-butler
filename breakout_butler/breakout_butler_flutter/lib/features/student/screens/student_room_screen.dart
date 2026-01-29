@@ -99,8 +99,7 @@ class _StudentRoomScreenState extends ConsumerState<StudentRoomScreen> {
             segments: ['breakoutpad', widget.urlTag, 'room ${widget.roomNumber}'],
             onSegmentTap: (index) {
               if (index == 0) context.go('/');
-              // index 1 would go to professor dashboard, but students
-              // don't have access — just ignore
+              if (index == 1) context.go('/${widget.urlTag}');
             },
           ),
 
