@@ -18,6 +18,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
     required this.roomNumber,
     required this.content,
     this.drawingData,
+    required this.occupantCount,
     required this.timestamp,
   });
 
@@ -25,6 +26,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
     required int roomNumber,
     required String content,
     String? drawingData,
+    required int occupantCount,
     required DateTime timestamp,
   }) = _RoomUpdateImpl;
 
@@ -33,6 +35,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
       roomNumber: jsonSerialization['roomNumber'] as int,
       content: jsonSerialization['content'] as String,
       drawingData: jsonSerialization['drawingData'] as String?,
+      occupantCount: jsonSerialization['occupantCount'] as int,
       timestamp: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['timestamp'],
       ),
@@ -48,6 +51,9 @@ abstract class RoomUpdate implements _i1.SerializableModel {
   /// Freehand drawing data (JSON array of strokes), null = unchanged
   String? drawingData;
 
+  /// Number of users currently in this room
+  int occupantCount;
+
   /// Timestamp of update
   DateTime timestamp;
 
@@ -58,6 +64,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
     int? roomNumber,
     String? content,
     String? drawingData,
+    int? occupantCount,
     DateTime? timestamp,
   });
   @override
@@ -67,6 +74,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
       'roomNumber': roomNumber,
       'content': content,
       if (drawingData != null) 'drawingData': drawingData,
+      'occupantCount': occupantCount,
       'timestamp': timestamp.toJson(),
     };
   }
@@ -84,11 +92,13 @@ class _RoomUpdateImpl extends RoomUpdate {
     required int roomNumber,
     required String content,
     String? drawingData,
+    required int occupantCount,
     required DateTime timestamp,
   }) : super._(
          roomNumber: roomNumber,
          content: content,
          drawingData: drawingData,
+         occupantCount: occupantCount,
          timestamp: timestamp,
        );
 
@@ -100,12 +110,14 @@ class _RoomUpdateImpl extends RoomUpdate {
     int? roomNumber,
     String? content,
     Object? drawingData = _Undefined,
+    int? occupantCount,
     DateTime? timestamp,
   }) {
     return RoomUpdate(
       roomNumber: roomNumber ?? this.roomNumber,
       content: content ?? this.content,
       drawingData: drawingData is String? ? drawingData : this.drawingData,
+      occupantCount: occupantCount ?? this.occupantCount,
       timestamp: timestamp ?? this.timestamp,
     );
   }

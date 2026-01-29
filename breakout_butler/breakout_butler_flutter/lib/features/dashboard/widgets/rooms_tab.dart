@@ -33,11 +33,13 @@ class _RoomsTabState extends ConsumerState<RoomsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final roomContents = ref.watch(roomContentsProvider(widget.sessionId));
+    final roomStates = ref.watch(roomContentsProvider(widget.sessionId));
     final scribeState = ref.watch(scribeActionsProvider);
 
-    // Count active rooms
-    final activeCount = roomContents.values.where((c) => c.isNotEmpty).length;
+    // Count active rooms (rooms with content)
+    final activeCount = roomStates.values.where((s) => s.content.isNotEmpty).length;
+    // Count total occupants
+    final totalOccupants = roomStates.values.fold<int>(0, (sum, s) => sum + s.occupantCount);
 
     return Column(
       children: [
@@ -52,11 +54,24 @@ class _RoomsTabState extends ConsumerState<RoomsTab> {
           ),
           child: Row(
             children: [
-              Text(
-                '$activeCount of ${widget.roomCount} active',
-                style: SpTypography.caption.copyWith(
-                  color: SpColors.textTertiary,
-                ),
+              Row(
+                children: [
+                  const Icon(Icons.person, size: 14, color: SpColors.textTertiary),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$totalOccupants',
+                    style: SpTypography.caption.copyWith(
+                      color: SpColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(width: SpSpacing.md),
+                  Text(
+                    '$activeCount of ${widget.roomCount} active',
+                    style: SpTypography.caption.copyWith(
+                      color: SpColors.textTertiary,
+                    ),
+                  ),
+                ],
               ),
               const Spacer(),
               SpSecondaryButton(
@@ -133,11 +148,14 @@ class _RoomsTabState extends ConsumerState<RoomsTab> {
               itemCount: widget.roomCount,
               itemBuilder: (context, index) {
                 final roomNumber = index + 1;
-                final content = roomContents[roomNumber] ?? '';
+                final roomState = roomStates[roomNumber];
+                final content = roomState?.content ?? '';
+                final occupantCount = roomState?.occupantCount ?? 0;
 
                 return RoomCard(
                   roomNumber: roomNumber,
                   content: content,
+                  occupantCount: occupantCount,
                   onTap: () => _showRoomDetail(roomNumber, content),
                 );
               },

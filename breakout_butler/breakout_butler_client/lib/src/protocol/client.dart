@@ -376,6 +376,32 @@ class EndpointRoom extends _i2.EndpointRef {
   @override
   String get name => 'room';
 
+  /// Called when a student enters a room
+  _i3.Future<int> joinRoom(
+    int sessionId,
+    int roomNumber,
+  ) => caller.callServerEndpoint<int>(
+    'room',
+    'joinRoom',
+    {
+      'sessionId': sessionId,
+      'roomNumber': roomNumber,
+    },
+  );
+
+  /// Called when a student leaves a room
+  _i3.Future<int> leaveRoom(
+    int sessionId,
+    int roomNumber,
+  ) => caller.callServerEndpoint<int>(
+    'room',
+    'leaveRoom',
+    {
+      'sessionId': sessionId,
+      'roomNumber': roomNumber,
+    },
+  );
+
   /// Get a specific room by session ID and room number
   _i3.Future<_i8.Room?> getRoom(
     int sessionId,

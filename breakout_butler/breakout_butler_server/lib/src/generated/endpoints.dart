@@ -499,6 +499,54 @@ class Endpoints extends _i1.EndpointDispatch {
       name: 'room',
       endpoint: endpoints['room']!,
       methodConnectors: {
+        'joinRoom': _i1.MethodConnector(
+          name: 'joinRoom',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'roomNumber': _i1.ParameterDescription(
+              name: 'roomNumber',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['room'] as _i5.RoomEndpoint).joinRoom(
+                session,
+                params['sessionId'],
+                params['roomNumber'],
+              ),
+        ),
+        'leaveRoom': _i1.MethodConnector(
+          name: 'leaveRoom',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'roomNumber': _i1.ParameterDescription(
+              name: 'roomNumber',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['room'] as _i5.RoomEndpoint).leaveRoom(
+                session,
+                params['sessionId'],
+                params['roomNumber'],
+              ),
+        ),
         'getRoom': _i1.MethodConnector(
           name: 'getRoom',
           params: {

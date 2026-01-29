@@ -1,6 +1,12 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 
+/// In-memory tracking of room occupants.
+/// Key: 'sessionId-roomNumber', Value: count of users
+final Map<String, int> _roomOccupants = {};
+
+String _occupantKey(int sessionId, int roomNumber) => '$sessionId-$roomNumber';
+
 /// Endpoint for managing breakout room workspaces with real-time collaboration
 class RoomEndpoint extends Endpoint {
   // Channel for all room updates in a session (professor dashboard)
@@ -9,6 +15,62 @@ class RoomEndpoint extends Endpoint {
   // Channel for a specific room
   static String _roomChannel(int sessionId, int roomNumber) =>
       'room-$sessionId-$roomNumber';
+
+  /// Get current occupant count for a room
+  int _getOccupantCount(int sessionId, int roomNumber) {
+    return _roomOccupants[_occupantKey(sessionId, roomNumber)] ?? 0;
+  }
+
+  /// Called when a student enters a room
+  Future<int> joinRoom(
+    Session session,
+    int sessionId,
+    int roomNumber,
+  ) async {
+    final key = _occupantKey(sessionId, roomNumber);
+    _roomOccupants[key] = (_roomOccupants[key] ?? 0) + 1;
+    final count = _roomOccupants[key]!;
+
+    // Broadcast the updated count
+    await _broadcastOccupantUpdate(session, sessionId, roomNumber);
+
+    return count;
+  }
+
+  /// Called when a student leaves a room
+  Future<int> leaveRoom(
+    Session session,
+    int sessionId,
+    int roomNumber,
+  ) async {
+    final key = _occupantKey(sessionId, roomNumber);
+    _roomOccupants[key] = ((_roomOccupants[key] ?? 1) - 1).clamp(0, 999);
+    final count = _roomOccupants[key]!;
+
+    // Broadcast the updated count
+    await _broadcastOccupantUpdate(session, sessionId, roomNumber);
+
+    return count;
+  }
+
+  /// Broadcast an occupant count update (without content change)
+  Future<void> _broadcastOccupantUpdate(
+    Session session,
+    int sessionId,
+    int roomNumber,
+  ) async {
+    final room = await getRoom(session, sessionId, roomNumber);
+    final update = RoomUpdate(
+      roomNumber: roomNumber,
+      content: room?.content ?? '',
+      drawingData: room?.drawingData,
+      occupantCount: _getOccupantCount(sessionId, roomNumber),
+      timestamp: DateTime.now(),
+    );
+
+    session.messages.postMessage(_roomChannel(sessionId, roomNumber), update);
+    session.messages.postMessage(_allRoomsChannel(sessionId), update);
+  }
 
   /// Get a specific room by session ID and room number
   Future<Room?> getRoom(
@@ -44,6 +106,7 @@ class RoomEndpoint extends Endpoint {
       roomNumber: roomNumber,
       content: content,
       drawingData: room.drawingData,
+      occupantCount: _getOccupantCount(sessionId, roomNumber),
       timestamp: DateTime.now(),
     );
     session.messages.postMessage(_roomChannel(sessionId, roomNumber), update);
@@ -75,6 +138,7 @@ class RoomEndpoint extends Endpoint {
       roomNumber: roomNumber,
       content: room.content,
       drawingData: drawingData,
+      occupantCount: _getOccupantCount(sessionId, roomNumber),
       timestamp: DateTime.now(),
     );
     session.messages.postMessage(_roomChannel(sessionId, roomNumber), update);
@@ -98,6 +162,7 @@ class RoomEndpoint extends Endpoint {
         roomNumber: roomNumber,
         content: room.content,
         drawingData: room.drawingData,
+        occupantCount: _getOccupantCount(sessionId, roomNumber),
         timestamp: room.updatedAt,
       );
     }
@@ -129,6 +194,7 @@ class RoomEndpoint extends Endpoint {
         roomNumber: room.roomNumber,
         content: room.content,
         drawingData: room.drawingData,
+        occupantCount: _getOccupantCount(sessionId, room.roomNumber),
         timestamp: room.updatedAt,
       );
     }

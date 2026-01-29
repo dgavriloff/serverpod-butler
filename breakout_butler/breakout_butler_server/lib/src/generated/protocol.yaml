@@ -20,6 +20,8 @@ butler:
   - getPrompt:
   - extractAssignment:
 room:
+  - joinRoom:
+  - leaveRoom:
   - getRoom:
   - updateRoomContent:
   - updateRoomDrawing:

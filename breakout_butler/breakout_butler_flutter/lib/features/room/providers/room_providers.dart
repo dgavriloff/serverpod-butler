@@ -23,9 +23,23 @@ final allRoomsProvider =
   (ref, sessionId) => client.room.getAllRooms(sessionId),
 );
 
-/// Maintains a map of room number → content, merging stream updates.
-/// Used by the professor dashboard to show all room content.
-class RoomContentsNotifier extends StateNotifier<Map<int, String>> {
+/// Room state including content and occupant count.
+class RoomState {
+  const RoomState({this.content = '', this.occupantCount = 0});
+  final String content;
+  final int occupantCount;
+
+  RoomState copyWith({String? content, int? occupantCount}) {
+    return RoomState(
+      content: content ?? this.content,
+      occupantCount: occupantCount ?? this.occupantCount,
+    );
+  }
+}
+
+/// Maintains a map of room number → RoomState, merging stream updates.
+/// Used by the professor dashboard to show all room content and occupants.
+class RoomContentsNotifier extends StateNotifier<Map<int, RoomState>> {
   RoomContentsNotifier(this._ref, this._sessionId) : super({}) {
     _init();
   }
@@ -37,9 +51,9 @@ class RoomContentsNotifier extends StateNotifier<Map<int, String>> {
   void _init() {
     // Load initial room contents
     _ref.read(allRoomsProvider(_sessionId).future).then((rooms) {
-      final map = <int, String>{};
+      final map = <int, RoomState>{};
       for (final room in rooms) {
-        map[room.roomNumber] = room.content;
+        map[room.roomNumber] = RoomState(content: room.content, occupantCount: 0);
       }
       if (mounted) state = map;
     });
@@ -47,7 +61,13 @@ class RoomContentsNotifier extends StateNotifier<Map<int, String>> {
     // Subscribe to live updates
     _sub = client.room.allRoomUpdates(_sessionId).listen((update) {
       if (mounted) {
-        state = {...state, update.roomNumber: update.content};
+        state = {
+          ...state,
+          update.roomNumber: RoomState(
+            content: update.content,
+            occupantCount: update.occupantCount,
+          ),
+        };
       }
     });
   }
@@ -60,7 +80,7 @@ class RoomContentsNotifier extends StateNotifier<Map<int, String>> {
 }
 
 final roomContentsProvider = StateNotifierProvider.autoDispose
-    .family<RoomContentsNotifier, Map<int, String>, int>(
+    .family<RoomContentsNotifier, Map<int, RoomState>, int>(
   (ref, sessionId) => RoomContentsNotifier(ref, sessionId),
 );
 
@@ -76,8 +96,17 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   StreamSubscription<RoomUpdate>? _sub;
   String _lastSavedContent = '';
   String _lastSavedDrawing = '';
+  bool _hasJoined = false;
 
   Future<void> init() async {
+    // Join the room (increment occupant count)
+    try {
+      await client.room.joinRoom(_sessionId, _roomNumber);
+      _hasJoined = true;
+    } catch (_) {
+      // Ignore join errors - room updates will still work
+    }
+
     // Load initial content
     final room = await client.room.getRoom(_sessionId, _roomNumber);
     if (room != null && mounted) {
@@ -155,6 +184,10 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     _contentDebounce?.cancel();
     _drawingDebounce?.cancel();
     _sub?.cancel();
+    // Leave the room (decrement occupant count)
+    if (_hasJoined) {
+      client.room.leaveRoom(_sessionId, _roomNumber).catchError((_) {});
+    }
     super.dispose();
   }
 }

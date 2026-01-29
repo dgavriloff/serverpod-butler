@@ -7,5 +7,7 @@ fields:
   content: String
   ### Freehand drawing data (JSON array of strokes), null = unchanged
   drawingData: String?
+  ### Number of users currently in this room
+  occupantCount: int
   ### Timestamp of update
   timestamp: DateTime
