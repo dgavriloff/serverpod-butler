@@ -12,7 +12,6 @@ When students enter Zoom breakout rooms, they immediately forget what they're su
 
 breakoutpad acts as a digital teaching assistant that:
 - Captures everything the professor says via live transcription
-- Makes it searchable and queryable via AI
 - Provides real-time collaborative workspaces with text and drawing
 - Gives professors a bird's-eye view of all rooms
 - Synthesizes themes and insights across groups
@@ -20,16 +19,15 @@ breakoutpad acts as a digital teaching assistant that:
 ## Features
 
 ### For Professors
-- Live lecture transcription (Gemini 2.0-Flash)
+- Live lecture transcription (Gemini 3 Flash Preview)
 - AI-powered assignment extraction from transcript
 - Real-time dashboard showing all breakout rooms
-- Cross-room synthesis — identify common themes and contradictions
+- Cross-room synthesis, identify common themes and contradictions
 
 ### For Students
 - Collaborative text editor + freehand drawing canvas
 - Always-visible professor instructions
 - Live lecture transcript
-- AI Q&A — "What did she say about X?"
 
 ### Zero Friction
 No accounts, no downloads. Students join with just a URL and room number.
@@ -45,7 +43,7 @@ No accounts, no downloads. Students join with just a URL and room number.
   - Riverpod state management
   - go_router for navigation
   - perfect_freehand for drawing
-- **AI:** Google Gemini 2.0-Flash
+- **AI:** Google Gemini 3 Flash Preview
 - **Deployment:** Railway + Caddy reverse proxy
 
 ## Project Structure
