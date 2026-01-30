@@ -9,6 +9,7 @@ import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_button.dart';
 import '../../../core/widgets/sp_highlight.dart';
+import '../../../core/widgets/sp_markdown.dart';
 import '../../../core/widgets/sp_skeleton.dart';
 import '../../../main.dart';
 import '../../transcript/providers/recording_providers.dart';
@@ -34,6 +35,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
   bool _promptLoaded = false;
   bool _promptHovered = false;
   bool _promptFocused = false;
+  bool _showPromptPreview = false;
   bool _transcriptHovered = false;
   bool _transcriptFocused = false;
 
@@ -165,7 +167,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
   Widget _buildPromptSection(bool hasTranscript, {required bool isWide}) {
     final canPull = hasTranscript && !_isExtracting;
-    final isActive = _promptHovered || _promptFocused;
+    final isActive = _promptHovered || _promptFocused || _showPromptPreview;
     final headerText = Text('prompt', style: SpTypography.section);
 
     return Column(
@@ -194,6 +196,20 @@ class _ContentTabState extends ConsumerState<ContentTab> {
                   ],
                 ),
               ),
+              // Preview/Edit toggle
+              IconButton(
+                icon: Icon(
+                  _showPromptPreview ? Icons.edit : Icons.visibility,
+                  size: 18,
+                  color: SpColors.textSecondary,
+                ),
+                tooltip: _showPromptPreview ? 'edit' : 'preview',
+                onPressed: () =>
+                    setState(() => _showPromptPreview = !_showPromptPreview),
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+              const SizedBox(width: SpSpacing.xs),
               SpSecondaryButton(
                 label: 'pull from transcript',
                 icon: Icons.auto_awesome,
@@ -207,7 +223,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
         const Divider(height: 1),
 
-        // Editable prompt
+        // Editable prompt or preview
         Expanded(
           child: _isExtracting
               ? Padding(
@@ -226,33 +242,55 @@ class _ContentTabState extends ConsumerState<ContentTab> {
                     ],
                   ),
                 )
-              : MouseRegion(
-                  onEnter: (_) => setState(() => _promptHovered = true),
-                  onExit: (_) => setState(() => _promptHovered = false),
-                  child: TextField(
-                    controller: _promptController,
-                    focusNode: _promptFocusNode,
-                    maxLines: null,
-                    expands: true,
-                    textAlignVertical: TextAlignVertical.top,
-                    style: SpTypography.body,
-                    decoration: InputDecoration(
-                      hintText: 'what should students work on? (supports markdown)',
-                      hintStyle: SpTypography.body
-                          .copyWith(color: SpColors.textPlaceholder),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: SpSpacing.lg,
-                        vertical: SpSpacing.md,
+              : _showPromptPreview
+                  ? _buildPromptPreview()
+                  : MouseRegion(
+                      onEnter: (_) => setState(() => _promptHovered = true),
+                      onExit: (_) => setState(() => _promptHovered = false),
+                      child: TextField(
+                        controller: _promptController,
+                        focusNode: _promptFocusNode,
+                        maxLines: null,
+                        expands: true,
+                        textAlignVertical: TextAlignVertical.top,
+                        style: SpTypography.body,
+                        decoration: InputDecoration(
+                          hintText:
+                              'what should students work on? (supports markdown)',
+                          hintStyle: SpTypography.body
+                              .copyWith(color: SpColors.textPlaceholder),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: SpSpacing.lg,
+                            vertical: SpSpacing.md,
+                          ),
+                        ),
+                        onChanged: _onPromptChanged,
                       ),
                     ),
-                    onChanged: _onPromptChanged,
-                  ),
-                ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPromptPreview() {
+    final text = _promptController.text;
+    if (text.isEmpty) {
+      return Center(
+        child: Text(
+          'no prompt yet',
+          style: SpTypography.caption.copyWith(color: SpColors.textPlaceholder),
+        ),
+      );
+    }
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpSpacing.lg,
+        vertical: SpSpacing.md,
+      ),
+      child: SpMarkdown(data: text),
     );
   }
 
