@@ -4,7 +4,7 @@ import 'dart:math';
 
 import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 
 import '../../../core/utils/text_crdt.dart';
 import '../../../main.dart';
@@ -35,22 +35,31 @@ String _generateUserId() {
   return List.generate(12, (_) => chars[rng.nextInt(chars.length)]).join();
 }
 
-/// Key for storing user ID in SharedPreferences
+/// Key for storing user ID in localStorage
 const _userIdKey = 'breakout_butler_user_id';
 
 /// Cached user ID (loaded from storage or generated)
 String? _cachedUserId;
 
-/// Get or create a persistent user ID
-Future<String> _getOrCreateUserId() async {
+/// Get or create a persistent user ID using web localStorage
+String _getOrCreateUserId() {
   if (_cachedUserId != null) return _cachedUserId!;
 
-  final prefs = await SharedPreferences.getInstance();
-  var userId = prefs.getString(_userIdKey);
+  try {
+    final stored = web.window.localStorage.getItem(_userIdKey);
+    if (stored != null && stored.isNotEmpty) {
+      _cachedUserId = stored;
+      return stored;
+    }
+  } catch (_) {
+    // localStorage not available, generate new ID
+  }
 
-  if (userId == null) {
-    userId = _generateUserId();
-    await prefs.setString(_userIdKey, userId);
+  final userId = _generateUserId();
+  try {
+    web.window.localStorage.setItem(_userIdKey, userId);
+  } catch (_) {
+    // Ignore storage errors
   }
 
   _cachedUserId = userId;
@@ -162,8 +171,8 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 
   Future<void> init() async {
     try {
-      // Get persistent user ID first
-      _userId = await _getOrCreateUserId();
+      // Get persistent user ID first (sync, uses localStorage)
+      _userId = _getOrCreateUserId();
       _textCrdt = TextCrdt(nodeId: _userId);
 
       // Join the room with user ID
