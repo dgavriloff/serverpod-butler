@@ -170,79 +170,58 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   bool _isLocallyEditingDrawing = false;
 
   Future<void> init() async {
+    // Get persistent user ID first (sync, uses localStorage)
+    _userId = _getOrCreateUserId();
+    _textCrdt = TextCrdt(nodeId: _userId);
+
+    // Join the room with user ID
     try {
-      // Get persistent user ID first (sync, uses localStorage)
-      _userId = _getOrCreateUserId();
-      _textCrdt = TextCrdt(nodeId: _userId);
-
-      // Join the room with user ID
-      try {
-        final presence = await client.room.joinRoom(
-          _sessionId,
-          _roomNumber,
-          _userId!,
-          null, // Auto-generate display name
-        );
-        _hasJoined = true;
-        if (mounted) {
-          state = state.copyWith(myPresence: presence);
-        }
-
-        // Start heartbeat to keep presence alive (every 15 seconds)
-        _heartbeatTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-          if (_hasJoined && mounted) {
-            _sendHeartbeat();
-          }
-        });
-      } catch (_) {
-        // Ignore join errors - room updates will still work
-      }
-
-      // Load initial content - try to load as CRDT JSON, fallback to plain text
-      final room = await client.room.getRoom(_sessionId, _roomNumber);
-      if (room != null && mounted) {
-        _lastSavedDrawing = room.drawingData ?? '';
-
-        // Try to load as CRDT JSON, fallback to treating as plain text
-        final content = room.content;
-        if (content.startsWith('[') && content.contains('"id"')) {
-          // Looks like CRDT JSON
-          _textCrdt!.loadFromJson(content);
-          _lastSavedCrdtJson = content;
-          state = state.copyWith(
-            content: _textCrdt!.text,
-            crdtJson: _lastSavedCrdtJson,
-            drawingData: room.drawingData ?? '',
-            loaded: true,
-          );
-        } else if (content.length < 1000) {
-          // Small plain text - convert to CRDT
-          _textCrdt!.replaceAll(content);
-          _lastSavedCrdtJson = _textCrdt!.toJson();
-          state = state.copyWith(
-            content: _textCrdt!.text,
-            crdtJson: _lastSavedCrdtJson,
-            drawingData: room.drawingData ?? '',
-            loaded: true,
-          );
-        } else {
-          // Large plain text - start fresh (legacy data, can't convert efficiently)
-          _lastSavedCrdtJson = '[]';
-          state = state.copyWith(
-            content: '',
-            crdtJson: '[]',
-            drawingData: room.drawingData ?? '',
-            loaded: true,
-          );
-        }
-      } else if (mounted) {
-        state = state.copyWith(content: '', crdtJson: '[]', drawingData: '', loaded: true);
-      }
-    } catch (e) {
-      // If anything fails, at least mark as loaded so UI isn't stuck
+      final presence = await client.room.joinRoom(
+        _sessionId,
+        _roomNumber,
+        _userId!,
+        null, // Auto-generate display name
+      );
+      _hasJoined = true;
       if (mounted) {
-        state = state.copyWith(content: '', crdtJson: '[]', drawingData: '', loaded: true);
+        state = state.copyWith(myPresence: presence);
       }
+
+      // Start heartbeat to keep presence alive (every 15 seconds)
+      _heartbeatTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        if (_hasJoined && mounted) {
+          _sendHeartbeat();
+        }
+      });
+    } catch (_) {
+      // Ignore join errors - room updates will still work
+    }
+
+    // Load initial content - try to load as CRDT JSON, fallback to plain text
+    final room = await client.room.getRoom(_sessionId, _roomNumber);
+    if (room != null && mounted) {
+      _lastSavedDrawing = room.drawingData ?? '';
+
+      // Try to load as CRDT JSON, fallback to treating as plain text
+      final content = room.content;
+      if (content.startsWith('[') && content.contains('"id"')) {
+        // Looks like CRDT JSON
+        _textCrdt!.loadFromJson(content);
+        _lastSavedCrdtJson = content;
+      } else {
+        // Plain text - convert to CRDT
+        _textCrdt!.replaceAll(content);
+        _lastSavedCrdtJson = _textCrdt!.toJson();
+      }
+
+      state = state.copyWith(
+        content: _textCrdt!.text,
+        crdtJson: _lastSavedCrdtJson,
+        drawingData: room.drawingData ?? '',
+        loaded: true,
+      );
+    } else if (mounted) {
+      state = state.copyWith(content: '', crdtJson: '[]', drawingData: '', loaded: true);
     }
 
     // Subscribe to remote updates
