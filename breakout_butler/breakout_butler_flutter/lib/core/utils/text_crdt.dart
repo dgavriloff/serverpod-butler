@@ -63,9 +63,12 @@ class CrdtChar {
 /// between two characters, we pick a position halfway between them.
 /// Deletions are tombstoned (marked deleted) rather than removed.
 class TextCrdt {
-  TextCrdt({String? nodeId})
-      : _nodeId = nodeId ?? _generateNodeId(),
-        _hlc = Hlc.zero(_generateNodeId());
+  factory TextCrdt({String? nodeId}) {
+    final id = nodeId ?? _generateNodeId();
+    return TextCrdt._(id, Hlc.zero(id));
+  }
+
+  TextCrdt._(this._nodeId, this._hlc);
 
   final String _nodeId;
   Hlc _hlc;
