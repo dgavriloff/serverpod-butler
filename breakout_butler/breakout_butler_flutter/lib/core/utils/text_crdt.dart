@@ -149,19 +149,24 @@ class TextCrdt {
     _hlc = _hlc.increment();
 
     // Find positions of neighbors
-    final visible = _chars.where((c) => !c.deleted).toList();
-    final leftPos = index > 0 ? visible[index - 1].position : 0.0;
-    final rightPos = index < visible.length ? visible[index].position : 1.0;
+    var visible = _chars.where((c) => !c.deleted).toList();
+    var leftPos = index > 0 ? visible[index - 1].position : 0.0;
+    var rightPos = index < visible.length ? visible[index].position : 1.0;
 
-    print('[CRDT] insert: index=$index, text="$text", visibleLen=${visible.length}');
-    print('[CRDT] insert: leftPos=$leftPos, rightPos=$rightPos');
+    // If positions are too close, rebalance the entire document
+    final minStep = 1e-10;
+    if (rightPos - leftPos < minStep * (text.length + 1)) {
+      _rebalancePositions();
+      visible = _chars.where((c) => !c.deleted).toList();
+      leftPos = index > 0 ? visible[index - 1].position : 0.0;
+      rightPos = index < visible.length ? visible[index].position : 1.0;
+    }
 
     // Generate positions for each character
     final step = (rightPos - leftPos) / (text.length + 1);
 
     for (var i = 0; i < text.length; i++) {
       final position = leftPos + step * (i + 1);
-      print('[CRDT] insert: char="${text[i]}" at position=$position');
       final char = CrdtChar(
         id: _generateCharId(),
         position: position,
@@ -173,7 +178,31 @@ class TextCrdt {
     }
 
     _sortChars();
-    print('[CRDT] after insert+sort: text="${this.text}"');
+  }
+
+  /// Rebalance all character positions to be evenly distributed
+  void _rebalancePositions() {
+    final visible = _chars.where((c) => !c.deleted).toList();
+    if (visible.isEmpty) return;
+
+    _hlc = _hlc.increment();
+    final step = 1.0 / (visible.length + 1);
+
+    for (var i = 0; i < visible.length; i++) {
+      final oldChar = visible[i];
+      final charIndex = _chars.indexWhere((c) => c.id == oldChar.id);
+      if (charIndex != -1) {
+        _chars[charIndex] = CrdtChar(
+          id: oldChar.id,
+          position: step * (i + 1),
+          char: oldChar.char,
+          deleted: oldChar.deleted,
+          hlc: _hlc,
+        );
+      }
+    }
+
+    _sortChars();
   }
 
   /// Delete text in the given visible range
@@ -218,8 +247,6 @@ class TextCrdt {
   void applyChange(String oldText, String newText) {
     if (oldText == newText) return;
 
-    print('[CRDT] applyChange: oldText="$oldText" (${oldText.length}), newText="$newText" (${newText.length})');
-
     // Find common prefix
     var prefixLen = 0;
     while (prefixLen < oldText.length &&
@@ -240,9 +267,6 @@ class TextCrdt {
     final deleteStart = prefixLen;
     final deleteEnd = oldText.length - suffixLen;
     final insertText = newText.substring(prefixLen, newText.length - suffixLen);
-
-    print('[CRDT] diff: prefixLen=$prefixLen, suffixLen=$suffixLen');
-    print('[CRDT] diff: deleteStart=$deleteStart, deleteEnd=$deleteEnd, insertText="$insertText"');
 
     // Delete old characters
     if (deleteEnd > deleteStart) {
