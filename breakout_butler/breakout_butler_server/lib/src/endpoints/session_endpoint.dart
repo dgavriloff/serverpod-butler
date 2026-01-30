@@ -86,13 +86,26 @@ class SessionEndpoint extends Endpoint {
     );
   }
 
-  /// End a live session
+  /// End a live session and delete all associated data
   Future<void> endLiveSession(Session session, String urlTag) async {
     final liveSession = await getLiveSessionByTag(session, urlTag);
     if (liveSession != null) {
-      liveSession.isActive = false;
-      liveSession.expiresAt = DateTime.now();
-      await LiveSession.db.updateRow(session, liveSession);
+      final sessionId = liveSession.sessionId;
+
+      // Delete rooms first (foreign key constraint)
+      await Room.db.deleteWhere(
+        session,
+        where: (t) => t.sessionId.equals(sessionId),
+      );
+
+      // Delete the live session
+      await LiveSession.db.deleteRow(session, liveSession);
+
+      // Delete the class session
+      await ClassSession.db.deleteWhere(
+        session,
+        where: (t) => t.id.equals(sessionId),
+      );
     }
   }
 
