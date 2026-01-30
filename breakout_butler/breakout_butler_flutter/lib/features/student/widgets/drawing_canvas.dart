@@ -6,23 +6,6 @@ import 'package:perfect_freehand/perfect_freehand.dart';
 
 import '../../../core/theme/sp_colors.dart';
 
-/// A remote user's cursor position on the canvas.
-class RemoteCursor {
-  const RemoteCursor({
-    required this.x,
-    required this.y,
-    required this.color,
-    required this.displayName,
-    required this.isDrawing,
-  });
-
-  final double x;
-  final double y;
-  final String color;
-  final String displayName;
-  final bool isDrawing;
-}
-
 /// Freehand drawing surface using [perfect_freehand].
 ///
 /// Strokes are serialized to JSON via [onChanged] for server persistence.
@@ -32,9 +15,7 @@ class DrawingCanvas extends StatefulWidget {
     super.key,
     this.initialData = '',
     this.onChanged,
-    this.onCursorMove,
     this.interactive = true,
-    this.remoteCursors = const [],
   });
 
   /// JSON string of strokes loaded from server.
@@ -43,15 +24,9 @@ class DrawingCanvas extends StatefulWidget {
   /// Called with serialized JSON after each completed stroke or undo/clear.
   final ValueChanged<String>? onChanged;
 
-  /// Called when the local cursor moves (for presence tracking).
-  final void Function(double x, double y)? onCursorMove;
-
   /// Whether the canvas accepts pointer input. When false, displays strokes
   /// but passes through all pointer events (for layering over text).
   final bool interactive;
-
-  /// Other users' cursor positions to display.
-  final List<RemoteCursor> remoteCursors;
 
   @override
   State<DrawingCanvas> createState() => DrawingCanvasState();
@@ -131,12 +106,6 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   }
 
   void _onPointerMove(PointerMoveEvent event) {
-    // Report cursor position for presence tracking
-    widget.onCursorMove?.call(
-      event.localPosition.dx,
-      event.localPosition.dy,
-    );
-
     if (_currentStroke == null) return;
     final point = PointVector(
       event.localPosition.dx,
@@ -173,15 +142,6 @@ class DrawingCanvasState extends State<DrawingCanvas> {
 
   bool get hasStrokes => _strokes.isNotEmpty;
 
-  Color _parseColor(String hexColor) {
-    try {
-      final hex = hexColor.replaceFirst('#', '');
-      return Color(int.parse('FF$hex', radix: 16));
-    } catch (_) {
-      return SpColors.textSecondary;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final canvas = CustomPaint(
@@ -193,95 +153,16 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       child: const SizedBox.expand(),
     );
 
-    // Build remote cursor overlays
-    final cursors = widget.remoteCursors
-        .where((c) => c.x >= 0 && c.y >= 0)
-        .map((cursor) => Positioned(
-              left: cursor.x - 4,
-              top: cursor.y - 4,
-              child: _RemoteCursorIndicator(
-                color: _parseColor(cursor.color),
-                displayName: cursor.displayName,
-                isDrawing: cursor.isDrawing,
-              ),
-            ))
-        .toList();
-
-    final canvasWithCursors = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        canvas,
-        ...cursors,
-      ],
-    );
-
     // When not interactive, pass through all pointer events
     if (!widget.interactive) {
-      return IgnorePointer(child: canvasWithCursors);
+      return IgnorePointer(child: canvas);
     }
 
     return Listener(
       onPointerDown: _onPointerDown,
       onPointerMove: _onPointerMove,
       onPointerUp: _onPointerUp,
-      child: canvasWithCursors,
-    );
-  }
-}
-
-/// Visual indicator for a remote user's cursor.
-class _RemoteCursorIndicator extends StatelessWidget {
-  const _RemoteCursorIndicator({
-    required this.color,
-    required this.displayName,
-    required this.isDrawing,
-  });
-
-  final Color color;
-  final String displayName;
-  final bool isDrawing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-            border: isDrawing
-                ? Border.all(color: SpColors.textPrimary, width: 1.5)
-                : null,
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.4),
-                blurRadius: 4,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 2),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            displayName,
-            style: const TextStyle(
-              fontSize: 9,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
+      child: canvas,
     );
   }
 }

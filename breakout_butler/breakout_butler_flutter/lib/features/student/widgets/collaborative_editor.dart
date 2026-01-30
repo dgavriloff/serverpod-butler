@@ -204,26 +204,6 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                       key: _canvasKey,
                       initialData: editorState.drawingData,
                       interactive: _mode == EditorMode.draw,
-                      remoteCursors: editorState.otherUsers
-                          .where((u) => u.isDrawing && u.drawingX >= 0 && u.drawingY >= 0)
-                          .map((u) => RemoteCursor(
-                                x: u.drawingX,
-                                y: u.drawingY,
-                                color: u.color,
-                                displayName: u.displayName,
-                                isDrawing: u.isDrawing,
-                              ))
-                          .toList(),
-                      onCursorMove: (x, y) {
-                        ref
-                            .read(roomEditorProvider(
-                              (
-                                sessionId: widget.sessionId,
-                                roomNumber: widget.roomNumber,
-                              ),
-                            ).notifier)
-                            .updateDrawingCursor(x, y);
-                      },
                       onChanged: (json) {
                         ref
                             .read(roomEditorProvider(
