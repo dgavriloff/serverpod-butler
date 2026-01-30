@@ -237,7 +237,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
                     textAlignVertical: TextAlignVertical.top,
                     style: SpTypography.body,
                     decoration: InputDecoration(
-                      hintText: 'what should students work on?',
+                      hintText: 'what should students work on? (supports markdown)',
                       hintStyle: SpTypography.body
                           .copyWith(color: SpColors.textPlaceholder),
                       border: InputBorder.none,

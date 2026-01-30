@@ -45927,7 +45927,7 @@ l=A.eN(A.cq(A.b([l,B.e9,A.bl("assignment for students",p,p,p,B.aA.b6(B.aw),p,p)]
 s=q.Q
 r=o?q.gajE():p
 r=A.dw(A.b([l,A.aq1(!1,B.dR,!b,s,"pull from transcript",r)],k),B.Z,B.r,B.a0,0,p)
-return A.cq(A.b([new A.bp(B.dH,r,p),B.hn,A.eN(q.Q?new A.bp(B.dH,A.cq(A.b([A.aIc(16,1/0),B.bl,A.aIc(16,1/0),B.bl,A.aIc(16,200)],k),B.Z,B.r,B.a0),p):A.hd(A.ar5(!1,q.w,A.Ql(p,B.bX,p,B.dH,p,p,p,p,!0,B.bX,p,p,p,p,p,p,p,p,p,p,p,B.bX,p,p,p,p,p,p,p,p,B.N.b6(B.bM),"what should students work on?",p,p,p,p,p,p,p,p,p,!0,!0,p,p,p,p,p,p,p,p,p,p,p,p,p,p),p,!0,q.y,p,p,p,p,q.gai1(),p,!1,B.N,B.dg,p),B.b0,p,new A.auS(q),new A.auT(q),p),1)],k),B.Z,B.r,B.a0)},
+return A.cq(A.b([new A.bp(B.dH,r,p),B.hn,A.eN(q.Q?new A.bp(B.dH,A.cq(A.b([A.aIc(16,1/0),B.bl,A.aIc(16,1/0),B.bl,A.aIc(16,200)],k),B.Z,B.r,B.a0),p):A.hd(A.ar5(!1,q.w,A.Ql(p,B.bX,p,B.dH,p,p,p,p,!0,B.bX,p,p,p,p,p,p,p,p,p,p,p,B.bX,p,p,p,p,p,p,p,p,B.N.b6(B.bM),"what should students work on? (supports markdown)",p,p,p,p,p,p,p,p,p,!0,!0,p,p,p,p,p,p,p,p,p,p,p,p,p,p),p,!0,q.y,p,p,p,p,q.gai1(),p,!1,B.N,B.dg,p),B.b0,p,new A.auS(q),new A.auT(q),p),1)],k),B.Z,B.r,B.a0)},
 OW(a,b){var s,r,q=this,p=null,o=b||q.ch||q.CW,n=A.bl("transcript",p,p,p,B.bT,p,p),m=o?new A.pN(n,p):n,l=t.p
 m=A.b([m],l)
 if(b){s=B.bq.mr(0.1)
