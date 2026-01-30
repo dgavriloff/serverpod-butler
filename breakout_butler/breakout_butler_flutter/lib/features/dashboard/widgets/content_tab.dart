@@ -173,11 +173,9 @@ class _ContentTabState extends ConsumerState<ContentTab> {
       children: [
         // Header with button
         Padding(
-          padding: const EdgeInsets.only(
-            left: SpSpacing.lg - 4, // Reduced to align with breadcrumb
-            right: SpSpacing.lg,
-            top: SpSpacing.md,
-            bottom: SpSpacing.md,
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpSpacing.lg,
+            vertical: SpSpacing.md,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,11 +269,9 @@ class _ContentTabState extends ConsumerState<ContentTab> {
       children: [
         // Header
         Padding(
-          padding: const EdgeInsets.only(
-            left: SpSpacing.lg - 4, // Reduced to align with breadcrumb
-            right: SpSpacing.lg,
-            top: SpSpacing.md,
-            bottom: SpSpacing.md,
+          padding: const EdgeInsets.symmetric(
+            horizontal: SpSpacing.lg,
+            vertical: SpSpacing.md,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

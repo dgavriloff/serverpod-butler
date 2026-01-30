@@ -35,9 +35,11 @@ class DashboardTabBar extends StatelessWidget {
     final isMobile = screenSizeOf(context) == SpScreenSize.mobile;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: SpSpacing.lg,
-        vertical: SpSpacing.sm,
+      padding: const EdgeInsets.only(
+        left: SpSpacing.lg - SpSpacing.xs, // Compensate for _TabLabel internal padding
+        right: SpSpacing.lg,
+        top: SpSpacing.sm,
+        bottom: SpSpacing.sm,
       ),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: SpColors.border)),
