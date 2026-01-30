@@ -69,7 +69,7 @@ class DashboardTabBar extends StatelessWidget {
                     children: [
                       Icon(Icons.link, size: 16),
                       SizedBox(width: 8),
-                      Text('copy link'),
+                      Text('copy link', style: TextStyle(height: 1.0)),
                     ],
                   ),
           ),

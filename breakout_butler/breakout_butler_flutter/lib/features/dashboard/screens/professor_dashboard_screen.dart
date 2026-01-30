@@ -216,7 +216,7 @@ class _ProfessorDashboardScreenState
                           children: [
                             Icon(Icons.close, size: 16),
                             SizedBox(width: 8),
-                            Text('close room'),
+                            Text('close room', style: TextStyle(height: 1.0)),
                           ],
                         ),
                 ),
@@ -296,7 +296,7 @@ class _SynthesizeButton extends ConsumerWidget {
               children: [
                 icon,
                 const SizedBox(width: 8),
-                const Text('synthesize'),
+                const Text('synthesize', style: TextStyle(height: 1.0)),
               ],
             ),
     );

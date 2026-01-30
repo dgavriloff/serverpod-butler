@@ -43,10 +43,16 @@ class SpPrimaryButton extends StatelessWidget {
     }
 
     final button = icon != null
-        ? ElevatedButton.icon(
+        ? ElevatedButton(
             onPressed: onPressed,
-            icon: Icon(icon, size: 16),
-            label: Text(label),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 16),
+                const SizedBox(width: 8),
+                Text(label, style: const TextStyle(height: 1.0)),
+              ],
+            ),
           )
         : ElevatedButton(
             onPressed: onPressed,
@@ -102,10 +108,16 @@ class SpSecondaryButton extends StatelessWidget {
         child: Icon(icon, size: 16),
       );
     } else if (icon != null) {
-      button = OutlinedButton.icon(
+      button = OutlinedButton(
         onPressed: onPressed,
-        icon: Icon(icon, size: 16),
-        label: Text(label),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16),
+            const SizedBox(width: 8),
+            Text(label, style: const TextStyle(height: 1.0)),
+          ],
+        ),
       );
     } else {
       button = OutlinedButton(

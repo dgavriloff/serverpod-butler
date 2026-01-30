@@ -48,7 +48,7 @@ class RecordButton extends ConsumerWidget {
                 children: [
                   _BlinkingDot(),
                   SizedBox(width: 8),
-                  Text('stop'),
+                  Text('stop', style: TextStyle(height: 1.0)),
                 ],
               ),
       );
@@ -69,7 +69,7 @@ class RecordButton extends ConsumerWidget {
               children: [
                 Icon(Icons.mic_none, size: 16),
                 SizedBox(width: 8),
-                Text('rec'),
+                Text('rec', style: TextStyle(height: 1.0)),
               ],
             ),
     );
