@@ -228,7 +228,6 @@ class _ProfessorDashboardScreenState
           DashboardTabBar(
             currentTab: _currentTab,
             onChanged: (tab) => setState(() => _currentTab = tab),
-            urlTag: widget.urlTag,
           ),
 
           // ── Tab content ────────────────────────────────────────────
