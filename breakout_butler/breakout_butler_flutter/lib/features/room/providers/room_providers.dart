@@ -132,6 +132,7 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   Timer? _drawingDebounce;
   Timer? _editingCooldown;
   Timer? _presenceDebounce;
+  Timer? _heartbeatTimer;
   StreamSubscription<RoomUpdate>? _sub;
   StreamSubscription<PresenceUpdate>? _presenceSub;
   String _lastSavedCrdtJson = '';
@@ -152,6 +153,13 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
       if (mounted) {
         state = state.copyWith(myPresence: presence);
       }
+
+      // Start heartbeat to keep presence alive (every 15 seconds)
+      _heartbeatTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        if (_hasJoined && mounted) {
+          _sendHeartbeat();
+        }
+      });
     } catch (_) {
       // Ignore join errors - room updates will still work
     }
@@ -336,6 +344,26 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     });
   }
 
+  /// Send a heartbeat to keep presence alive
+  void _sendHeartbeat() {
+    if (!_hasJoined || state.myPresence == null || !mounted) return;
+
+    final updated = UserPresence(
+      userId: state.myPresence!.userId,
+      displayName: state.myPresence!.displayName,
+      color: state.myPresence!.color,
+      textCursor: state.myPresence!.textCursor,
+      isTyping: false,
+      drawingX: state.myPresence!.drawingX,
+      drawingY: state.myPresence!.drawingY,
+      isDrawing: false,
+      lastActive: DateTime.now(),
+    );
+
+    state = state.copyWith(myPresence: updated);
+    client.room.updatePresence(_sessionId, _roomNumber, updated);
+  }
+
   Future<void> _saveContent(String crdtJson) async {
     if (!mounted) return;
     state = state.copyWith(isSaving: true);
@@ -365,6 +393,7 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     _drawingDebounce?.cancel();
     _editingCooldown?.cancel();
     _presenceDebounce?.cancel();
+    _heartbeatTimer?.cancel();
     _sub?.cancel();
     _presenceSub?.cancel();
     // Leave the room

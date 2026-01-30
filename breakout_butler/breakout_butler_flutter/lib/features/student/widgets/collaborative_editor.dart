@@ -1,4 +1,3 @@
-import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -123,12 +122,6 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                     ],
                   ),
                   const Spacer(),
-                  // Typing/drawing indicator (center)
-                  if (editorState.otherUsers.any((u) => u.isTyping || u.isDrawing))
-                    Padding(
-                      padding: const EdgeInsets.only(right: SpSpacing.md),
-                      child: _buildActivityIndicator(editorState.otherUsers),
-                    ),
                   // Save indicator (right)
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -280,36 +273,6 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
     }
   }
 
-  /// Build an activity indicator showing who is typing/drawing.
-  Widget _buildActivityIndicator(List<UserPresence> otherUsers) {
-    final typingUsers = otherUsers.where((u) => u.isTyping).toList();
-    final drawingUsers = otherUsers.where((u) => u.isDrawing).toList();
-
-    String text;
-    if (typingUsers.isNotEmpty && drawingUsers.isNotEmpty) {
-      text = '${typingUsers.length} typing, ${drawingUsers.length} drawing';
-    } else if (typingUsers.isNotEmpty) {
-      final names = typingUsers.take(2).map((u) => u.displayName).join(', ');
-      text = typingUsers.length > 2
-          ? '$names +${typingUsers.length - 2} typing...'
-          : '$names typing...';
-    } else if (drawingUsers.isNotEmpty) {
-      final names = drawingUsers.take(2).map((u) => u.displayName).join(', ');
-      text = drawingUsers.length > 2
-          ? '$names +${drawingUsers.length - 2} drawing...'
-          : '$names drawing...';
-    } else {
-      return const SizedBox.shrink();
-    }
-
-    return Text(
-      text,
-      style: SpTypography.caption.copyWith(
-        color: SpColors.textTertiary,
-        fontStyle: FontStyle.italic,
-      ),
-    );
-  }
 }
 
 /// Small text button for canvas undo/clear actions.

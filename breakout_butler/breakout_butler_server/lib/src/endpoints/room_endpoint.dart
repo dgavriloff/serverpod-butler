@@ -14,6 +14,24 @@ Map<String, UserPresence> _getPresenceMap(int sessionId, int roomNumber) {
   return _roomPresence.putIfAbsent(key, () => {});
 }
 
+/// Stale timeout - users inactive for this long are removed
+const _staleTimeout = Duration(seconds: 30);
+
+/// Clean up stale users from a room (called periodically)
+List<String> _cleanupStaleUsers(int sessionId, int roomNumber) {
+  final presenceMap = _getPresenceMap(sessionId, roomNumber);
+  final now = DateTime.now();
+  final staleUserIds = <String>[];
+
+  presenceMap.removeWhere((userId, presence) {
+    final isStale = now.difference(presence.lastActive) > _staleTimeout;
+    if (isStale) staleUserIds.add(userId);
+    return isStale;
+  });
+
+  return staleUserIds;
+}
+
 /// Available colors for users (assigned round-robin)
 const _userColors = [
   '#FF6B6B', // red
@@ -57,6 +75,19 @@ class RoomEndpoint extends Endpoint {
     String odtuserId,
     String? displayName,
   ) async {
+    // Clean up stale users first
+    final staleUsers = _cleanupStaleUsers(sessionId, roomNumber);
+    for (final staleUserId in staleUsers) {
+      session.messages.postMessage(
+        _presenceChannel(sessionId, roomNumber),
+        PresenceUpdate(roomNumber: roomNumber, user: UserPresence(
+          userId: staleUserId, displayName: '', color: '',
+          textCursor: -1, isTyping: false, drawingX: -1, drawingY: -1,
+          isDrawing: false, lastActive: DateTime.now(),
+        ), joined: false),
+      );
+    }
+
     final presenceMap = _getPresenceMap(sessionId, roomNumber);
     final colorIndex = presenceMap.length % _userColors.length;
 
