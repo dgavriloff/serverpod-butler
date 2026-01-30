@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:breakout_butler_client/breakout_butler_client.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -15,6 +14,12 @@ import 'core/theme/sp_theme.dart';
 /// Also exposed via [clientProvider] for Riverpod consumers.
 late final Client client;
 
+/// Check if running in dev environment (hostname contains "dev" or is localhost)
+bool get isDevEnvironment {
+  final host = web.window.location.hostname;
+  return host.contains('dev') || host == 'localhost' || host == '127.0.0.1';
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   usePathUrlStrategy();
@@ -24,8 +29,11 @@ void main() async {
   client = Client(serverUrl)
     ..connectivityMonitor = FlutterConnectivityMonitor();
 
-  // In release mode, suppress WebSocket closure errors (normal on page refresh)
-  if (kReleaseMode) {
+  // In production, suppress WebSocket closure errors (normal on page refresh)
+  // In dev environment, let all errors surface for debugging
+  if (isDevEnvironment) {
+    runApp(const ProviderScope(child: BreakoutpadApp()));
+  } else {
     runZonedGuarded(
       () => runApp(const ProviderScope(child: BreakoutpadApp())),
       (error, stack) {
@@ -36,13 +44,10 @@ void main() async {
             errorStr.contains('connection closed')) {
           return; // Swallow these expected errors
         }
-        // Log other errors (could send to error reporting service)
-        debugPrint('Unhandled error: $error');
+        // Log other unexpected errors
+        print('Unhandled error: $error');
       },
     );
-  } else {
-    // In debug mode, let all errors surface normally
-    runApp(const ProviderScope(child: BreakoutpadApp()));
   }
 }
 
