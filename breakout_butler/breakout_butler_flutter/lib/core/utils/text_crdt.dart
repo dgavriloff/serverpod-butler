@@ -153,11 +153,15 @@ class TextCrdt {
     final leftPos = index > 0 ? visible[index - 1].position : 0.0;
     final rightPos = index < visible.length ? visible[index].position : 1.0;
 
+    print('[CRDT] insert: index=$index, text="$text", visibleLen=${visible.length}');
+    print('[CRDT] insert: leftPos=$leftPos, rightPos=$rightPos');
+
     // Generate positions for each character
     final step = (rightPos - leftPos) / (text.length + 1);
 
     for (var i = 0; i < text.length; i++) {
       final position = leftPos + step * (i + 1);
+      print('[CRDT] insert: char="${text[i]}" at position=$position');
       final char = CrdtChar(
         id: _generateCharId(),
         position: position,
@@ -169,6 +173,7 @@ class TextCrdt {
     }
 
     _sortChars();
+    print('[CRDT] after insert+sort: text="${this.text}"');
   }
 
   /// Delete text in the given visible range
@@ -213,6 +218,8 @@ class TextCrdt {
   void applyChange(String oldText, String newText) {
     if (oldText == newText) return;
 
+    print('[CRDT] applyChange: oldText="$oldText" (${oldText.length}), newText="$newText" (${newText.length})');
+
     // Find common prefix
     var prefixLen = 0;
     while (prefixLen < oldText.length &&
@@ -233,6 +240,9 @@ class TextCrdt {
     final deleteStart = prefixLen;
     final deleteEnd = oldText.length - suffixLen;
     final insertText = newText.substring(prefixLen, newText.length - suffixLen);
+
+    print('[CRDT] diff: prefixLen=$prefixLen, suffixLen=$suffixLen');
+    print('[CRDT] diff: deleteStart=$deleteStart, deleteEnd=$deleteEnd, insertText="$insertText"');
 
     // Delete old characters
     if (deleteEnd > deleteStart) {
