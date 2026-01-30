@@ -21,12 +21,17 @@ import 'package:breakout_butler_server/src/generated/transcript_update.dart'
 import 'dart:typed_data' as _i6;
 import 'package:breakout_butler_server/src/generated/butler_response.dart'
     as _i7;
-import 'package:breakout_butler_server/src/generated/room.dart' as _i8;
-import 'package:breakout_butler_server/src/generated/room_update.dart' as _i9;
-import 'package:breakout_butler_server/src/generated/session.dart' as _i10;
-import 'package:breakout_butler_server/src/generated/live_session.dart' as _i11;
+import 'package:breakout_butler_server/src/generated/user_presence.dart' as _i8;
+import 'package:breakout_butler_server/src/generated/presence_update.dart'
+    as _i9;
+import 'package:breakout_butler_server/src/generated/room.dart' as _i10;
+import 'package:breakout_butler_server/src/generated/drawing_stroke.dart'
+    as _i11;
+import 'package:breakout_butler_server/src/generated/room_update.dart' as _i12;
+import 'package:breakout_butler_server/src/generated/session.dart' as _i13;
+import 'package:breakout_butler_server/src/generated/live_session.dart' as _i14;
 import 'package:breakout_butler_server/src/generated/greetings/greeting.dart'
-    as _i12;
+    as _i15;
 import 'package:breakout_butler_server/src/generated/protocol.dart';
 import 'package:breakout_butler_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -829,10 +834,12 @@ class _RoomEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<int> joinRoom(
+  _i3.Future<_i8.UserPresence> joinRoom(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
     int roomNumber,
+    String odtuserId,
+    String? displayName,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -848,6 +855,8 @@ class _RoomEndpoint {
           parameters: _i1.testObjectToJson({
             'sessionId': sessionId,
             'roomNumber': roomNumber,
+            'odtuserId': odtuserId,
+            'displayName': displayName,
           }),
           serializationManager: _serializationManager,
         );
@@ -856,7 +865,7 @@ class _RoomEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<int>);
+                as _i3.Future<_i8.UserPresence>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -864,10 +873,11 @@ class _RoomEndpoint {
     });
   }
 
-  _i3.Future<int> leaveRoom(
+  _i3.Future<void> leaveRoom(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
     int roomNumber,
+    String userId,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -883,6 +893,7 @@ class _RoomEndpoint {
           parameters: _i1.testObjectToJson({
             'sessionId': sessionId,
             'roomNumber': roomNumber,
+            'userId': userId,
           }),
           serializationManager: _serializationManager,
         );
@@ -891,7 +902,7 @@ class _RoomEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<int>);
+                as _i3.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -899,7 +910,80 @@ class _RoomEndpoint {
     });
   }
 
-  _i3.Future<_i8.Room?> getRoom(
+  _i3.Future<void> updatePresence(
+    _i1.TestSessionBuilder sessionBuilder,
+    int sessionId,
+    int roomNumber,
+    _i8.UserPresence presence,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'room',
+            method: 'updatePresence',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'room',
+          methodName: 'updatePresence',
+          parameters: _i1.testObjectToJson({
+            'sessionId': sessionId,
+            'roomNumber': roomNumber,
+            'presence': presence,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Stream<_i9.PresenceUpdate> presenceUpdates(
+    _i1.TestSessionBuilder sessionBuilder,
+    int sessionId,
+    int roomNumber,
+  ) {
+    var _localTestStreamManager = _i1.TestStreamManager<_i9.PresenceUpdate>();
+    _i1.callStreamFunctionAndHandleExceptions(
+      () async {
+        var _localUniqueSession =
+            (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+              endpoint: 'room',
+              method: 'presenceUpdates',
+            );
+        var _localCallContext = await _endpointDispatch
+            .getMethodStreamCallContext(
+              createSessionCallback: (_) => _localUniqueSession,
+              endpointPath: 'room',
+              methodName: 'presenceUpdates',
+              arguments: {
+                'sessionId': sessionId,
+                'roomNumber': roomNumber,
+              },
+              requestedInputStreams: [],
+              serializationManager: _serializationManager,
+            );
+        await _localTestStreamManager.callStreamMethod(
+          _localCallContext,
+          _localUniqueSession,
+          {},
+        );
+      },
+      _localTestStreamManager.outputStreamController,
+    );
+    return _localTestStreamManager.outputStreamController.stream;
+  }
+
+  _i3.Future<_i10.Room?> getRoom(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
     int roomNumber,
@@ -926,7 +1010,7 @@ class _RoomEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.Room?>);
+                as _i3.Future<_i10.Room?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -934,7 +1018,7 @@ class _RoomEndpoint {
     });
   }
 
-  _i3.Future<_i8.Room> updateRoomContent(
+  _i3.Future<_i10.Room> updateRoomContent(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
     int roomNumber,
@@ -963,7 +1047,7 @@ class _RoomEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.Room>);
+                as _i3.Future<_i10.Room>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -971,7 +1055,7 @@ class _RoomEndpoint {
     });
   }
 
-  _i3.Future<_i8.Room> updateRoomDrawing(
+  _i3.Future<_i10.Room> updateRoomDrawing(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
     int roomNumber,
@@ -1000,7 +1084,7 @@ class _RoomEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i8.Room>);
+                as _i3.Future<_i10.Room>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1008,12 +1092,86 @@ class _RoomEndpoint {
     });
   }
 
-  _i3.Stream<_i9.RoomUpdate> roomUpdates(
+  _i3.Future<void> addStroke(
+    _i1.TestSessionBuilder sessionBuilder,
+    int sessionId,
+    int roomNumber,
+    _i11.DrawingStroke stroke,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'room',
+            method: 'addStroke',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'room',
+          methodName: 'addStroke',
+          parameters: _i1.testObjectToJson({
+            'sessionId': sessionId,
+            'roomNumber': roomNumber,
+            'stroke': stroke,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<void> removeStroke(
+    _i1.TestSessionBuilder sessionBuilder,
+    int sessionId,
+    int roomNumber,
+    String strokeId,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'room',
+            method: 'removeStroke',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'room',
+          methodName: 'removeStroke',
+          parameters: _i1.testObjectToJson({
+            'sessionId': sessionId,
+            'roomNumber': roomNumber,
+            'strokeId': strokeId,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Stream<_i12.RoomUpdate> roomUpdates(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
     int roomNumber,
   ) {
-    var _localTestStreamManager = _i1.TestStreamManager<_i9.RoomUpdate>();
+    var _localTestStreamManager = _i1.TestStreamManager<_i12.RoomUpdate>();
     _i1.callStreamFunctionAndHandleExceptions(
       () async {
         var _localUniqueSession =
@@ -1044,11 +1202,11 @@ class _RoomEndpoint {
     return _localTestStreamManager.outputStreamController.stream;
   }
 
-  _i3.Stream<_i9.RoomUpdate> allRoomUpdates(
+  _i3.Stream<_i12.RoomUpdate> allRoomUpdates(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
   ) {
-    var _localTestStreamManager = _i1.TestStreamManager<_i9.RoomUpdate>();
+    var _localTestStreamManager = _i1.TestStreamManager<_i12.RoomUpdate>();
     _i1.callStreamFunctionAndHandleExceptions(
       () async {
         var _localUniqueSession =
@@ -1076,7 +1234,7 @@ class _RoomEndpoint {
     return _localTestStreamManager.outputStreamController.stream;
   }
 
-  _i3.Future<List<_i8.Room>> getAllRooms(
+  _i3.Future<List<_i10.Room>> getAllRooms(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
   ) async {
@@ -1099,7 +1257,7 @@ class _RoomEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i8.Room>>);
+                as _i3.Future<List<_i10.Room>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1118,7 +1276,7 @@ class _SessionEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i10.ClassSession> createSession(
+  _i3.Future<_i13.ClassSession> createSession(
     _i1.TestSessionBuilder sessionBuilder,
     String name,
     int roomCount,
@@ -1145,7 +1303,7 @@ class _SessionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i10.ClassSession>);
+                as _i3.Future<_i13.ClassSession>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1153,7 +1311,7 @@ class _SessionEndpoint {
     });
   }
 
-  _i3.Future<_i11.LiveSession> startLiveSession(
+  _i3.Future<_i14.LiveSession> startLiveSession(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
     String urlTag,
@@ -1180,7 +1338,7 @@ class _SessionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i11.LiveSession>);
+                as _i3.Future<_i14.LiveSession>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1188,7 +1346,7 @@ class _SessionEndpoint {
     });
   }
 
-  _i3.Future<_i11.LiveSession?> getLiveSessionByTag(
+  _i3.Future<_i14.LiveSession?> getLiveSessionByTag(
     _i1.TestSessionBuilder sessionBuilder,
     String urlTag,
   ) async {
@@ -1211,7 +1369,7 @@ class _SessionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i11.LiveSession?>);
+                as _i3.Future<_i14.LiveSession?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1219,7 +1377,7 @@ class _SessionEndpoint {
     });
   }
 
-  _i3.Future<_i10.ClassSession?> getSession(
+  _i3.Future<_i13.ClassSession?> getSession(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
   ) async {
@@ -1242,7 +1400,7 @@ class _SessionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i10.ClassSession?>);
+                as _i3.Future<_i13.ClassSession?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1316,7 +1474,7 @@ class _SessionEndpoint {
     });
   }
 
-  _i3.Future<List<_i8.Room>> getRooms(
+  _i3.Future<List<_i10.Room>> getRooms(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
   ) async {
@@ -1339,7 +1497,7 @@ class _SessionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<List<_i8.Room>>);
+                as _i3.Future<List<_i10.Room>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1358,7 +1516,7 @@ class _GreetingEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i3.Future<_i12.Greeting> hello(
+  _i3.Future<_i15.Greeting> hello(
     _i1.TestSessionBuilder sessionBuilder,
     String name,
   ) async {
@@ -1381,7 +1539,7 @@ class _GreetingEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i3.Future<_i12.Greeting>);
+                as _i3.Future<_i15.Greeting>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

@@ -1,0 +1,9 @@
+### Lightweight presence update (sent frequently without full content)
+class: PresenceUpdate
+fields:
+  ### Room number
+  roomNumber: int
+  ### The user whose presence changed
+  user: UserPresence
+  ### Whether user joined (true) or left (false), null = just an update
+  joined: bool?

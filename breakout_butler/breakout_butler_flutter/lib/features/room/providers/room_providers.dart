@@ -1,9 +1,41 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/utils/text_crdt.dart';
 import '../../../main.dart';
+
+/// Render CRDT JSON to plain text (for display in dashboard)
+String _renderCrdtToText(String content) {
+  if (!content.startsWith('[') || !content.contains('"id"')) {
+    return content; // Not CRDT JSON, return as-is
+  }
+  try {
+    final list = jsonDecode(content) as List<dynamic>;
+    // Sort by position and filter out deleted chars
+    final chars = list
+        .map((item) => item as Map<String, dynamic>)
+        .where((item) => item['deleted'] != true)
+        .toList()
+      ..sort((a, b) => (a['position'] as num).compareTo(b['position'] as num));
+    return chars.map((c) => c['char'] as String).join();
+  } catch (_) {
+    return content;
+  }
+}
+
+/// Generate a simple user ID (persisted in memory for session)
+String _generateUserId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  final rng = Random();
+  return List.generate(12, (_) => chars[rng.nextInt(chars.length)]).join();
+}
+
+/// Global user ID for this session
+final _userId = _generateUserId();
 
 /// Stream of updates for a single room.
 final roomUpdatesProvider =
@@ -53,7 +85,10 @@ class RoomContentsNotifier extends StateNotifier<Map<int, RoomState>> {
     _ref.read(allRoomsProvider(_sessionId).future).then((rooms) {
       final map = <int, RoomState>{};
       for (final room in rooms) {
-        map[room.roomNumber] = RoomState(content: room.content, occupantCount: 0);
+        map[room.roomNumber] = RoomState(
+          content: _renderCrdtToText(room.content),
+          occupantCount: 0,
+        );
       }
       if (mounted) state = map;
     });
@@ -64,7 +99,7 @@ class RoomContentsNotifier extends StateNotifier<Map<int, RoomState>> {
         state = {
           ...state,
           update.roomNumber: RoomState(
-            content: update.content,
+            content: _renderCrdtToText(update.content),
             occupantCount: update.occupantCount,
           ),
         };
@@ -87,42 +122,65 @@ final roomContentsProvider = StateNotifierProvider.autoDispose
 /// Manages local content + drawing editing with debounced save for a student room.
 class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   RoomEditorNotifier(this._sessionId, this._roomNumber)
-      : super(const RoomEditorState());
+      : _textCrdt = TextCrdt(nodeId: _userId),
+        super(const RoomEditorState());
 
   final int _sessionId;
   final int _roomNumber;
+  final TextCrdt _textCrdt;
   Timer? _contentDebounce;
   Timer? _drawingDebounce;
   Timer? _editingCooldown;
+  Timer? _presenceDebounce;
   StreamSubscription<RoomUpdate>? _sub;
-  String _lastSavedContent = '';
+  StreamSubscription<PresenceUpdate>? _presenceSub;
+  String _lastSavedCrdtJson = '';
   String _lastSavedDrawing = '';
   bool _hasJoined = false;
-  bool _isLocallyEditingContent = false;
   bool _isLocallyEditingDrawing = false;
 
   Future<void> init() async {
-    // Join the room (increment occupant count)
+    // Join the room with user ID
     try {
-      final count = await client.room.joinRoom(_sessionId, _roomNumber);
+      final presence = await client.room.joinRoom(
+        _sessionId,
+        _roomNumber,
+        _userId,
+        null, // Auto-generate display name
+      );
       _hasJoined = true;
-      if (mounted) state = state.copyWith(occupantCount: count);
+      if (mounted) {
+        state = state.copyWith(myPresence: presence);
+      }
     } catch (_) {
       // Ignore join errors - room updates will still work
     }
 
-    // Load initial content
+    // Load initial content - try to load as CRDT JSON, fallback to plain text
     final room = await client.room.getRoom(_sessionId, _roomNumber);
     if (room != null && mounted) {
-      _lastSavedContent = room.content;
       _lastSavedDrawing = room.drawingData ?? '';
+
+      // Try to load as CRDT JSON, fallback to treating as plain text
+      final content = room.content;
+      if (content.startsWith('[') && content.contains('"id"')) {
+        // Looks like CRDT JSON
+        _textCrdt.loadFromJson(content);
+        _lastSavedCrdtJson = content;
+      } else {
+        // Plain text - convert to CRDT
+        _textCrdt.replaceAll(content);
+        _lastSavedCrdtJson = _textCrdt.toJson();
+      }
+
       state = state.copyWith(
-        content: room.content,
+        content: _textCrdt.text,
+        crdtJson: _lastSavedCrdtJson,
         drawingData: room.drawingData ?? '',
         loaded: true,
       );
     } else if (mounted) {
-      state = state.copyWith(content: '', drawingData: '', loaded: true);
+      state = state.copyWith(content: '', crdtJson: '[]', drawingData: '', loaded: true);
     }
 
     // Subscribe to remote updates
@@ -131,13 +189,25 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
         .listen((update) {
       if (!mounted) return;
 
-      // Always update occupant count
-      state = state.copyWith(occupantCount: update.occupantCount);
+      // Always update occupant count and presence
+      state = state.copyWith(
+        occupantCount: update.occupantCount,
+        presence: update.presence ?? [],
+      );
 
-      // Only apply remote content if we're not actively editing
-      if (!_isLocallyEditingContent && update.content != _lastSavedContent) {
-        _lastSavedContent = update.content;
-        state = state.copyWith(content: update.content);
+      // Merge remote CRDT content
+      final remoteContent = update.content;
+      if (remoteContent != _lastSavedCrdtJson) {
+        if (remoteContent.startsWith('[') && remoteContent.contains('"id"')) {
+          // Remote is CRDT JSON - merge it
+          _textCrdt.merge(remoteContent);
+          _lastSavedCrdtJson = _textCrdt.toJson();
+          state = state.copyWith(
+            content: _textCrdt.text,
+            crdtJson: _lastSavedCrdtJson,
+          );
+        }
+        // If remote is plain text, ignore it (we're using CRDT now)
       }
 
       // Only apply remote drawing if we're not actively editing
@@ -147,22 +217,62 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
         state = state.copyWith(drawingData: remoteDrawing);
       }
     });
+
+    // Subscribe to presence updates for real-time cursor tracking
+    _presenceSub = client.room
+        .presenceUpdates(_sessionId, _roomNumber)
+        .listen((update) {
+      if (!mounted) return;
+
+      final currentPresence = Map<String, UserPresence>.fromIterable(
+        state.presence,
+        key: (p) => (p as UserPresence).userId,
+        value: (p) => p as UserPresence,
+      );
+
+      if (update.joined == false) {
+        // User left
+        currentPresence.remove(update.user.userId);
+      } else {
+        // User joined or updated
+        currentPresence[update.user.userId] = update.user;
+      }
+
+      state = state.copyWith(
+        presence: currentPresence.values.toList(),
+        occupantCount: currentPresence.length,
+      );
+    });
   }
 
-  void updateContent(String content) {
+  void updateContent(String newText, {int cursorPosition = -1}) {
     if (!mounted) return;
-    _isLocallyEditingContent = true;
-    state = state.copyWith(content: content);
+
+    // Apply change to CRDT
+    final oldText = _textCrdt.text;
+    _textCrdt.applyChange(oldText, newText);
+
+    final crdtJson = _textCrdt.toJson();
+    state = state.copyWith(
+      content: _textCrdt.text,
+      crdtJson: crdtJson,
+    );
 
     _contentDebounce?.cancel();
-    _contentDebounce = Timer(const Duration(milliseconds: 500), () {
-      _saveContent(content);
+    _contentDebounce = Timer(const Duration(milliseconds: 300), () {
+      _saveContent(crdtJson);
     });
 
-    // Reset editing flag after a longer cooldown to allow save + broadcast to complete
+    // Send presence update (typing state + cursor position)
+    _sendPresenceUpdate(
+      isTyping: true,
+      textCursor: cursorPosition,
+    );
+
+    // Reset typing indicator after cooldown
     _editingCooldown?.cancel();
     _editingCooldown = Timer(const Duration(milliseconds: 1500), () {
-      _isLocallyEditingContent = false;
+      _sendPresenceUpdate(isTyping: false);
     });
   }
 
@@ -180,15 +290,58 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     _editingCooldown?.cancel();
     _editingCooldown = Timer(const Duration(milliseconds: 1500), () {
       _isLocallyEditingDrawing = false;
+      // Also mark as not drawing
+      _sendPresenceUpdate(isDrawing: false);
     });
   }
 
-  Future<void> _saveContent(String content) async {
+  /// Update drawing cursor position (called on pointer move)
+  void updateDrawingCursor(double x, double y) {
+    _sendPresenceUpdate(
+      isDrawing: true,
+      drawingX: x,
+      drawingY: y,
+    );
+  }
+
+  /// Send presence update to server (debounced)
+  void _sendPresenceUpdate({
+    bool? isTyping,
+    int? textCursor,
+    bool? isDrawing,
+    double? drawingX,
+    double? drawingY,
+  }) {
+    if (!_hasJoined || state.myPresence == null) return;
+
+    // Debounce presence updates to avoid flooding
+    _presenceDebounce?.cancel();
+    _presenceDebounce = Timer(const Duration(milliseconds: 50), () {
+      if (!mounted) return;
+
+      final updated = UserPresence(
+        userId: state.myPresence!.userId,
+        displayName: state.myPresence!.displayName,
+        color: state.myPresence!.color,
+        textCursor: textCursor ?? state.myPresence!.textCursor,
+        isTyping: isTyping ?? state.myPresence!.isTyping,
+        drawingX: drawingX ?? state.myPresence!.drawingX,
+        drawingY: drawingY ?? state.myPresence!.drawingY,
+        isDrawing: isDrawing ?? state.myPresence!.isDrawing,
+        lastActive: DateTime.now(),
+      );
+
+      state = state.copyWith(myPresence: updated);
+      client.room.updatePresence(_sessionId, _roomNumber, updated);
+    });
+  }
+
+  Future<void> _saveContent(String crdtJson) async {
     if (!mounted) return;
     state = state.copyWith(isSaving: true);
     try {
-      await client.room.updateRoomContent(_sessionId, _roomNumber, content);
-      _lastSavedContent = content;
+      await client.room.updateRoomContent(_sessionId, _roomNumber, crdtJson);
+      _lastSavedCrdtJson = crdtJson;
     } finally {
       if (mounted) state = state.copyWith(isSaving: false);
     }
@@ -211,10 +364,12 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     _contentDebounce?.cancel();
     _drawingDebounce?.cancel();
     _editingCooldown?.cancel();
+    _presenceDebounce?.cancel();
     _sub?.cancel();
-    // Leave the room (decrement occupant count)
+    _presenceSub?.cancel();
+    // Leave the room
     if (_hasJoined) {
-      client.room.leaveRoom(_sessionId, _roomNumber).catchError((_) {});
+      client.room.leaveRoom(_sessionId, _roomNumber, _userId).catchError((_) {});
     }
     super.dispose();
   }
@@ -223,31 +378,51 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 class RoomEditorState {
   const RoomEditorState({
     this.content = '',
+    this.crdtJson = '[]',
     this.drawingData = '',
     this.isSaving = false,
     this.loaded = false,
     this.occupantCount = 0,
+    this.presence = const [],
+    this.myPresence,
   });
 
+  /// Rendered text content (for display)
   final String content;
+
+  /// CRDT JSON data (for sync)
+  final String crdtJson;
+
   final String drawingData;
   final bool isSaving;
   final bool loaded;
   final int occupantCount;
+  final List<UserPresence> presence;
+  final UserPresence? myPresence;
+
+  /// Get other users' presence (excluding self)
+  List<UserPresence> get otherUsers =>
+      presence.where((p) => p.userId != _userId).toList();
 
   RoomEditorState copyWith({
     String? content,
+    String? crdtJson,
     String? drawingData,
     bool? isSaving,
     bool? loaded,
     int? occupantCount,
+    List<UserPresence>? presence,
+    UserPresence? myPresence,
   }) {
     return RoomEditorState(
       content: content ?? this.content,
+      crdtJson: crdtJson ?? this.crdtJson,
       drawingData: drawingData ?? this.drawingData,
       isSaving: isSaving ?? this.isSaving,
       loaded: loaded ?? this.loaded,
       occupantCount: occupantCount ?? this.occupantCount,
+      presence: presence ?? this.presence,
+      myPresence: myPresence ?? this.myPresence,
     );
   }
 }

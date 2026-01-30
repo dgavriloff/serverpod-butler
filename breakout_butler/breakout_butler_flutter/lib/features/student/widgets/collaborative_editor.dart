@@ -1,3 +1,4 @@
+import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -73,11 +74,12 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
     }
 
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         // ── Main content area ───────────────────────────────────────
         Column(
           children: [
-            // Status bar (top) - occupant count left, save indicator right
+            // Status bar (top) - occupant count left, typing indicator center, save indicator right
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: SpSpacing.lg,
@@ -85,15 +87,32 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
               ),
               child: Row(
                 children: [
-                  // Occupant count (left)
+                  // Occupant count (left) with colored dots for each user
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.people_outline,
-                        size: 14,
-                        color: SpColors.textTertiary,
-                      ),
+                      // Show colored dots for each user
+                      ...editorState.presence.take(5).map((user) => Container(
+                            width: 8,
+                            height: 8,
+                            margin: const EdgeInsets.only(right: 2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _parseColor(user.color),
+                              border: user.isTyping || user.isDrawing
+                                  ? Border.all(
+                                      color: SpColors.textPrimary, width: 1.5)
+                                  : null,
+                            ),
+                          )),
+                      if (editorState.presence.length > 5)
+                        Text(
+                          '+${editorState.presence.length - 5}',
+                          style: SpTypography.caption.copyWith(
+                            color: SpColors.textTertiary,
+                            fontSize: 10,
+                          ),
+                        ),
                       const SizedBox(width: SpSpacing.xs),
                       Text(
                         '${editorState.occupantCount} here',
@@ -104,6 +123,12 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                     ],
                   ),
                   const Spacer(),
+                  // Typing/drawing indicator (center)
+                  if (editorState.otherUsers.any((u) => u.isTyping || u.isDrawing))
+                    Padding(
+                      padding: const EdgeInsets.only(right: SpSpacing.md),
+                      child: _buildActivityIndicator(editorState.otherUsers),
+                    ),
                   // Save indicator (right)
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -164,7 +189,10 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                                   roomNumber: widget.roomNumber,
                                 ),
                               ).notifier)
-                              .updateContent(text);
+                              .updateContent(
+                                text,
+                                cursorPosition: _controller.selection.baseOffset,
+                              );
                         },
                       ),
                     ),
@@ -176,6 +204,26 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                       key: _canvasKey,
                       initialData: editorState.drawingData,
                       interactive: _mode == EditorMode.draw,
+                      remoteCursors: editorState.otherUsers
+                          .where((u) => u.isDrawing && u.drawingX >= 0 && u.drawingY >= 0)
+                          .map((u) => RemoteCursor(
+                                x: u.drawingX,
+                                y: u.drawingY,
+                                color: u.color,
+                                displayName: u.displayName,
+                                isDrawing: u.isDrawing,
+                              ))
+                          .toList(),
+                      onCursorMove: (x, y) {
+                        ref
+                            .read(roomEditorProvider(
+                              (
+                                sessionId: widget.sessionId,
+                                roomNumber: widget.roomNumber,
+                              ),
+                            ).notifier)
+                            .updateDrawingCursor(x, y);
+                      },
                       onChanged: (json) {
                         ref
                             .read(roomEditorProvider(
@@ -239,6 +287,47 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Parse a hex color string to a Color.
+  Color _parseColor(String hexColor) {
+    try {
+      final hex = hexColor.replaceFirst('#', '');
+      return Color(int.parse('FF$hex', radix: 16));
+    } catch (_) {
+      return SpColors.textSecondary;
+    }
+  }
+
+  /// Build an activity indicator showing who is typing/drawing.
+  Widget _buildActivityIndicator(List<UserPresence> otherUsers) {
+    final typingUsers = otherUsers.where((u) => u.isTyping).toList();
+    final drawingUsers = otherUsers.where((u) => u.isDrawing).toList();
+
+    String text;
+    if (typingUsers.isNotEmpty && drawingUsers.isNotEmpty) {
+      text = '${typingUsers.length} typing, ${drawingUsers.length} drawing';
+    } else if (typingUsers.isNotEmpty) {
+      final names = typingUsers.take(2).map((u) => u.displayName).join(', ');
+      text = typingUsers.length > 2
+          ? '$names +${typingUsers.length - 2} typing...'
+          : '$names typing...';
+    } else if (drawingUsers.isNotEmpty) {
+      final names = drawingUsers.take(2).map((u) => u.displayName).join(', ');
+      text = drawingUsers.length > 2
+          ? '$names +${drawingUsers.length - 2} drawing...'
+          : '$names drawing...';
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    return Text(
+      text,
+      style: SpTypography.caption.copyWith(
+        color: SpColors.textTertiary,
+        fontStyle: FontStyle.italic,
+      ),
     );
   }
 }

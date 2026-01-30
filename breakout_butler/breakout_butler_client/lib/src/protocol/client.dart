@@ -21,13 +21,18 @@ import 'package:breakout_butler_client/src/protocol/transcript_update.dart'
 import 'dart:typed_data' as _i6;
 import 'package:breakout_butler_client/src/protocol/butler_response.dart'
     as _i7;
-import 'package:breakout_butler_client/src/protocol/room.dart' as _i8;
-import 'package:breakout_butler_client/src/protocol/room_update.dart' as _i9;
-import 'package:breakout_butler_client/src/protocol/session.dart' as _i10;
-import 'package:breakout_butler_client/src/protocol/live_session.dart' as _i11;
+import 'package:breakout_butler_client/src/protocol/user_presence.dart' as _i8;
+import 'package:breakout_butler_client/src/protocol/presence_update.dart'
+    as _i9;
+import 'package:breakout_butler_client/src/protocol/room.dart' as _i10;
+import 'package:breakout_butler_client/src/protocol/drawing_stroke.dart'
+    as _i11;
+import 'package:breakout_butler_client/src/protocol/room_update.dart' as _i12;
+import 'package:breakout_butler_client/src/protocol/session.dart' as _i13;
+import 'package:breakout_butler_client/src/protocol/live_session.dart' as _i14;
 import 'package:breakout_butler_client/src/protocol/greetings/greeting.dart'
-    as _i12;
-import 'protocol.dart' as _i13;
+    as _i15;
+import 'protocol.dart' as _i16;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -377,36 +382,75 @@ class EndpointRoom extends _i2.EndpointRef {
   String get name => 'room';
 
   /// Called when a student enters a room
-  _i3.Future<int> joinRoom(
+  _i3.Future<_i8.UserPresence> joinRoom(
     int sessionId,
     int roomNumber,
-  ) => caller.callServerEndpoint<int>(
+    String odtuserId,
+    String? displayName,
+  ) => caller.callServerEndpoint<_i8.UserPresence>(
     'room',
     'joinRoom',
     {
       'sessionId': sessionId,
       'roomNumber': roomNumber,
+      'odtuserId': odtuserId,
+      'displayName': displayName,
     },
   );
 
   /// Called when a student leaves a room
-  _i3.Future<int> leaveRoom(
+  _i3.Future<void> leaveRoom(
     int sessionId,
     int roomNumber,
-  ) => caller.callServerEndpoint<int>(
+    String userId,
+  ) => caller.callServerEndpoint<void>(
     'room',
     'leaveRoom',
     {
       'sessionId': sessionId,
       'roomNumber': roomNumber,
+      'userId': userId,
     },
   );
 
-  /// Get a specific room by session ID and room number
-  _i3.Future<_i8.Room?> getRoom(
+  /// Update a user's presence (cursor position, typing state, etc.)
+  _i3.Future<void> updatePresence(
     int sessionId,
     int roomNumber,
-  ) => caller.callServerEndpoint<_i8.Room?>(
+    _i8.UserPresence presence,
+  ) => caller.callServerEndpoint<void>(
+    'room',
+    'updatePresence',
+    {
+      'sessionId': sessionId,
+      'roomNumber': roomNumber,
+      'presence': presence,
+    },
+  );
+
+  /// Stream presence updates for a room
+  _i3.Stream<_i9.PresenceUpdate> presenceUpdates(
+    int sessionId,
+    int roomNumber,
+  ) =>
+      caller.callStreamingServerEndpoint<
+        _i3.Stream<_i9.PresenceUpdate>,
+        _i9.PresenceUpdate
+      >(
+        'room',
+        'presenceUpdates',
+        {
+          'sessionId': sessionId,
+          'roomNumber': roomNumber,
+        },
+        {},
+      );
+
+  /// Get a specific room by session ID and room number
+  _i3.Future<_i10.Room?> getRoom(
+    int sessionId,
+    int roomNumber,
+  ) => caller.callServerEndpoint<_i10.Room?>(
     'room',
     'getRoom',
     {
@@ -416,11 +460,11 @@ class EndpointRoom extends _i2.EndpointRef {
   );
 
   /// Update room content
-  _i3.Future<_i8.Room> updateRoomContent(
+  _i3.Future<_i10.Room> updateRoomContent(
     int sessionId,
     int roomNumber,
     String content,
-  ) => caller.callServerEndpoint<_i8.Room>(
+  ) => caller.callServerEndpoint<_i10.Room>(
     'room',
     'updateRoomContent',
     {
@@ -430,12 +474,12 @@ class EndpointRoom extends _i2.EndpointRef {
     },
   );
 
-  /// Update room drawing data
-  _i3.Future<_i8.Room> updateRoomDrawing(
+  /// Update room drawing data (full replacement - for backwards compatibility)
+  _i3.Future<_i10.Room> updateRoomDrawing(
     int sessionId,
     int roomNumber,
     String drawingData,
-  ) => caller.callServerEndpoint<_i8.Room>(
+  ) => caller.callServerEndpoint<_i10.Room>(
     'room',
     'updateRoomDrawing',
     {
@@ -445,12 +489,45 @@ class EndpointRoom extends _i2.EndpointRef {
     },
   );
 
-  /// Stream real-time room updates for a specific room
-  _i3.Stream<_i9.RoomUpdate> roomUpdates(
+  /// Add a stroke to the drawing (CRDT-style merge by ID)
+  _i3.Future<void> addStroke(
     int sessionId,
     int roomNumber,
-  ) => caller
-      .callStreamingServerEndpoint<_i3.Stream<_i9.RoomUpdate>, _i9.RoomUpdate>(
+    _i11.DrawingStroke stroke,
+  ) => caller.callServerEndpoint<void>(
+    'room',
+    'addStroke',
+    {
+      'sessionId': sessionId,
+      'roomNumber': roomNumber,
+      'stroke': stroke,
+    },
+  );
+
+  /// Remove a stroke (soft delete for CRDT consistency)
+  _i3.Future<void> removeStroke(
+    int sessionId,
+    int roomNumber,
+    String strokeId,
+  ) => caller.callServerEndpoint<void>(
+    'room',
+    'removeStroke',
+    {
+      'sessionId': sessionId,
+      'roomNumber': roomNumber,
+      'strokeId': strokeId,
+    },
+  );
+
+  /// Stream real-time room updates for a specific room
+  _i3.Stream<_i12.RoomUpdate> roomUpdates(
+    int sessionId,
+    int roomNumber,
+  ) =>
+      caller.callStreamingServerEndpoint<
+        _i3.Stream<_i12.RoomUpdate>,
+        _i12.RoomUpdate
+      >(
         'room',
         'roomUpdates',
         {
@@ -461,8 +538,11 @@ class EndpointRoom extends _i2.EndpointRef {
       );
 
   /// Stream updates for ALL rooms in a session (for professor dashboard)
-  _i3.Stream<_i9.RoomUpdate> allRoomUpdates(int sessionId) => caller
-      .callStreamingServerEndpoint<_i3.Stream<_i9.RoomUpdate>, _i9.RoomUpdate>(
+  _i3.Stream<_i12.RoomUpdate> allRoomUpdates(int sessionId) =>
+      caller.callStreamingServerEndpoint<
+        _i3.Stream<_i12.RoomUpdate>,
+        _i12.RoomUpdate
+      >(
         'room',
         'allRoomUpdates',
         {'sessionId': sessionId},
@@ -470,8 +550,8 @@ class EndpointRoom extends _i2.EndpointRef {
       );
 
   /// Get all rooms for a session (snapshot, not streaming)
-  _i3.Future<List<_i8.Room>> getAllRooms(int sessionId) =>
-      caller.callServerEndpoint<List<_i8.Room>>(
+  _i3.Future<List<_i10.Room>> getAllRooms(int sessionId) =>
+      caller.callServerEndpoint<List<_i10.Room>>(
         'room',
         'getAllRooms',
         {'sessionId': sessionId},
@@ -487,10 +567,10 @@ class EndpointSession extends _i2.EndpointRef {
   String get name => 'session';
 
   /// Create a new classroom session
-  _i3.Future<_i10.ClassSession> createSession(
+  _i3.Future<_i13.ClassSession> createSession(
     String name,
     int roomCount,
-  ) => caller.callServerEndpoint<_i10.ClassSession>(
+  ) => caller.callServerEndpoint<_i13.ClassSession>(
     'session',
     'createSession',
     {
@@ -500,10 +580,10 @@ class EndpointSession extends _i2.EndpointRef {
   );
 
   /// Start a live session with a URL tag
-  _i3.Future<_i11.LiveSession> startLiveSession(
+  _i3.Future<_i14.LiveSession> startLiveSession(
     int sessionId,
     String urlTag,
-  ) => caller.callServerEndpoint<_i11.LiveSession>(
+  ) => caller.callServerEndpoint<_i14.LiveSession>(
     'session',
     'startLiveSession',
     {
@@ -513,22 +593,22 @@ class EndpointSession extends _i2.EndpointRef {
   );
 
   /// Get a live session by URL tag
-  _i3.Future<_i11.LiveSession?> getLiveSessionByTag(String urlTag) =>
-      caller.callServerEndpoint<_i11.LiveSession?>(
+  _i3.Future<_i14.LiveSession?> getLiveSessionByTag(String urlTag) =>
+      caller.callServerEndpoint<_i14.LiveSession?>(
         'session',
         'getLiveSessionByTag',
         {'urlTag': urlTag},
       );
 
   /// Get session details including rooms
-  _i3.Future<_i10.ClassSession?> getSession(int sessionId) =>
-      caller.callServerEndpoint<_i10.ClassSession?>(
+  _i3.Future<_i13.ClassSession?> getSession(int sessionId) =>
+      caller.callServerEndpoint<_i13.ClassSession?>(
         'session',
         'getSession',
         {'sessionId': sessionId},
       );
 
-  /// End a live session
+  /// End a live session and delete all associated data
   _i3.Future<void> endLiveSession(String urlTag) =>
       caller.callServerEndpoint<void>(
         'session',
@@ -551,8 +631,8 @@ class EndpointSession extends _i2.EndpointRef {
   );
 
   /// Get all rooms for a session
-  _i3.Future<List<_i8.Room>> getRooms(int sessionId) =>
-      caller.callServerEndpoint<List<_i8.Room>>(
+  _i3.Future<List<_i10.Room>> getRooms(int sessionId) =>
+      caller.callServerEndpoint<List<_i10.Room>>(
         'session',
         'getRooms',
         {'sessionId': sessionId},
@@ -569,8 +649,8 @@ class EndpointGreeting extends _i2.EndpointRef {
   String get name => 'greeting';
 
   /// Returns a personalized greeting message: "Hello {name}".
-  _i3.Future<_i12.Greeting> hello(String name) =>
-      caller.callServerEndpoint<_i12.Greeting>(
+  _i3.Future<_i15.Greeting> hello(String name) =>
+      caller.callServerEndpoint<_i15.Greeting>(
         'greeting',
         'hello',
         {'name': name},
@@ -608,7 +688,7 @@ class Client extends _i2.ServerpodClientShared {
     bool? disconnectStreamsOnLostInternetConnection,
   }) : super(
          host,
-         _i13.Protocol(),
+         _i16.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,

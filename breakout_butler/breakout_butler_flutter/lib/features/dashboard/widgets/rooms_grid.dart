@@ -33,7 +33,8 @@ class RoomsGrid extends ConsumerWidget {
         itemCount: roomCount,
         itemBuilder: (context, index) {
           final roomNumber = index + 1;
-          final content = roomContents[roomNumber] ?? '';
+          final roomState = roomContents[roomNumber];
+          final content = roomState?.content ?? '';
 
           return RoomCard(
             roomNumber: roomNumber,

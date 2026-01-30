@@ -1,11 +1,30 @@
+import 'dart:convert';
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 
-/// In-memory tracking of room occupants.
-/// Key: 'sessionId-roomNumber', Value: count of users
-final Map<String, int> _roomOccupants = {};
+/// In-memory tracking of room occupants and presence.
+/// Key: 'sessionId-roomNumber', Value: map of userId -> UserPresence
+final Map<String, Map<String, UserPresence>> _roomPresence = {};
 
-String _occupantKey(int sessionId, int roomNumber) => '$sessionId-$roomNumber';
+String _presenceKey(int sessionId, int roomNumber) => '$sessionId-$roomNumber';
+
+/// Get presence map for a room, creating if needed
+Map<String, UserPresence> _getPresenceMap(int sessionId, int roomNumber) {
+  final key = _presenceKey(sessionId, roomNumber);
+  return _roomPresence.putIfAbsent(key, () => {});
+}
+
+/// Available colors for users (assigned round-robin)
+const _userColors = [
+  '#FF6B6B', // red
+  '#4ECDC4', // teal
+  '#45B7D1', // blue
+  '#96CEB4', // green
+  '#FFEAA7', // yellow
+  '#DDA0DD', // plum
+  '#98D8C8', // mint
+  '#F7DC6F', // gold
+];
 
 /// Endpoint for managing breakout room workspaces with real-time collaboration
 class RoomEndpoint extends Endpoint {
@@ -16,45 +35,129 @@ class RoomEndpoint extends Endpoint {
   static String _roomChannel(int sessionId, int roomNumber) =>
       'room-$sessionId-$roomNumber';
 
+  // Channel for presence updates (separate from content for efficiency)
+  static String _presenceChannel(int sessionId, int roomNumber) =>
+      'presence-$sessionId-$roomNumber';
+
   /// Get current occupant count for a room
   int _getOccupantCount(int sessionId, int roomNumber) {
-    return _roomOccupants[_occupantKey(sessionId, roomNumber)] ?? 0;
+    return _getPresenceMap(sessionId, roomNumber).length;
+  }
+
+  /// Get list of current user presences for a room
+  List<UserPresence> _getPresenceList(int sessionId, int roomNumber) {
+    return _getPresenceMap(sessionId, roomNumber).values.toList();
   }
 
   /// Called when a student enters a room
-  Future<int> joinRoom(
+  Future<UserPresence> joinRoom(
     Session session,
     int sessionId,
     int roomNumber,
+    String odtuserId,
+    String? displayName,
   ) async {
-    final key = _occupantKey(sessionId, roomNumber);
-    _roomOccupants[key] = (_roomOccupants[key] ?? 0) + 1;
-    final count = _roomOccupants[key]!;
+    final presenceMap = _getPresenceMap(sessionId, roomNumber);
+    final colorIndex = presenceMap.length % _userColors.length;
 
-    // Broadcast the updated count
-    await _broadcastOccupantUpdate(session, sessionId, roomNumber);
+    final presence = UserPresence(
+      userId: odtuserId,
+      displayName: displayName ?? 'User ${presenceMap.length + 1}',
+      color: _userColors[colorIndex],
+      textCursor: -1,
+      isTyping: false,
+      drawingX: -1,
+      drawingY: -1,
+      isDrawing: false,
+      lastActive: DateTime.now(),
+    );
 
-    return count;
+    presenceMap[odtuserId] = presence;
+
+    // Broadcast presence join
+    final presenceUpdate = PresenceUpdate(
+      roomNumber: roomNumber,
+      user: presence,
+      joined: true,
+    );
+    session.messages.postMessage(_presenceChannel(sessionId, roomNumber), presenceUpdate);
+
+    // Broadcast full room update
+    await _broadcastRoomUpdate(session, sessionId, roomNumber);
+
+    return presence;
   }
 
   /// Called when a student leaves a room
-  Future<int> leaveRoom(
+  Future<void> leaveRoom(
     Session session,
     int sessionId,
     int roomNumber,
+    String userId,
   ) async {
-    final key = _occupantKey(sessionId, roomNumber);
-    _roomOccupants[key] = ((_roomOccupants[key] ?? 1) - 1).clamp(0, 999);
-    final count = _roomOccupants[key]!;
+    final presenceMap = _getPresenceMap(sessionId, roomNumber);
+    final presence = presenceMap.remove(userId);
 
-    // Broadcast the updated count
-    await _broadcastOccupantUpdate(session, sessionId, roomNumber);
+    if (presence != null) {
+      // Broadcast presence leave
+      final presenceUpdate = PresenceUpdate(
+        roomNumber: roomNumber,
+        user: presence,
+        joined: false,
+      );
+      session.messages.postMessage(_presenceChannel(sessionId, roomNumber), presenceUpdate);
+    }
 
-    return count;
+    // Broadcast full room update
+    await _broadcastRoomUpdate(session, sessionId, roomNumber);
   }
 
-  /// Broadcast an occupant count update (without content change)
-  Future<void> _broadcastOccupantUpdate(
+  /// Update a user's presence (cursor position, typing state, etc.)
+  Future<void> updatePresence(
+    Session session,
+    int sessionId,
+    int roomNumber,
+    UserPresence presence,
+  ) async {
+    final presenceMap = _getPresenceMap(sessionId, roomNumber);
+    presenceMap[presence.userId] = presence.copyWith(lastActive: DateTime.now());
+
+    // Broadcast presence update
+    final presenceUpdate = PresenceUpdate(
+      roomNumber: roomNumber,
+      user: presence,
+      joined: null,
+    );
+    session.messages.postMessage(_presenceChannel(sessionId, roomNumber), presenceUpdate);
+  }
+
+  /// Stream presence updates for a room
+  Stream<PresenceUpdate> presenceUpdates(
+    Session session,
+    int sessionId,
+    int roomNumber,
+  ) async* {
+    // First, send current presence for all users
+    for (final presence in _getPresenceList(sessionId, roomNumber)) {
+      yield PresenceUpdate(
+        roomNumber: roomNumber,
+        user: presence,
+        joined: true,
+      );
+    }
+
+    // Then stream updates
+    final updateStream = session.messages.createStream<PresenceUpdate>(
+      _presenceChannel(sessionId, roomNumber),
+    );
+
+    await for (var update in updateStream) {
+      yield update;
+    }
+  }
+
+  /// Broadcast a full room update (content + presence)
+  Future<void> _broadcastRoomUpdate(
     Session session,
     int sessionId,
     int roomNumber,
@@ -65,6 +168,7 @@ class RoomEndpoint extends Endpoint {
       content: room?.content ?? '',
       drawingData: room?.drawingData,
       occupantCount: _getOccupantCount(sessionId, roomNumber),
+      presence: _getPresenceList(sessionId, roomNumber),
       timestamp: DateTime.now(),
     );
 
@@ -101,23 +205,13 @@ class RoomEndpoint extends Endpoint {
     room.updatedAt = DateTime.now();
     await Room.db.updateRow(session, room);
 
-    // Broadcast update to room-specific listeners
-    final update = RoomUpdate(
-      roomNumber: roomNumber,
-      content: content,
-      drawingData: room.drawingData,
-      occupantCount: _getOccupantCount(sessionId, roomNumber),
-      timestamp: DateTime.now(),
-    );
-    session.messages.postMessage(_roomChannel(sessionId, roomNumber), update);
-
-    // Also broadcast to all-rooms channel for professor dashboard
-    session.messages.postMessage(_allRoomsChannel(sessionId), update);
+    // Broadcast update
+    await _broadcastRoomUpdate(session, sessionId, roomNumber);
 
     return room;
   }
 
-  /// Update room drawing data
+  /// Update room drawing data (full replacement - for backwards compatibility)
   Future<Room> updateRoomDrawing(
     Session session,
     int sessionId,
@@ -133,20 +227,85 @@ class RoomEndpoint extends Endpoint {
     room.updatedAt = DateTime.now();
     await Room.db.updateRow(session, room);
 
-    // Broadcast update to room-specific listeners
-    final update = RoomUpdate(
-      roomNumber: roomNumber,
-      content: room.content,
-      drawingData: drawingData,
-      occupantCount: _getOccupantCount(sessionId, roomNumber),
-      timestamp: DateTime.now(),
-    );
-    session.messages.postMessage(_roomChannel(sessionId, roomNumber), update);
-
-    // Also broadcast to all-rooms channel for professor dashboard
-    session.messages.postMessage(_allRoomsChannel(sessionId), update);
+    // Broadcast update
+    await _broadcastRoomUpdate(session, sessionId, roomNumber);
 
     return room;
+  }
+
+  /// Add a stroke to the drawing (CRDT-style merge by ID)
+  Future<void> addStroke(
+    Session session,
+    int sessionId,
+    int roomNumber,
+    DrawingStroke stroke,
+  ) async {
+    final room = await getRoom(session, sessionId, roomNumber);
+    if (room == null) {
+      throw Exception('Room not found');
+    }
+
+    // Parse existing strokes
+    Map<String, dynamic> strokes = {};
+    if (room.drawingData != null && room.drawingData!.isNotEmpty) {
+      try {
+        strokes = Map<String, dynamic>.from(jsonDecode(room.drawingData!));
+      } catch (_) {
+        // Corrupt data, start fresh
+      }
+    }
+
+    // Add/update stroke by ID
+    strokes[stroke.id] = {
+      'userId': stroke.userId,
+      'points': stroke.points,
+      'color': stroke.color,
+      'width': stroke.width,
+      'createdAt': stroke.createdAt.toIso8601String(),
+      'deleted': stroke.deleted,
+    };
+
+    room.drawingData = jsonEncode(strokes);
+    room.updatedAt = DateTime.now();
+    await Room.db.updateRow(session, room);
+
+    // Broadcast update
+    await _broadcastRoomUpdate(session, sessionId, roomNumber);
+  }
+
+  /// Remove a stroke (soft delete for CRDT consistency)
+  Future<void> removeStroke(
+    Session session,
+    int sessionId,
+    int roomNumber,
+    String strokeId,
+  ) async {
+    final room = await getRoom(session, sessionId, roomNumber);
+    if (room == null) {
+      throw Exception('Room not found');
+    }
+
+    // Parse existing strokes
+    Map<String, dynamic> strokes = {};
+    if (room.drawingData != null && room.drawingData!.isNotEmpty) {
+      try {
+        strokes = Map<String, dynamic>.from(jsonDecode(room.drawingData!));
+      } catch (_) {
+        return; // Nothing to remove
+      }
+    }
+
+    // Mark stroke as deleted
+    if (strokes.containsKey(strokeId)) {
+      strokes[strokeId]['deleted'] = true;
+    }
+
+    room.drawingData = jsonEncode(strokes);
+    room.updatedAt = DateTime.now();
+    await Room.db.updateRow(session, room);
+
+    // Broadcast update
+    await _broadcastRoomUpdate(session, sessionId, roomNumber);
   }
 
   /// Stream real-time room updates for a specific room
@@ -163,6 +322,7 @@ class RoomEndpoint extends Endpoint {
         content: room.content,
         drawingData: room.drawingData,
         occupantCount: _getOccupantCount(sessionId, roomNumber),
+        presence: _getPresenceList(sessionId, roomNumber),
         timestamp: room.updatedAt,
       );
     }
@@ -195,6 +355,7 @@ class RoomEndpoint extends Endpoint {
         content: room.content,
         drawingData: room.drawingData,
         occupantCount: _getOccupantCount(sessionId, room.roomNumber),
+        presence: _getPresenceList(sessionId, room.roomNumber),
         timestamp: room.updatedAt,
       );
     }

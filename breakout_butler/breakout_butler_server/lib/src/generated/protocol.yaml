@@ -22,9 +22,13 @@ butler:
 room:
   - joinRoom:
   - leaveRoom:
+  - updatePresence:
+  - presenceUpdates:
   - getRoom:
   - updateRoomContent:
   - updateRoomDrawing:
+  - addStroke:
+  - removeStroke:
   - roomUpdates:
   - allRoomUpdates:
   - getAllRooms:

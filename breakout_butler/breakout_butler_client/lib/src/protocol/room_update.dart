@@ -11,6 +11,8 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+import 'user_presence.dart' as _i2;
+import 'package:breakout_butler_client/src/protocol/protocol.dart' as _i3;
 
 /// Real-time update for room content (not stored in database)
 abstract class RoomUpdate implements _i1.SerializableModel {
@@ -19,6 +21,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
     required this.content,
     this.drawingData,
     required this.occupantCount,
+    this.presence,
     required this.timestamp,
   });
 
@@ -27,6 +30,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
     required String content,
     String? drawingData,
     required int occupantCount,
+    List<_i2.UserPresence>? presence,
     required DateTime timestamp,
   }) = _RoomUpdateImpl;
 
@@ -36,6 +40,11 @@ abstract class RoomUpdate implements _i1.SerializableModel {
       content: jsonSerialization['content'] as String,
       drawingData: jsonSerialization['drawingData'] as String?,
       occupantCount: jsonSerialization['occupantCount'] as int,
+      presence: jsonSerialization['presence'] == null
+          ? null
+          : _i3.Protocol().deserialize<List<_i2.UserPresence>>(
+              jsonSerialization['presence'],
+            ),
       timestamp: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['timestamp'],
       ),
@@ -48,11 +57,14 @@ abstract class RoomUpdate implements _i1.SerializableModel {
   /// New content
   String content;
 
-  /// Freehand drawing data (JSON array of strokes), null = unchanged
+  /// Freehand drawing data (JSON map of strokeId -> stroke data), null = unchanged
   String? drawingData;
 
   /// Number of users currently in this room
   int occupantCount;
+
+  /// List of users currently in this room with their presence state
+  List<_i2.UserPresence>? presence;
 
   /// Timestamp of update
   DateTime timestamp;
@@ -65,6 +77,7 @@ abstract class RoomUpdate implements _i1.SerializableModel {
     String? content,
     String? drawingData,
     int? occupantCount,
+    List<_i2.UserPresence>? presence,
     DateTime? timestamp,
   });
   @override
@@ -75,6 +88,8 @@ abstract class RoomUpdate implements _i1.SerializableModel {
       'content': content,
       if (drawingData != null) 'drawingData': drawingData,
       'occupantCount': occupantCount,
+      if (presence != null)
+        'presence': presence?.toJson(valueToJson: (v) => v.toJson()),
       'timestamp': timestamp.toJson(),
     };
   }
@@ -93,12 +108,14 @@ class _RoomUpdateImpl extends RoomUpdate {
     required String content,
     String? drawingData,
     required int occupantCount,
+    List<_i2.UserPresence>? presence,
     required DateTime timestamp,
   }) : super._(
          roomNumber: roomNumber,
          content: content,
          drawingData: drawingData,
          occupantCount: occupantCount,
+         presence: presence,
          timestamp: timestamp,
        );
 
@@ -111,6 +128,7 @@ class _RoomUpdateImpl extends RoomUpdate {
     String? content,
     Object? drawingData = _Undefined,
     int? occupantCount,
+    Object? presence = _Undefined,
     DateTime? timestamp,
   }) {
     return RoomUpdate(
@@ -118,6 +136,9 @@ class _RoomUpdateImpl extends RoomUpdate {
       content: content ?? this.content,
       drawingData: drawingData is String? ? drawingData : this.drawingData,
       occupantCount: occupantCount ?? this.occupantCount,
+      presence: presence is List<_i2.UserPresence>?
+          ? presence
+          : this.presence?.map((e0) => e0.copyWith()).toList(),
       timestamp: timestamp ?? this.timestamp,
     );
   }

@@ -17,22 +17,28 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i4;
 import 'butler_response.dart' as _i5;
-import 'greetings/greeting.dart' as _i6;
-import 'live_session.dart' as _i7;
-import 'room.dart' as _i8;
-import 'room_update.dart' as _i9;
-import 'session.dart' as _i10;
-import 'transcript_chunk.dart' as _i11;
-import 'transcript_update.dart' as _i12;
-import 'package:breakout_butler_server/src/generated/room.dart' as _i13;
+import 'drawing_stroke.dart' as _i6;
+import 'greetings/greeting.dart' as _i7;
+import 'live_session.dart' as _i8;
+import 'presence_update.dart' as _i9;
+import 'room.dart' as _i10;
+import 'room_update.dart' as _i11;
+import 'session.dart' as _i12;
+import 'transcript_chunk.dart' as _i13;
+import 'transcript_update.dart' as _i14;
+import 'user_presence.dart' as _i15;
+import 'package:breakout_butler_server/src/generated/room.dart' as _i16;
 export 'butler_response.dart';
+export 'drawing_stroke.dart';
 export 'greetings/greeting.dart';
 export 'live_session.dart';
+export 'presence_update.dart';
 export 'room.dart';
 export 'room_update.dart';
 export 'session.dart';
 export 'transcript_chunk.dart';
 export 'transcript_update.dart';
+export 'user_presence.dart';
 
 class Protocol extends _i1.SerializationManagerServer {
   Protocol._();
@@ -386,76 +392,108 @@ class Protocol extends _i1.SerializationManagerServer {
     if (t == _i5.ButlerResponse) {
       return _i5.ButlerResponse.fromJson(data) as T;
     }
-    if (t == _i6.Greeting) {
-      return _i6.Greeting.fromJson(data) as T;
+    if (t == _i6.DrawingStroke) {
+      return _i6.DrawingStroke.fromJson(data) as T;
     }
-    if (t == _i7.LiveSession) {
-      return _i7.LiveSession.fromJson(data) as T;
+    if (t == _i7.Greeting) {
+      return _i7.Greeting.fromJson(data) as T;
     }
-    if (t == _i8.Room) {
-      return _i8.Room.fromJson(data) as T;
+    if (t == _i8.LiveSession) {
+      return _i8.LiveSession.fromJson(data) as T;
     }
-    if (t == _i9.RoomUpdate) {
-      return _i9.RoomUpdate.fromJson(data) as T;
+    if (t == _i9.PresenceUpdate) {
+      return _i9.PresenceUpdate.fromJson(data) as T;
     }
-    if (t == _i10.ClassSession) {
-      return _i10.ClassSession.fromJson(data) as T;
+    if (t == _i10.Room) {
+      return _i10.Room.fromJson(data) as T;
     }
-    if (t == _i11.TranscriptChunk) {
-      return _i11.TranscriptChunk.fromJson(data) as T;
+    if (t == _i11.RoomUpdate) {
+      return _i11.RoomUpdate.fromJson(data) as T;
     }
-    if (t == _i12.TranscriptUpdate) {
-      return _i12.TranscriptUpdate.fromJson(data) as T;
+    if (t == _i12.ClassSession) {
+      return _i12.ClassSession.fromJson(data) as T;
+    }
+    if (t == _i13.TranscriptChunk) {
+      return _i13.TranscriptChunk.fromJson(data) as T;
+    }
+    if (t == _i14.TranscriptUpdate) {
+      return _i14.TranscriptUpdate.fromJson(data) as T;
+    }
+    if (t == _i15.UserPresence) {
+      return _i15.UserPresence.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.ButlerResponse?>()) {
       return (data != null ? _i5.ButlerResponse.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i6.Greeting?>()) {
-      return (data != null ? _i6.Greeting.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i6.DrawingStroke?>()) {
+      return (data != null ? _i6.DrawingStroke.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i7.LiveSession?>()) {
-      return (data != null ? _i7.LiveSession.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i7.Greeting?>()) {
+      return (data != null ? _i7.Greeting.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i8.Room?>()) {
-      return (data != null ? _i8.Room.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i8.LiveSession?>()) {
+      return (data != null ? _i8.LiveSession.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i9.RoomUpdate?>()) {
-      return (data != null ? _i9.RoomUpdate.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i9.PresenceUpdate?>()) {
+      return (data != null ? _i9.PresenceUpdate.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i10.ClassSession?>()) {
-      return (data != null ? _i10.ClassSession.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i10.Room?>()) {
+      return (data != null ? _i10.Room.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i11.TranscriptChunk?>()) {
-      return (data != null ? _i11.TranscriptChunk.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i11.RoomUpdate?>()) {
+      return (data != null ? _i11.RoomUpdate.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i12.TranscriptUpdate?>()) {
-      return (data != null ? _i12.TranscriptUpdate.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i12.ClassSession?>()) {
+      return (data != null ? _i12.ClassSession.fromJson(data) : null) as T;
     }
-    if (t == List<_i8.Room>) {
-      return (data as List).map((e) => deserialize<_i8.Room>(e)).toList() as T;
+    if (t == _i1.getType<_i13.TranscriptChunk?>()) {
+      return (data != null ? _i13.TranscriptChunk.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<List<_i8.Room>?>()) {
-      return (data != null
-              ? (data as List).map((e) => deserialize<_i8.Room>(e)).toList()
-              : null)
-          as T;
+    if (t == _i1.getType<_i14.TranscriptUpdate?>()) {
+      return (data != null ? _i14.TranscriptUpdate.fromJson(data) : null) as T;
     }
-    if (t == List<_i11.TranscriptChunk>) {
+    if (t == _i1.getType<_i15.UserPresence?>()) {
+      return (data != null ? _i15.UserPresence.fromJson(data) : null) as T;
+    }
+    if (t == List<_i15.UserPresence>) {
       return (data as List)
-              .map((e) => deserialize<_i11.TranscriptChunk>(e))
+              .map((e) => deserialize<_i15.UserPresence>(e))
               .toList()
           as T;
     }
-    if (t == _i1.getType<List<_i11.TranscriptChunk>?>()) {
+    if (t == _i1.getType<List<_i15.UserPresence>?>()) {
       return (data != null
               ? (data as List)
-                    .map((e) => deserialize<_i11.TranscriptChunk>(e))
+                    .map((e) => deserialize<_i15.UserPresence>(e))
                     .toList()
               : null)
           as T;
     }
-    if (t == List<_i13.Room>) {
-      return (data as List).map((e) => deserialize<_i13.Room>(e)).toList() as T;
+    if (t == List<_i10.Room>) {
+      return (data as List).map((e) => deserialize<_i10.Room>(e)).toList() as T;
+    }
+    if (t == _i1.getType<List<_i10.Room>?>()) {
+      return (data != null
+              ? (data as List).map((e) => deserialize<_i10.Room>(e)).toList()
+              : null)
+          as T;
+    }
+    if (t == List<_i13.TranscriptChunk>) {
+      return (data as List)
+              .map((e) => deserialize<_i13.TranscriptChunk>(e))
+              .toList()
+          as T;
+    }
+    if (t == _i1.getType<List<_i13.TranscriptChunk>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map((e) => deserialize<_i13.TranscriptChunk>(e))
+                    .toList()
+              : null)
+          as T;
+    }
+    if (t == List<_i16.Room>) {
+      return (data as List).map((e) => deserialize<_i16.Room>(e)).toList() as T;
     }
     try {
       return _i3.Protocol().deserialize<T>(data, t);
@@ -472,13 +510,16 @@ class Protocol extends _i1.SerializationManagerServer {
   static String? getClassNameForType(Type type) {
     return switch (type) {
       _i5.ButlerResponse => 'ButlerResponse',
-      _i6.Greeting => 'Greeting',
-      _i7.LiveSession => 'LiveSession',
-      _i8.Room => 'Room',
-      _i9.RoomUpdate => 'RoomUpdate',
-      _i10.ClassSession => 'ClassSession',
-      _i11.TranscriptChunk => 'TranscriptChunk',
-      _i12.TranscriptUpdate => 'TranscriptUpdate',
+      _i6.DrawingStroke => 'DrawingStroke',
+      _i7.Greeting => 'Greeting',
+      _i8.LiveSession => 'LiveSession',
+      _i9.PresenceUpdate => 'PresenceUpdate',
+      _i10.Room => 'Room',
+      _i11.RoomUpdate => 'RoomUpdate',
+      _i12.ClassSession => 'ClassSession',
+      _i13.TranscriptChunk => 'TranscriptChunk',
+      _i14.TranscriptUpdate => 'TranscriptUpdate',
+      _i15.UserPresence => 'UserPresence',
       _ => null,
     };
   }
@@ -498,20 +539,26 @@ class Protocol extends _i1.SerializationManagerServer {
     switch (data) {
       case _i5.ButlerResponse():
         return 'ButlerResponse';
-      case _i6.Greeting():
+      case _i6.DrawingStroke():
+        return 'DrawingStroke';
+      case _i7.Greeting():
         return 'Greeting';
-      case _i7.LiveSession():
+      case _i8.LiveSession():
         return 'LiveSession';
-      case _i8.Room():
+      case _i9.PresenceUpdate():
+        return 'PresenceUpdate';
+      case _i10.Room():
         return 'Room';
-      case _i9.RoomUpdate():
+      case _i11.RoomUpdate():
         return 'RoomUpdate';
-      case _i10.ClassSession():
+      case _i12.ClassSession():
         return 'ClassSession';
-      case _i11.TranscriptChunk():
+      case _i13.TranscriptChunk():
         return 'TranscriptChunk';
-      case _i12.TranscriptUpdate():
+      case _i14.TranscriptUpdate():
         return 'TranscriptUpdate';
+      case _i15.UserPresence():
+        return 'UserPresence';
     }
     className = _i2.Protocol().getClassNameForObject(data);
     if (className != null) {
@@ -537,26 +584,35 @@ class Protocol extends _i1.SerializationManagerServer {
     if (dataClassName == 'ButlerResponse') {
       return deserialize<_i5.ButlerResponse>(data['data']);
     }
+    if (dataClassName == 'DrawingStroke') {
+      return deserialize<_i6.DrawingStroke>(data['data']);
+    }
     if (dataClassName == 'Greeting') {
-      return deserialize<_i6.Greeting>(data['data']);
+      return deserialize<_i7.Greeting>(data['data']);
     }
     if (dataClassName == 'LiveSession') {
-      return deserialize<_i7.LiveSession>(data['data']);
+      return deserialize<_i8.LiveSession>(data['data']);
+    }
+    if (dataClassName == 'PresenceUpdate') {
+      return deserialize<_i9.PresenceUpdate>(data['data']);
     }
     if (dataClassName == 'Room') {
-      return deserialize<_i8.Room>(data['data']);
+      return deserialize<_i10.Room>(data['data']);
     }
     if (dataClassName == 'RoomUpdate') {
-      return deserialize<_i9.RoomUpdate>(data['data']);
+      return deserialize<_i11.RoomUpdate>(data['data']);
     }
     if (dataClassName == 'ClassSession') {
-      return deserialize<_i10.ClassSession>(data['data']);
+      return deserialize<_i12.ClassSession>(data['data']);
     }
     if (dataClassName == 'TranscriptChunk') {
-      return deserialize<_i11.TranscriptChunk>(data['data']);
+      return deserialize<_i13.TranscriptChunk>(data['data']);
     }
     if (dataClassName == 'TranscriptUpdate') {
-      return deserialize<_i12.TranscriptUpdate>(data['data']);
+      return deserialize<_i14.TranscriptUpdate>(data['data']);
+    }
+    if (dataClassName == 'UserPresence') {
+      return deserialize<_i15.UserPresence>(data['data']);
     }
     if (dataClassName.startsWith('serverpod.')) {
       data['className'] = dataClassName.substring(10);
@@ -594,14 +650,14 @@ class Protocol extends _i1.SerializationManagerServer {
       }
     }
     switch (t) {
-      case _i7.LiveSession:
-        return _i7.LiveSession.t;
-      case _i8.Room:
-        return _i8.Room.t;
-      case _i10.ClassSession:
-        return _i10.ClassSession.t;
-      case _i11.TranscriptChunk:
-        return _i11.TranscriptChunk.t;
+      case _i8.LiveSession:
+        return _i8.LiveSession.t;
+      case _i10.Room:
+        return _i10.Room.t;
+      case _i12.ClassSession:
+        return _i12.ClassSession.t;
+      case _i13.TranscriptChunk:
+        return _i13.TranscriptChunk.t;
     }
     return null;
   }

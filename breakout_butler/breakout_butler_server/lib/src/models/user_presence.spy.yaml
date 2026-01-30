@@ -1,0 +1,21 @@
+### Represents a user's presence state in a room
+class: UserPresence
+fields:
+  ### Unique user identifier (generated client-side)
+  userId: String
+  ### Display name (optional, auto-generated if not provided)
+  displayName: String
+  ### User's assigned color (hex, e.g. "#FF5733")
+  color: String
+  ### Text cursor position (character offset), -1 = not editing text
+  textCursor: int
+  ### Whether user is actively typing
+  isTyping: bool
+  ### Drawing cursor position X (canvas coordinates), -1 = not drawing
+  drawingX: double
+  ### Drawing cursor position Y
+  drawingY: double
+  ### Whether user is actively drawing
+  isDrawing: bool
+  ### Last activity timestamp
+  lastActive: DateTime

@@ -5,9 +5,11 @@ fields:
   roomNumber: int
   ### New content
   content: String
-  ### Freehand drawing data (JSON array of strokes), null = unchanged
+  ### Freehand drawing data (JSON map of strokeId -> stroke data), null = unchanged
   drawingData: String?
   ### Number of users currently in this room
   occupantCount: int
+  ### List of users currently in this room with their presence state
+  presence: List<UserPresence>?
   ### Timestamp of update
   timestamp: DateTime

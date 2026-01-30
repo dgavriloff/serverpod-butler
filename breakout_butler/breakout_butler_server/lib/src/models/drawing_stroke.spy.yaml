@@ -1,0 +1,17 @@
+### A single drawing stroke with unique ID for CRDT-style merging
+class: DrawingStroke
+fields:
+  ### Unique stroke identifier (UUID)
+  id: String
+  ### User ID who drew this stroke
+  userId: String
+  ### Points as JSON array of [x, y, pressure] tuples
+  points: String
+  ### Stroke color (hex)
+  color: String
+  ### Stroke width
+  width: double
+  ### Timestamp when stroke was created
+  createdAt: DateTime
+  ### Whether stroke is deleted (soft delete for CRDT)
+  deleted: bool

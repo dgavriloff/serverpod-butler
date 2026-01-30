@@ -18,10 +18,13 @@ import '../endpoints/room_endpoint.dart' as _i5;
 import '../endpoints/session_endpoint.dart' as _i6;
 import '../greetings/greeting_endpoint.dart' as _i7;
 import 'dart:typed_data' as _i8;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
-    as _i9;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:breakout_butler_server/src/generated/user_presence.dart' as _i9;
+import 'package:breakout_butler_server/src/generated/drawing_stroke.dart'
     as _i10;
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+    as _i11;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i12;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -512,6 +515,16 @@ class Endpoints extends _i1.EndpointDispatch {
               type: _i1.getType<int>(),
               nullable: false,
             ),
+            'odtuserId': _i1.ParameterDescription(
+              name: 'odtuserId',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+            'displayName': _i1.ParameterDescription(
+              name: 'displayName',
+              type: _i1.getType<String?>(),
+              nullable: true,
+            ),
           },
           call:
               (
@@ -521,6 +534,8 @@ class Endpoints extends _i1.EndpointDispatch {
                 session,
                 params['sessionId'],
                 params['roomNumber'],
+                params['odtuserId'],
+                params['displayName'],
               ),
         ),
         'leaveRoom': _i1.MethodConnector(
@@ -536,6 +551,11 @@ class Endpoints extends _i1.EndpointDispatch {
               type: _i1.getType<int>(),
               nullable: false,
             ),
+            'userId': _i1.ParameterDescription(
+              name: 'userId',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
           },
           call:
               (
@@ -545,6 +565,37 @@ class Endpoints extends _i1.EndpointDispatch {
                 session,
                 params['sessionId'],
                 params['roomNumber'],
+                params['userId'],
+              ),
+        ),
+        'updatePresence': _i1.MethodConnector(
+          name: 'updatePresence',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'roomNumber': _i1.ParameterDescription(
+              name: 'roomNumber',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'presence': _i1.ParameterDescription(
+              name: 'presence',
+              type: _i1.getType<_i9.UserPresence>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['room'] as _i5.RoomEndpoint).updatePresence(
+                session,
+                params['sessionId'],
+                params['roomNumber'],
+                params['presence'],
               ),
         ),
         'getRoom': _i1.MethodConnector(
@@ -633,6 +684,66 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['drawingData'],
                   ),
         ),
+        'addStroke': _i1.MethodConnector(
+          name: 'addStroke',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'roomNumber': _i1.ParameterDescription(
+              name: 'roomNumber',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'stroke': _i1.ParameterDescription(
+              name: 'stroke',
+              type: _i1.getType<_i10.DrawingStroke>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['room'] as _i5.RoomEndpoint).addStroke(
+                session,
+                params['sessionId'],
+                params['roomNumber'],
+                params['stroke'],
+              ),
+        ),
+        'removeStroke': _i1.MethodConnector(
+          name: 'removeStroke',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'roomNumber': _i1.ParameterDescription(
+              name: 'roomNumber',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'strokeId': _i1.ParameterDescription(
+              name: 'strokeId',
+              type: _i1.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['room'] as _i5.RoomEndpoint).removeStroke(
+                session,
+                params['sessionId'],
+                params['roomNumber'],
+                params['strokeId'],
+              ),
+        ),
         'getAllRooms': _i1.MethodConnector(
           name: 'getAllRooms',
           params: {
@@ -649,6 +760,33 @@ class Endpoints extends _i1.EndpointDispatch {
               ) async => (endpoints['room'] as _i5.RoomEndpoint).getAllRooms(
                 session,
                 params['sessionId'],
+              ),
+        ),
+        'presenceUpdates': _i1.MethodStreamConnector(
+          name: 'presenceUpdates',
+          params: {
+            'sessionId': _i1.ParameterDescription(
+              name: 'sessionId',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+            'roomNumber': _i1.ParameterDescription(
+              name: 'roomNumber',
+              type: _i1.getType<int>(),
+              nullable: false,
+            ),
+          },
+          streamParams: {},
+          returnType: _i1.MethodStreamReturnType.streamType,
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+                Map<String, Stream> streamParams,
+              ) => (endpoints['room'] as _i5.RoomEndpoint).presenceUpdates(
+                session,
+                params['sessionId'],
+                params['roomNumber'],
               ),
         ),
         'roomUpdates': _i1.MethodStreamConnector(
@@ -881,9 +1019,9 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    modules['serverpod_auth_idp'] = _i9.Endpoints()
+    modules['serverpod_auth_idp'] = _i11.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_core'] = _i10.Endpoints()
+    modules['serverpod_auth_core'] = _i12.Endpoints()
       ..initializeEndpoints(server);
   }
 }
