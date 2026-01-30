@@ -6,6 +6,7 @@ This folder contains all documentation for the Serverpod Hackathon submission.
 
 | File | Purpose |
 |------|---------|
+| [FEATURES_CHECKLIST.md](./FEATURES_CHECKLIST.md) | **Start here** - Checklist of features to show in demo |
 | [PROJECT_DESCRIPTION.md](./PROJECT_DESCRIPTION.md) | What Breakout Butler is and the problem it solves |
 | [SERVERPOD_FEATURES.md](./SERVERPOD_FEATURES.md) | Detailed breakdown of Serverpod features used |
 | [HACKATHON_CRITERIA.md](./HACKATHON_CRITERIA.md) | How the project meets judging criteria |
@@ -20,10 +21,12 @@ This folder contains all documentation for the Serverpod Hackathon submission.
 ## TL;DR
 
 **Breakout Butler** = Zoom breakout room companion with:
-- Real-time collaborative workspaces
-- Live lecture transcription
+- Real-time collaborative text + drawing workspaces
+- Live lecture transcription (Gemini 2.0-Flash)
 - AI-powered Q&A ("What did she say about X?")
+- AI assignment extraction from transcript
 - Professor dashboard with cross-room synthesis
+- Zero-friction access (no accounts needed)
 
 **Serverpod Features Used:**
 - Streaming endpoints (WebSocket)

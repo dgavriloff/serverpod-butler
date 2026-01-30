@@ -29,6 +29,8 @@
 
 ✅ **Real-Time Features**
 - Collaborative text editing (last-write-wins sync)
+- Freehand drawing canvas with pressure-sensitive strokes
+- Toggle between write and draw modes
 - Live occupant counts
 - Instant transcript streaming to all connected clients
 - Professor dashboard with all-room monitoring
@@ -151,9 +153,9 @@ The hackathon asks for a "personal digital assistant." Breakout Butler embodies 
 ## What We'd Do With More Time
 
 - CRDT-based conflict resolution for text editing
-- Whiteboard/drawing sync across users
 - Session history and replay
 - Export to PDF/Google Docs
 - Student identity (optional names)
 - Serverpod Cloud deployment
 - Mobile-native apps (iOS/Android)
+- Multi-user cursor presence indicators

@@ -8,8 +8,9 @@ When a professor sends students into Zoom breakout rooms, they lose the ability 
 
 - **Live Transcription** — The professor's voice is transcribed in real-time and streamed to all rooms
 - **AI Butler** — Students can ask "What did she say about X?" and get instant answers based on the transcript
-- **Collaborative Workspaces** — Each room gets a shared text editor that syncs in real-time
+- **Collaborative Workspaces** — Each room gets a shared text editor AND freehand drawing canvas that sync in real-time
 - **Professor Dashboard** — See all rooms at once, monitor activity, and synthesize insights across groups
+- **AI Assignment Extraction** — Professor can auto-generate assignment prompts from lecture transcript
 
 ## The Problem
 

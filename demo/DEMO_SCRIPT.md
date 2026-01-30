@@ -54,20 +54,32 @@ Discuss whether Milgram's obedience experiment was ethical and what it reveals a
 
 **[Type or show pre-loaded prompt]**
 
-"...and as I lecture, my voice is transcribed in real-time."
+"Or I can click 'pull from transcript' to have the AI automatically extract the assignment from what I said."
+
+**[Click pull from transcript button if transcript exists]**
+
+"As I lecture, my voice is transcribed in real-time using Gemini 2.0 Flash."
 
 **[Click "rec" button briefly to show recording indicator, or show pre-loaded transcript]**
 
 "Students in any room can see this transcript and ask the AI Butler questions."
 
-### Student Flow (1:00 - 1:45)
+### Student Flow (1:00 - 1:50)
 **[Switch to student browser/window]**
 
 "Students join by entering the room name and their breakout room number — matching their Zoom assignment."
 
 **[Show student room view]**
 
-"They see a collaborative workspace on the left where the whole group can type together in real-time. On the right, they have the professor's instructions AND the live transcript."
+"They see a collaborative workspace on the left where the whole group can type together in real-time."
+
+**[Toggle to draw mode, draw a quick sketch]**
+
+"They can also switch to draw mode for diagrams and visual collaboration — great for brainstorming or explaining concepts."
+
+**[Toggle back to write mode]**
+
+"On the right, they have the professor's instructions AND the live transcript."
 
 **[Click on "scribe" tab to show transcript]**
 
@@ -79,10 +91,10 @@ Discuss whether Milgram's obedience experiment was ethical and what it reveals a
 
 **[Show Butler response]**
 
-### Real-Time Collaboration (1:45 - 2:15)
+### Real-Time Collaboration (1:50 - 2:15)
 **[Type something in student workspace]**
 
-"Everything syncs in real-time. If I type here..."
+"Everything syncs in real-time via Serverpod streaming endpoints. If I type here..."
 
 **[Switch to professor dashboard, show rooms tab]**
 
