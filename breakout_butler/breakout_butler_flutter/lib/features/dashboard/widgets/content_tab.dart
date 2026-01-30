@@ -131,7 +131,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
           // Left column: Prompt
           Expanded(
             flex: 1,
-            child: _buildPromptSection(transcriptState.hasContent),
+            child: _buildPromptSection(transcriptState.hasContent, isWide: isWide),
           ),
           const VerticalDivider(width: 1),
           // Right column: Transcript
@@ -150,7 +150,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     return Column(
       children: [
         Expanded(
-          child: _buildPromptSection(transcriptState.hasContent),
+          child: _buildPromptSection(transcriptState.hasContent, isWide: isWide),
         ),
         const Divider(height: 1),
         Expanded(
@@ -163,7 +163,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     );
   }
 
-  Widget _buildPromptSection(bool hasTranscript) {
+  Widget _buildPromptSection(bool hasTranscript, {required bool isWide}) {
     final canPull = hasTranscript && !_isExtracting;
     final isActive = _promptHovered || _promptFocused;
     final headerText = Text('prompt', style: SpTypography.section);
@@ -194,6 +194,7 @@ class _ContentTabState extends ConsumerState<ContentTab> {
               SpSecondaryButton(
                 label: 'pull from transcript',
                 icon: Icons.auto_awesome,
+                iconOnly: !isWide,
                 isLoading: _isExtracting,
                 onPressed: canPull ? _pullFromTranscript : null,
               ),
