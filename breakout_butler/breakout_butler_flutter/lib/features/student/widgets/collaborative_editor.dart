@@ -77,32 +77,55 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
         // ── Main content area ───────────────────────────────────────
         Column(
           children: [
-            // Save indicator (top-right)
+            // Status bar (top) - occupant count left, save indicator right
             Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: SpSpacing.lg,
                 vertical: SpSpacing.xs,
               ),
-              alignment: Alignment.centerRight,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: editorState.isSaving
-                          ? SpColors.textPlaceholder
-                          : SpColors.success,
-                    ),
+                  // Occupant count (left)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.people_outline,
+                        size: 14,
+                        color: SpColors.textTertiary,
+                      ),
+                      const SizedBox(width: SpSpacing.xs),
+                      Text(
+                        '${editorState.occupantCount} here',
+                        style: SpTypography.caption.copyWith(
+                          color: SpColors.textTertiary,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: SpSpacing.xs),
-                  Text(
-                    editorState.isSaving ? 'saving...' : 'saved',
-                    style: SpTypography.caption.copyWith(
-                      color: SpColors.textTertiary,
-                    ),
+                  const Spacer(),
+                  // Save indicator (right)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: editorState.isSaving
+                              ? SpColors.textPlaceholder
+                              : SpColors.success,
+                        ),
+                      ),
+                      const SizedBox(width: SpSpacing.xs),
+                      Text(
+                        editorState.isSaving ? 'saving...' : 'saved',
+                        style: SpTypography.caption.copyWith(
+                          color: SpColors.textTertiary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

@@ -93,16 +93,20 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   final int _roomNumber;
   Timer? _contentDebounce;
   Timer? _drawingDebounce;
+  Timer? _editingCooldown;
   StreamSubscription<RoomUpdate>? _sub;
   String _lastSavedContent = '';
   String _lastSavedDrawing = '';
   bool _hasJoined = false;
+  bool _isLocallyEditingContent = false;
+  bool _isLocallyEditingDrawing = false;
 
   Future<void> init() async {
     // Join the room (increment occupant count)
     try {
-      await client.room.joinRoom(_sessionId, _roomNumber);
+      final count = await client.room.joinRoom(_sessionId, _roomNumber);
       _hasJoined = true;
+      if (mounted) state = state.copyWith(occupantCount: count);
     } catch (_) {
       // Ignore join errors - room updates will still work
     }
@@ -126,11 +130,20 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
         .roomUpdates(_sessionId, _roomNumber)
         .listen((update) {
       if (!mounted) return;
-      if (update.content != _lastSavedContent) {
+
+      // Always update occupant count
+      state = state.copyWith(occupantCount: update.occupantCount);
+
+      // Only apply remote content if we're not actively editing
+      if (!_isLocallyEditingContent && update.content != _lastSavedContent) {
+        _lastSavedContent = update.content;
         state = state.copyWith(content: update.content);
       }
+
+      // Only apply remote drawing if we're not actively editing
       final remoteDrawing = update.drawingData ?? '';
-      if (remoteDrawing != _lastSavedDrawing) {
+      if (!_isLocallyEditingDrawing && remoteDrawing != _lastSavedDrawing) {
+        _lastSavedDrawing = remoteDrawing;
         state = state.copyWith(drawingData: remoteDrawing);
       }
     });
@@ -138,21 +151,35 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 
   void updateContent(String content) {
     if (!mounted) return;
+    _isLocallyEditingContent = true;
     state = state.copyWith(content: content);
 
     _contentDebounce?.cancel();
     _contentDebounce = Timer(const Duration(milliseconds: 500), () {
       _saveContent(content);
     });
+
+    // Reset editing flag after a longer cooldown to allow save + broadcast to complete
+    _editingCooldown?.cancel();
+    _editingCooldown = Timer(const Duration(milliseconds: 1500), () {
+      _isLocallyEditingContent = false;
+    });
   }
 
   void updateDrawing(String drawingData) {
     if (!mounted) return;
+    _isLocallyEditingDrawing = true;
     state = state.copyWith(drawingData: drawingData);
 
     _drawingDebounce?.cancel();
     _drawingDebounce = Timer(const Duration(milliseconds: 500), () {
       _saveDrawing(drawingData);
+    });
+
+    // Reset editing flag after cooldown
+    _editingCooldown?.cancel();
+    _editingCooldown = Timer(const Duration(milliseconds: 1500), () {
+      _isLocallyEditingDrawing = false;
     });
   }
 
@@ -183,6 +210,7 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   void dispose() {
     _contentDebounce?.cancel();
     _drawingDebounce?.cancel();
+    _editingCooldown?.cancel();
     _sub?.cancel();
     // Leave the room (decrement occupant count)
     if (_hasJoined) {
@@ -198,24 +226,28 @@ class RoomEditorState {
     this.drawingData = '',
     this.isSaving = false,
     this.loaded = false,
+    this.occupantCount = 0,
   });
 
   final String content;
   final String drawingData;
   final bool isSaving;
   final bool loaded;
+  final int occupantCount;
 
   RoomEditorState copyWith({
     String? content,
     String? drawingData,
     bool? isSaving,
     bool? loaded,
+    int? occupantCount,
   }) {
     return RoomEditorState(
       content: content ?? this.content,
       drawingData: drawingData ?? this.drawingData,
       isSaving: isSaving ?? this.isSaving,
       loaded: loaded ?? this.loaded,
+      occupantCount: occupantCount ?? this.occupantCount,
     );
   }
 }
