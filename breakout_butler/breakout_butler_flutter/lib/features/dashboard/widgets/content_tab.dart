@@ -211,7 +211,10 @@ class _ContentTabState extends ConsumerState<ContentTab> {
         Expanded(
           child: _isExtracting
               ? Padding(
-                  padding: const EdgeInsets.all(SpSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: SpSpacing.lg,
+                    vertical: SpSpacing.md,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -226,27 +229,26 @@ class _ContentTabState extends ConsumerState<ContentTab> {
               : MouseRegion(
                   onEnter: (_) => setState(() => _promptHovered = true),
                   onExit: (_) => setState(() => _promptHovered = false),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: SpSpacing.md),
-                    child: TextField(
-                      controller: _promptController,
-                      focusNode: _promptFocusNode,
-                      maxLines: null,
-                      expands: true,
-                      textAlignVertical: TextAlignVertical.top,
-                      style: SpTypography.body,
-                      decoration: InputDecoration(
-                        hintText: 'what should students work on?',
-                        hintStyle: SpTypography.body
-                            .copyWith(color: SpColors.textPlaceholder),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(SpSpacing.md),
+                  child: TextField(
+                    controller: _promptController,
+                    focusNode: _promptFocusNode,
+                    maxLines: null,
+                    expands: true,
+                    textAlignVertical: TextAlignVertical.top,
+                    style: SpTypography.body,
+                    decoration: InputDecoration(
+                      hintText: 'what should students work on?',
+                      hintStyle: SpTypography.body
+                          .copyWith(color: SpColors.textPlaceholder),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: SpSpacing.lg,
+                        vertical: SpSpacing.md,
                       ),
-                      onChanged: _onPromptChanged,
                     ),
+                    onChanged: _onPromptChanged,
                   ),
                 ),
         ),
@@ -334,7 +336,10 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(SpSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: SpSpacing.lg,
+        vertical: SpSpacing.md,
+      ),
       itemCount: transcriptState.chunks.length +
           (transcriptState.interimText.isNotEmpty ? 1 : 0),
       itemBuilder: (context, index) {
@@ -363,31 +368,31 @@ class _ContentTabState extends ConsumerState<ContentTab> {
     return MouseRegion(
       onEnter: (_) => setState(() => _transcriptHovered = true),
       onExit: (_) => setState(() => _transcriptHovered = false),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: SpSpacing.md),
-        child: TextField(
-          controller: _transcriptController,
-          focusNode: _transcriptFocusNode,
-          maxLines: null,
-          expands: true,
-          textAlignVertical: TextAlignVertical.top,
-          style: SpTypography.body,
-          decoration: InputDecoration(
-            hintText: 'paste or type lecture content here...',
-            hintStyle:
-                SpTypography.body.copyWith(color: SpColors.textPlaceholder),
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            contentPadding: const EdgeInsets.all(SpSpacing.md),
+      child: TextField(
+        controller: _transcriptController,
+        focusNode: _transcriptFocusNode,
+        maxLines: null,
+        expands: true,
+        textAlignVertical: TextAlignVertical.top,
+        style: SpTypography.body,
+        decoration: InputDecoration(
+          hintText: 'paste or type lecture content here...',
+          hintStyle:
+              SpTypography.body.copyWith(color: SpColors.textPlaceholder),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: SpSpacing.lg,
+            vertical: SpSpacing.md,
           ),
-          onChanged: (text) {
-            // Update transcript state when user edits
-            ref
-                .read(transcriptStateProvider(widget.sessionId).notifier)
-                .setFullText(text);
-          },
         ),
+        onChanged: (text) {
+          // Update transcript state when user edits
+          ref
+              .read(transcriptStateProvider(widget.sessionId).notifier)
+              .setFullText(text);
+        },
       ),
     );
   }
