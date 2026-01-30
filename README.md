@@ -1,4 +1,4 @@
-# Breakout Butler
+# breakoutpad
 
 A Zoom companion web app that creates collaborative workspaces for breakout room sessions. Built with Flutter and Serverpod for the [Serverpod Hackathon](https://serverpod.devpost.com/).
 
@@ -10,7 +10,7 @@ When students enter Zoom breakout rooms, they immediately forget what they're su
 
 ## The Solution
 
-Breakout Butler acts as a digital teaching assistant that:
+breakoutpad acts as a digital teaching assistant that:
 - Captures everything the professor says via live transcription
 - Makes it searchable and queryable via AI
 - Provides real-time collaborative workspaces with text and drawing
@@ -29,7 +29,7 @@ Breakout Butler acts as a digital teaching assistant that:
 - Collaborative text editor + freehand drawing canvas
 - Always-visible professor instructions
 - Live lecture transcript
-- AI Butler Q&A — "What did she say about X?"
+- AI Q&A — "What did she say about X?"
 
 ### Zero Friction
 No accounts, no downloads. Students join with just a URL and room number.
