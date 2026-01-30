@@ -87,12 +87,12 @@ MODERN PARALLELS:
 
 **Window 1 (Professor):**
 - Chrome browser
-- URL: `https://serverpod-butler-dev.up.railway.app/app#/[your-session-tag]dash`
+- URL: `https://serverpod-butler-dev.up.railway.app/[your-session-tag]dash`
 - Position: Left side of screen
 
 **Window 2 (Student):**
 - Different browser (Safari, Firefox, or Chrome incognito)
-- URL: `https://serverpod-butler-dev.up.railway.app/app#/[your-session-tag]/1`
+- URL: `https://serverpod-butler-dev.up.railway.app/[your-session-tag]/1`
 - Position: Right side of screen
 
 ---
@@ -143,10 +143,10 @@ MODERN PARALLELS:
 
 | Purpose | URL Pattern |
 |---------|-------------|
-| Home | `/app` or `/app#/` |
+| Home | `/` |
 | Create session | Click button on home |
-| Professor dashboard | `/app#/[tag]dash` |
-| Student room | `/app#/[tag]/[room#]` |
+| Professor dashboard | `/[tag]dash` |
+| Student room | `/[tag]/[room#]` |
 
 Replace `[tag]` with your session's URL tag (e.g., `milgram`).
 Replace `[room#]` with room number (1, 2, 3...).

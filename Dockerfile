@@ -7,9 +7,9 @@
 # This avoids installing Flutter SDK in Docker (saves ~5min per deploy).
 # After changing Flutter code, rebuild and commit:
 #   cd breakout_butler/breakout_butler_flutter
-#   flutter build web --base-href /app/ --wasm
+#   flutter build web --base-href / --no-tree-shake-icons
 #   cp -r build/web/* ../breakout_butler_server/web/app/
-#   git add breakout_butler/breakout_butler_server/web/app/
+#   git add -f breakout_butler/breakout_butler_server/web/app/
 # =============================================================================
 
 # Stage 1: Build Dart server
@@ -45,7 +45,8 @@ COPY --from=server-build /app/migrations/ migrations/
 COPY --from=server-build /app/lib/src/generated/protocol.yaml lib/src/generated/protocol.yaml
 
 # Flutter web build is pre-built and committed at web/app/ in the server package
-# (already included via COPY --from=server-build /app/web/ web/ above)
+# Copy to /app/flutter for Caddy to serve directly (not through Serverpod web server)
+COPY --from=server-build /app/web/app/ flutter/
 
 # Copy production Caddyfile
 COPY Caddyfile.production /etc/caddy/Caddyfile

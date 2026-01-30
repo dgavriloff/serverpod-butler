@@ -12,7 +12,7 @@ Serverpod monorepo with three packages:
 **IMPORTANT: Do NOT push to main until explicitly told to do so.** Only push to `dev` branch by default.
 
 **IMPORTANT: Do NOT run local servers.** The only dev environment is Railway:
-- Dev URL: `https://serverpod-butler-dev.up.railway.app/app`
+- Dev URL: `https://serverpod-butler-dev.up.railway.app/`
 - To deploy: build Flutter, commit pre-built files, push to `dev` branch
 - Railway auto-deploys on push to `dev`
 
@@ -61,9 +61,9 @@ files from `breakout_butler_server/web/app/`.
 After ANY Flutter code change, you MUST rebuild and commit the output:
 ```bash
 cd breakout_butler/breakout_butler_flutter
-flutter build web --base-href /app/ --no-tree-shake-icons
+flutter build web --base-href / --no-tree-shake-icons
 cp -r build/web/* ../breakout_butler_server/web/app/
-git add breakout_butler/breakout_butler_server/web/app/
+git add -f breakout_butler/breakout_butler_server/web/app/
 ```
 If you skip this step, Railway will deploy stale frontend code.
 

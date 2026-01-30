@@ -2,7 +2,7 @@
 # Routes all traffic through a single port (Railway's PORT env var)
 # - POST requests → Serverpod API server (8080)
 # - WebSocket upgrades → Serverpod API server (8080)
-# - Everything else → Serverpod web server (8082) which serves Flutter app
+# - Everything else → Flutter web app (static files with SPA fallback)
 #
 # PIN Protection (dev only):
 # Set DEV_PIN env var to enable a PIN entry gate (e.g. DEV_PIN=957142)
@@ -60,7 +60,7 @@ button:hover{background:#c73e54}
 		}
 		handle @pinCorrect {
 			header Set-Cookie "dev_auth={$DEV_PIN:none}; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800"
-			redir /app/ 302
+			redir / 302
 		}
 
 		# Wrong PIN → redirect back with error
@@ -101,7 +101,9 @@ button:hover{background:#c73e54}
 		@insights path /insights/*
 		reverse_proxy @insights localhost:8081
 
-		# Everything else → web server (Flutter app + static files)
-		reverse_proxy localhost:8082
+		# Everything else → Flutter app (static files with SPA fallback)
+		root * /app/flutter
+		try_files {path} /index.html
+		file_server
 	}
 }

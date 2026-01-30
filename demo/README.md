@@ -14,7 +14,7 @@ This folder contains all documentation for the Serverpod Hackathon submission.
 
 ## Quick Links
 
-- **Live App:** https://serverpod-butler-dev.up.railway.app/app
+- **Live App:** https://serverpod-butler-dev.up.railway.app/
 - **Hackathon Page:** https://serverpod.devpost.com/
 
 ## TL;DR

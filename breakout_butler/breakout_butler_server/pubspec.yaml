@@ -26,12 +26,13 @@ serverpod:
     # Build the Flutter web app and copy it to the server's web directory.
     # Windows uses xcopy since flutter's --output flag doesn't work there.
     # See: https://github.com/flutter/flutter/issues/157886
+    # Note: --no-tree-shake-icons fixes icon rendering bugs on Flutter web
     flutter_build:
       windows: >-
         (if exist web\app rmdir /S /Q web\app)
         & cd /D ..\breakout_butler_flutter
-        && flutter build web --base-href /app/ --wasm
+        && flutter build web --base-href / --no-tree-shake-icons
         && xcopy /E /I /Y build\web ..\breakout_butler_server\web\app
       posix: |
         cd ../breakout_butler_flutter
-        flutter build web --base-href /app/ --wasm --output ../breakout_butler_server/web/app
+        flutter build web --base-href / --no-tree-shake-icons --output ../breakout_butler_server/web/app
