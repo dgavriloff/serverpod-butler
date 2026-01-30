@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:js_interop';
 
+import 'package:web/web.dart' as web;
+
 /// JS interop bindings for the Web Speech API (Chrome).
 /// Uses webkitSpeechRecognition which is the only widely-supported variant.
 @JS('webkitSpeechRecognition')
@@ -78,9 +80,16 @@ class SpeechRecognitionService {
   bool _isListening = false;
   int _lastFinalIndex = 0;
 
-  /// Check if the Web Speech API is available in this browser.
-  /// Tries to instantiate the recognition object — if it throws, it's unsupported.
+  /// Check if the Web Speech API is available and works reliably.
+  /// Only Chrome properly supports continuous speech recognition.
+  /// Other browsers may have partial support but fail on continuous mode.
   static bool get isSupported {
+    // Check for Chrome specifically - other browsers have broken implementations
+    final userAgent = web.window.navigator.userAgent.toLowerCase();
+    final isChrome = userAgent.contains('chrome') && !userAgent.contains('edg');
+
+    if (!isChrome) return false;
+
     try {
       _JsSpeechRecognition();
       return true;

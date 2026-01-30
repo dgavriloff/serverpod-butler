@@ -40,9 +40,17 @@ class RecordingControllerNotifier extends StateNotifier<RecordingState> {
   Future<void> _start() async {
     final useSpeechApi = SpeechRecognitionService.isSupported;
 
+    // Only Chrome has reliable speech recognition - show error for other browsers
+    if (!useSpeechApi) {
+      state = state.copyWith(
+        error: 'Voice transcription is only supported in Google Chrome.',
+      );
+      return;
+    }
+
     _audioRecorder = AudioRecorderService();
     final error = await _audioRecorder!.startRecording(
-      enableRecorder: !useSpeechApi,
+      enableRecorder: false, // Always use speech API when supported
     );
 
     if (error != null) {
@@ -52,15 +60,11 @@ class RecordingControllerNotifier extends StateNotifier<RecordingState> {
 
     state = state.copyWith(
       isRecording: true,
-      usingSpeechApi: useSpeechApi,
+      usingSpeechApi: true,
       error: null,
     );
 
-    if (useSpeechApi) {
-      _startSpeechRecognition();
-    } else {
-      _startAudioChunkProcessing();
-    }
+    _startSpeechRecognition();
   }
 
   void _startSpeechRecognition() {

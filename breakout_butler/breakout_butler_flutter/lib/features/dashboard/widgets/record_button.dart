@@ -17,6 +17,21 @@ class RecordButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(recordingControllerProvider(sessionId));
 
+    // Show error as snackbar when it changes
+    ref.listen<RecordingState>(
+      recordingControllerProvider(sessionId),
+      (previous, next) {
+        if (next.error != null && next.error != previous?.error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.error!),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      },
+    );
+
     // When recording, show blinking red dot button
     if (state.isRecording) {
       return OutlinedButton(

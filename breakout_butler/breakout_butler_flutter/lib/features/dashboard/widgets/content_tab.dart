@@ -194,7 +194,6 @@ class _ContentTabState extends ConsumerState<ContentTab> {
               SpSecondaryButton(
                 label: 'pull from transcript',
                 icon: Icons.auto_awesome,
-                iconOnly: true,
                 isLoading: _isExtracting,
                 onPressed: canPull ? _pullFromTranscript : null,
               ),
