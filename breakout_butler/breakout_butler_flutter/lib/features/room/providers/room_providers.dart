@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/utils/text_crdt.dart';
 import '../../../main.dart';
@@ -27,15 +28,34 @@ String _renderCrdtToText(String content) {
   }
 }
 
-/// Generate a simple user ID (persisted in memory for session)
+/// Generate a simple user ID
 String _generateUserId() {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
   final rng = Random();
   return List.generate(12, (_) => chars[rng.nextInt(chars.length)]).join();
 }
 
-/// Global user ID for this session
-final _userId = _generateUserId();
+/// Key for storing user ID in SharedPreferences
+const _userIdKey = 'breakout_butler_user_id';
+
+/// Cached user ID (loaded from storage or generated)
+String? _cachedUserId;
+
+/// Get or create a persistent user ID
+Future<String> _getOrCreateUserId() async {
+  if (_cachedUserId != null) return _cachedUserId!;
+
+  final prefs = await SharedPreferences.getInstance();
+  var userId = prefs.getString(_userIdKey);
+
+  if (userId == null) {
+    userId = _generateUserId();
+    await prefs.setString(_userIdKey, userId);
+  }
+
+  _cachedUserId = userId;
+  return userId;
+}
 
 /// Stream of updates for a single room.
 final roomUpdatesProvider =
@@ -122,12 +142,12 @@ final roomContentsProvider = StateNotifierProvider.autoDispose
 /// Manages local content + drawing editing with debounced save for a student room.
 class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   RoomEditorNotifier(this._sessionId, this._roomNumber)
-      : _textCrdt = TextCrdt(nodeId: _userId),
-        super(const RoomEditorState());
+      : super(const RoomEditorState());
 
   final int _sessionId;
   final int _roomNumber;
-  final TextCrdt _textCrdt;
+  TextCrdt? _textCrdt;
+  String? _userId;
   Timer? _contentDebounce;
   Timer? _drawingDebounce;
   Timer? _editingCooldown;
@@ -141,12 +161,16 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   bool _isLocallyEditingDrawing = false;
 
   Future<void> init() async {
+    // Get persistent user ID first
+    _userId = await _getOrCreateUserId();
+    _textCrdt = TextCrdt(nodeId: _userId);
+
     // Join the room with user ID
     try {
       final presence = await client.room.joinRoom(
         _sessionId,
         _roomNumber,
-        _userId,
+        _userId!,
         null, // Auto-generate display name
       );
       _hasJoined = true;
@@ -173,16 +197,16 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
       final content = room.content;
       if (content.startsWith('[') && content.contains('"id"')) {
         // Looks like CRDT JSON
-        _textCrdt.loadFromJson(content);
+        _textCrdt!.loadFromJson(content);
         _lastSavedCrdtJson = content;
       } else {
         // Plain text - convert to CRDT
-        _textCrdt.replaceAll(content);
-        _lastSavedCrdtJson = _textCrdt.toJson();
+        _textCrdt!.replaceAll(content);
+        _lastSavedCrdtJson = _textCrdt!.toJson();
       }
 
       state = state.copyWith(
-        content: _textCrdt.text,
+        content: _textCrdt!.text,
         crdtJson: _lastSavedCrdtJson,
         drawingData: room.drawingData ?? '',
         loaded: true,
@@ -205,13 +229,13 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 
       // Merge remote CRDT content
       final remoteContent = update.content;
-      if (remoteContent != _lastSavedCrdtJson) {
+      if (remoteContent != _lastSavedCrdtJson && _textCrdt != null) {
         if (remoteContent.startsWith('[') && remoteContent.contains('"id"')) {
           // Remote is CRDT JSON - merge it
-          _textCrdt.merge(remoteContent);
-          _lastSavedCrdtJson = _textCrdt.toJson();
+          _textCrdt!.merge(remoteContent);
+          _lastSavedCrdtJson = _textCrdt!.toJson();
           state = state.copyWith(
-            content: _textCrdt.text,
+            content: _textCrdt!.text,
             crdtJson: _lastSavedCrdtJson,
           );
         }
@@ -254,15 +278,15 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   }
 
   void updateContent(String newText, {int cursorPosition = -1}) {
-    if (!mounted) return;
+    if (!mounted || _textCrdt == null) return;
 
     // Apply change to CRDT
-    final oldText = _textCrdt.text;
-    _textCrdt.applyChange(oldText, newText);
+    final oldText = _textCrdt!.text;
+    _textCrdt!.applyChange(oldText, newText);
 
-    final crdtJson = _textCrdt.toJson();
+    final crdtJson = _textCrdt!.toJson();
     state = state.copyWith(
-      content: _textCrdt.text,
+      content: _textCrdt!.text,
       crdtJson: crdtJson,
     );
 
@@ -397,8 +421,8 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     _sub?.cancel();
     _presenceSub?.cancel();
     // Leave the room
-    if (_hasJoined) {
-      client.room.leaveRoom(_sessionId, _roomNumber, _userId).catchError((_) {});
+    if (_hasJoined && _userId != null) {
+      client.room.leaveRoom(_sessionId, _roomNumber, _userId!).catchError((_) {});
     }
     super.dispose();
   }
@@ -431,7 +455,7 @@ class RoomEditorState {
 
   /// Get other users' presence (excluding self)
   List<UserPresence> get otherUsers =>
-      presence.where((p) => p.userId != _userId).toList();
+      presence.where((p) => p.userId != myPresence?.userId).toList();
 
   RoomEditorState copyWith({
     String? content,

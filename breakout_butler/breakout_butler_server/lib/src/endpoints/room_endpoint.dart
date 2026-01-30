@@ -232,6 +232,10 @@ class RoomEndpoint extends Endpoint {
       throw Exception('Room not found');
     }
 
+    // Debug logging for CRDT content
+    session.log('updateRoomContent: sessionId=$sessionId, roomNumber=$roomNumber');
+    session.log('Content length: ${content.length}, preview: ${content.substring(0, content.length > 200 ? 200 : content.length)}');
+
     room.content = content;
     room.updatedAt = DateTime.now();
     await Room.db.updateRow(session, room);
