@@ -90,3 +90,10 @@ coverage/
 
 # Serverpod passwords (secrets)
 **/config/passwords.yaml
+
+# Internal documentation (keep locally, not in repo)
+HANDOFF.md
+PLAN.md
+NOTES.md
+DESIGN_PHILOSOPHY.md
+demo/
