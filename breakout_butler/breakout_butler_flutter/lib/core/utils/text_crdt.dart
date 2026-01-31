@@ -235,39 +235,40 @@ class TextCrdt {
 
     final visible = _chars.where((c) => !c.deleted).toList();
     _consoleLog('[CRDT] delete: start=$start, end=$end, visibleLen=${visible.length}, totalChars=${_chars.length}');
-    _consoleLog('[CRDT] delete: chars to delete: "${visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
+
+    // Log what skip/take shows vs direct index access
+    final skipTakeChars = visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join();
+    final directIndexChars = List.generate(
+      (end - start).clamp(0, visible.length - start),
+      (i) => visible[start + i].char == '\n' ? '\\n' : visible[start + i].char,
+    ).join();
+    _consoleLog('[CRDT] skip/take chars: "$skipTakeChars"');
+    _consoleLog('[CRDT] direct index chars: "$directIndexChars"');
+
+    if (skipTakeChars != directIndexChars) {
+      _consoleLog('[CRDT] BUG: skip/take differs from direct index!');
+    }
 
     var deletedCount = 0;
-    var notFoundCount = 0;
     for (var i = start; i < end && i < visible.length; i++) {
       final charToDelete = visible[i];
       final charId = charToDelete.id;
       final charIndex = _chars.indexWhere((c) => c.id == charId);
       if (charIndex != -1) {
+        _consoleLog('[CRDT] deleting idx=$i char="${charToDelete.char}" pos=${charToDelete.position}');
         _chars[charIndex] = _chars[charIndex].copyWith(
           deleted: true,
           hlc: _hlc,
         );
         deletedCount++;
-      } else {
-        notFoundCount++;
-        _consoleLog('[CRDT] NOT FOUND: id=$charId char="${charToDelete.char}"');
       }
     }
-    _consoleLog('[CRDT] delete result: deleted=$deletedCount, notFound=$notFoundCount');
+    _consoleLog('[CRDT] delete result: deleted=$deletedCount of ${end - start}');
 
-    // Check for duplicate characters at same positions
+    // Check result
     final afterVisible = _chars.where((c) => !c.deleted).toList();
-    _consoleLog('[CRDT] after delete: visibleCount=${afterVisible.length}');
-    if (afterVisible.length == visible.length) {
-      _consoleLog('[CRDT] WARNING: visible count unchanged! Checking for duplicates...');
-      // Log the last 10 visible chars with their IDs
-      final lastChars = afterVisible.skip(afterVisible.length > 10 ? afterVisible.length - 10 : 0).toList();
-      for (final c in lastChars) {
-        _consoleLog('[CRDT] char: "${c.char == '\n' ? '\\n' : c.char}" id=${c.id.substring(0, 20)}... pos=${c.position}');
-      }
-    }
-    _consoleLog('[CRDT] after delete: text="${text.replaceAll('\n', '\\n')}"');
+    final afterText = afterVisible.map((c) => c.char).join();
+    _consoleLog('[CRDT] after delete: visibleCount=${afterVisible.length}, text ends with: "${afterText.length > 20 ? afterText.substring(afterText.length - 20) : afterText}"');
   }
 
   /// Replace all text (used for initial sync or full replacement)
