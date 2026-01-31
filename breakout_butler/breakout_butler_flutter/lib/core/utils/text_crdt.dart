@@ -85,9 +85,16 @@ class TextCrdt {
   /// All characters including tombstones, sorted by position
   final List<CrdtChar> _chars = [];
 
-  /// Get visible text (excluding tombstones)
+  /// Get visible text (excluding tombstones), sorted by position
   String get text {
-    final visible = _chars.where((c) => !c.deleted).toList();
+    final visible = _chars.where((c) => !c.deleted).toList()
+      ..sort((a, b) {
+        final posCmp = a.position.compareTo(b.position);
+        if (posCmp != 0) return posCmp;
+        final hlcCmp = a.hlc.compareTo(b.hlc);
+        if (hlcCmp != 0) return hlcCmp;
+        return a.id.compareTo(b.id);
+      });
     return visible.map((c) => c.char).join();
   }
 
@@ -165,34 +172,48 @@ class TextCrdt {
   }
 
   /// Insert text at the given visible index
-  void insert(int index, String text) {
-    if (text.isEmpty) return;
+  void insert(int index, String textToInsert) {
+    if (textToInsert.isEmpty) return;
 
     _hlc = _hlc.increment();
 
-    // Find positions of neighbors
-    var visible = _chars.where((c) => !c.deleted).toList();
+    // Find positions of neighbors (sorted by position)
+    var visible = _chars.where((c) => !c.deleted).toList()
+      ..sort((a, b) {
+        final posCmp = a.position.compareTo(b.position);
+        if (posCmp != 0) return posCmp;
+        final hlcCmp = a.hlc.compareTo(b.hlc);
+        if (hlcCmp != 0) return hlcCmp;
+        return a.id.compareTo(b.id);
+      });
     var leftPos = index > 0 ? visible[index - 1].position : 0.0;
     var rightPos = index < visible.length ? visible[index].position : 1.0;
 
     // If positions are too close, rebalance the entire document
     final minStep = 1e-10;
-    if (rightPos - leftPos < minStep * (text.length + 1)) {
+    if (rightPos - leftPos < minStep * (textToInsert.length + 1)) {
       _rebalancePositions();
-      visible = _chars.where((c) => !c.deleted).toList();
+      visible = _chars.where((c) => !c.deleted).toList()
+        ..sort((a, b) {
+          final posCmp = a.position.compareTo(b.position);
+          if (posCmp != 0) return posCmp;
+          final hlcCmp = a.hlc.compareTo(b.hlc);
+          if (hlcCmp != 0) return hlcCmp;
+          return a.id.compareTo(b.id);
+        });
       leftPos = index > 0 ? visible[index - 1].position : 0.0;
       rightPos = index < visible.length ? visible[index].position : 1.0;
     }
 
     // Generate positions for each character
-    final step = (rightPos - leftPos) / (text.length + 1);
+    final step = (rightPos - leftPos) / (textToInsert.length + 1);
 
-    for (var i = 0; i < text.length; i++) {
+    for (var i = 0; i < textToInsert.length; i++) {
       final position = leftPos + step * (i + 1);
       final char = CrdtChar(
         id: _generateCharId(),
         position: position,
-        char: text[i],
+        char: textToInsert[i],
         deleted: false,
         hlc: _hlc,
       );
@@ -233,21 +254,18 @@ class TextCrdt {
 
     _hlc = _hlc.increment();
 
-    final visible = _chars.where((c) => !c.deleted).toList();
-    _consoleLog('[CRDT] delete: start=$start, end=$end, visibleLen=${visible.length}, totalChars=${_chars.length}');
+    // Get visible chars sorted by position (same order as text getter)
+    final visible = _chars.where((c) => !c.deleted).toList()
+      ..sort((a, b) {
+        final posCmp = a.position.compareTo(b.position);
+        if (posCmp != 0) return posCmp;
+        final hlcCmp = a.hlc.compareTo(b.hlc);
+        if (hlcCmp != 0) return hlcCmp;
+        return a.id.compareTo(b.id);
+      });
 
-    // Log what skip/take shows vs direct index access
-    final skipTakeChars = visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join();
-    final directIndexChars = List.generate(
-      (end - start).clamp(0, visible.length - start),
-      (i) => visible[start + i].char == '\n' ? '\\n' : visible[start + i].char,
-    ).join();
-    _consoleLog('[CRDT] skip/take chars: "$skipTakeChars"');
-    _consoleLog('[CRDT] direct index chars: "$directIndexChars"');
-
-    if (skipTakeChars != directIndexChars) {
-      _consoleLog('[CRDT] BUG: skip/take differs from direct index!');
-    }
+    _consoleLog('[CRDT] delete: start=$start, end=$end, visibleLen=${visible.length}');
+    _consoleLog('[CRDT] delete: chars to delete: "${visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
 
     var deletedCount = 0;
     for (var i = start; i < end && i < visible.length; i++) {
@@ -255,7 +273,6 @@ class TextCrdt {
       final charId = charToDelete.id;
       final charIndex = _chars.indexWhere((c) => c.id == charId);
       if (charIndex != -1) {
-        _consoleLog('[CRDT] deleting idx=$i char="${charToDelete.char}" pos=${charToDelete.position}');
         _chars[charIndex] = _chars[charIndex].copyWith(
           deleted: true,
           hlc: _hlc,
@@ -264,11 +281,7 @@ class TextCrdt {
       }
     }
     _consoleLog('[CRDT] delete result: deleted=$deletedCount of ${end - start}');
-
-    // Check result
-    final afterVisible = _chars.where((c) => !c.deleted).toList();
-    final afterText = afterVisible.map((c) => c.char).join();
-    _consoleLog('[CRDT] after delete: visibleCount=${afterVisible.length}, text ends with: "${afterText.length > 20 ? afterText.substring(afterText.length - 20) : afterText}"');
+    _consoleLog('[CRDT] after delete: text ends with "${text.length > 20 ? text.substring(text.length - 20) : text}"');
   }
 
   /// Replace all text (used for initial sync or full replacement)
