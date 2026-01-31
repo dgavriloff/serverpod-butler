@@ -281,7 +281,32 @@ class TextCrdt {
       }
     }
     _consoleLog('[CRDT] delete result: deleted=$deletedCount of ${end - start}');
-    _consoleLog('[CRDT] after delete: text ends with "${text.length > 20 ? text.substring(text.length - 20) : text}"');
+
+    // Check for duplicates - count all visible chars matching the deleted pattern
+    final afterVisible = _chars.where((c) => !c.deleted).toList()
+      ..sort((a, b) {
+        final posCmp = a.position.compareTo(b.position);
+        if (posCmp != 0) return posCmp;
+        final hlcCmp = a.hlc.compareTo(b.hlc);
+        if (hlcCmp != 0) return hlcCmp;
+        return a.id.compareTo(b.id);
+      });
+    _consoleLog('[CRDT] after delete: ${afterVisible.length} visible chars');
+
+    // Count occurrences of the pattern we tried to delete
+    final charsToFind = visible.skip(start).take(end - start).map((c) => c.char).toList();
+    var patternCount = 0;
+    for (var i = 0; i <= afterVisible.length - charsToFind.length; i++) {
+      var match = true;
+      for (var j = 0; j < charsToFind.length && match; j++) {
+        if (afterVisible[i + j].char != charsToFind[j]) match = false;
+      }
+      if (match) {
+        patternCount++;
+        _consoleLog('[CRDT] found pattern at index $i: "${afterVisible.skip(i).take(charsToFind.length).map((c) => c.id.substring(0, 12)).join(", ")}"');
+      }
+    }
+    _consoleLog('[CRDT] pattern "$charsToFind" found $patternCount times after delete');
   }
 
   /// Replace all text (used for initial sync or full replacement)
