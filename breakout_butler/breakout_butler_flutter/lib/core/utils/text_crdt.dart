@@ -212,6 +212,9 @@ class TextCrdt {
     _hlc = _hlc.increment();
 
     final visible = _chars.where((c) => !c.deleted).toList();
+    print('[CRDT] delete: start=$start, end=$end, visibleLen=${visible.length}');
+    print('[CRDT] delete: chars to delete: "${visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
+
     for (var i = start; i < end && i < visible.length; i++) {
       final charId = visible[i].id;
       final charIndex = _chars.indexWhere((c) => c.id == charId);
@@ -222,6 +225,7 @@ class TextCrdt {
         );
       }
     }
+    print('[CRDT] after delete: text="${text.replaceAll('\n', '\\n')}"');
   }
 
   /// Replace all text (used for initial sync or full replacement)
@@ -247,6 +251,8 @@ class TextCrdt {
   void applyChange(String oldText, String newText) {
     if (oldText == newText) return;
 
+    print('[CRDT] applyChange: oldLen=${oldText.length}, newLen=${newText.length}');
+
     // Find common prefix
     var prefixLen = 0;
     while (prefixLen < oldText.length &&
@@ -267,6 +273,9 @@ class TextCrdt {
     final deleteStart = prefixLen;
     final deleteEnd = oldText.length - suffixLen;
     final insertText = newText.substring(prefixLen, newText.length - suffixLen);
+
+    print('[CRDT] diff: prefixLen=$prefixLen, suffixLen=$suffixLen, deleteStart=$deleteStart, deleteEnd=$deleteEnd');
+    print('[CRDT] diff: deleteCount=${deleteEnd - deleteStart}, insertLen=${insertText.length}');
 
     // Delete old characters
     if (deleteEnd > deleteStart) {
