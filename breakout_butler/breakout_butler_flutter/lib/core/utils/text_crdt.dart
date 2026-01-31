@@ -116,6 +116,7 @@ class TextCrdt {
         _chars.add(CrdtChar.fromJson(item as Map<String, dynamic>));
       }
       _sortChars();
+      _deduplicateChars();
     } catch (_) {
       // Corrupt data, start fresh
       _chars.clear();
@@ -166,6 +167,7 @@ class TextCrdt {
 
       _consoleLog('[CRDT] merge done: new=$newCount updated=$updatedCount restored=$restoredCount');
       _sortChars();
+      _deduplicateChars();
     } catch (e) {
       _consoleLog('[CRDT] merge error: $e');
     }
@@ -404,6 +406,49 @@ class TextCrdt {
       if (hlcCmp != 0) return hlcCmp;
       return a.id.compareTo(b.id);
     });
+  }
+
+  /// Remove duplicate characters that have the same char at very similar positions.
+  /// Keeps the one with the highest HLC (most recent).
+  void _deduplicateChars() {
+    if (_chars.isEmpty) return;
+
+    // Sort first
+    _sortChars();
+
+    // Find duplicates: chars with same character and positions within epsilon
+    const posEpsilon = 0.0001;
+    final toRemove = <String>{};
+
+    for (var i = 0; i < _chars.length - 1; i++) {
+      final current = _chars[i];
+      if (toRemove.contains(current.id)) continue;
+
+      for (var j = i + 1; j < _chars.length; j++) {
+        final other = _chars[j];
+        if (toRemove.contains(other.id)) continue;
+
+        // Check if positions are very close and same character
+        if ((current.position - other.position).abs() < posEpsilon &&
+            current.char == other.char) {
+          // Keep the one with higher HLC, remove the other
+          if (current.hlc.compareTo(other.hlc) >= 0) {
+            toRemove.add(other.id);
+          } else {
+            toRemove.add(current.id);
+            break; // Current is removed, move to next
+          }
+        } else if (other.position - current.position >= posEpsilon) {
+          // Positions are now too far apart (sorted), stop checking
+          break;
+        }
+      }
+    }
+
+    if (toRemove.isNotEmpty) {
+      _consoleLog('[CRDT] deduplicating: removing ${toRemove.length} duplicate chars');
+      _chars.removeWhere((c) => toRemove.contains(c.id));
+    }
   }
 
   String _generateCharId() {
