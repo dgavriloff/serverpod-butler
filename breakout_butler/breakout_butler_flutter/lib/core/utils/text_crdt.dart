@@ -265,7 +265,11 @@ class TextCrdt {
       });
 
     _consoleLog('[CRDT] delete: start=$start, end=$end, visibleLen=${visible.length}');
-    _consoleLog('[CRDT] delete: chars to delete: "${visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
+
+    // Log IDs of chars we're about to delete
+    final toDelete = visible.skip(start).take(end - start).toList();
+    _consoleLog('[CRDT] deleting chars: "${toDelete.map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
+    _consoleLog('[CRDT] deleting IDs: ${toDelete.map((c) => c.id).join(", ")}');
 
     var deletedCount = 0;
     for (var i = start; i < end && i < visible.length; i++) {
@@ -319,7 +323,13 @@ class TextCrdt {
       }
       if (match) {
         patternCount++;
-        _consoleLog('[CRDT] found pattern at index $i: "${afterVisible.skip(i).take(charsToFind.length).map((c) => c.id.substring(0, 12)).join(", ")}"');
+        final foundIds = afterVisible.skip(i).take(charsToFind.length).map((c) => c.id).toList();
+        _consoleLog('[CRDT] found at idx $i IDs: ${foundIds.join(", ")}');
+        // Check if any of these IDs match the ones we deleted
+        final overlap = foundIds.where((id) => toDelete.any((d) => d.id == id)).length;
+        if (overlap > 0) {
+          _consoleLog('[CRDT] BUG: $overlap IDs overlap with deleted chars!');
+        }
       }
     }
     _consoleLog('[CRDT] pattern "$charsToFind" found $patternCount times after delete');
