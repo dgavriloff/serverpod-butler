@@ -273,14 +273,30 @@ class TextCrdt {
       final charId = charToDelete.id;
       final charIndex = _chars.indexWhere((c) => c.id == charId);
       if (charIndex != -1) {
+        final before = _chars[charIndex].deleted;
         _chars[charIndex] = _chars[charIndex].copyWith(
           deleted: true,
           hlc: _hlc,
         );
+        final after = _chars[charIndex].deleted;
+        if (!after) {
+          _consoleLog('[CRDT] BUG: char at $charIndex not deleted! before=$before after=$after');
+        }
         deletedCount++;
+      } else {
+        _consoleLog('[CRDT] NOT FOUND: id=$charId char="${charToDelete.char}"');
       }
     }
     _consoleLog('[CRDT] delete result: deleted=$deletedCount of ${end - start}');
+
+    // Verify deletion took effect on the specific chars we tried to delete
+    final charsWeDeleted = visible.skip(start).take(end - start).toList();
+    for (final c in charsWeDeleted) {
+      final inChars = _chars.firstWhere((x) => x.id == c.id, orElse: () => c);
+      if (!inChars.deleted) {
+        _consoleLog('[CRDT] BUG: char "${c.char}" id=${c.id.substring(0, 20)} still not deleted!');
+      }
+    }
 
     // Check for duplicates - count all visible chars matching the deleted pattern
     final afterVisible = _chars.where((c) => !c.deleted).toList()
