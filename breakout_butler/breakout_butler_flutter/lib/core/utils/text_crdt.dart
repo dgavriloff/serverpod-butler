@@ -273,27 +273,24 @@ class TextCrdt {
     _consoleLog('[CRDT] deleting chars: "${toDelete.map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
     _consoleLog('[CRDT] deleting IDs: ${toDelete.map((c) => c.id).join(", ")}');
 
-    var deletedCount = 0;
+    // Collect all IDs to delete
+    final idsToDelete = <String>{};
     for (var i = start; i < end && i < visible.length; i++) {
-      final charToDelete = visible[i];
-      final charId = charToDelete.id;
-      final charIndex = _chars.indexWhere((c) => c.id == charId);
-      if (charIndex != -1) {
-        final before = _chars[charIndex].deleted;
-        _chars[charIndex] = _chars[charIndex].copyWith(
+      idsToDelete.add(visible[i].id);
+    }
+
+    // Mark ALL occurrences of these IDs as deleted (handles duplicates)
+    var deletedCount = 0;
+    for (var i = 0; i < _chars.length; i++) {
+      if (idsToDelete.contains(_chars[i].id) && !_chars[i].deleted) {
+        _chars[i] = _chars[i].copyWith(
           deleted: true,
           hlc: _hlc,
         );
-        final after = _chars[charIndex].deleted;
-        if (!after) {
-          _consoleLog('[CRDT] BUG: char at $charIndex not deleted! before=$before after=$after');
-        }
         deletedCount++;
-      } else {
-        _consoleLog('[CRDT] NOT FOUND: id=$charId char="${charToDelete.char}"');
       }
     }
-    _consoleLog('[CRDT] delete result: deleted=$deletedCount of ${end - start}');
+    _consoleLog('[CRDT] delete result: deleted=$deletedCount entries for ${idsToDelete.length} IDs');
 
     // Verify deletion took effect on the specific chars we tried to delete
     final charsWeDeleted = visible.skip(start).take(end - start).toList();
@@ -408,15 +405,51 @@ class TextCrdt {
     });
   }
 
-  /// Remove duplicate characters that have the same char at very similar positions.
-  /// Keeps the one with the highest HLC (most recent).
+  /// Remove duplicate characters. Two types of duplicates:
+  /// 1. Same ID appearing multiple times (keep highest HLC)
+  /// 2. Same char at very similar positions (keep highest HLC)
   void _deduplicateChars() {
     if (_chars.isEmpty) return;
 
-    // Sort first
+    // First pass: deduplicate by ID (IDs should be unique)
+    final seenIds = <String, int>{};
+    final idDuplicateIndices = <int>[];
+
+    for (var i = 0; i < _chars.length; i++) {
+      final id = _chars[i].id;
+      if (seenIds.containsKey(id)) {
+        final existingIdx = seenIds[id]!;
+        final existing = _chars[existingIdx];
+        final current = _chars[i];
+
+        // Keep the one with higher HLC (or if equal, keep deleted=true version)
+        final hlcCmp = current.hlc.compareTo(existing.hlc);
+        if (hlcCmp > 0 || (hlcCmp == 0 && current.deleted && !existing.deleted)) {
+          // Current is newer/more authoritative, remove existing
+          idDuplicateIndices.add(existingIdx);
+          seenIds[id] = i;
+        } else {
+          // Existing is newer/more authoritative, remove current
+          idDuplicateIndices.add(i);
+        }
+      } else {
+        seenIds[id] = i;
+      }
+    }
+
+    if (idDuplicateIndices.isNotEmpty) {
+      _consoleLog('[CRDT] removing ${idDuplicateIndices.length} duplicate IDs');
+      // Remove in reverse order to preserve indices
+      idDuplicateIndices.sort((a, b) => b.compareTo(a));
+      for (final idx in idDuplicateIndices) {
+        _chars.removeAt(idx);
+      }
+    }
+
+    // Sort after ID deduplication
     _sortChars();
 
-    // Find duplicates: chars with same character and positions within epsilon
+    // Second pass: deduplicate by position+char
     const posEpsilon = 0.0001;
     final toRemove = <String>{};
 
@@ -446,7 +479,7 @@ class TextCrdt {
     }
 
     if (toRemove.isNotEmpty) {
-      _consoleLog('[CRDT] deduplicating: removing ${toRemove.length} duplicate chars');
+      _consoleLog('[CRDT] removing ${toRemove.length} position duplicates');
       _chars.removeWhere((c) => toRemove.contains(c.id));
     }
   }
