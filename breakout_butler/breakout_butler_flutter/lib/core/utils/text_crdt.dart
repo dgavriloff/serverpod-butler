@@ -1,7 +1,16 @@
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:math';
 
 import 'package:crdt/crdt.dart';
+
+/// Log to browser console (works in WASM)
+void _consoleLog(String message) {
+  _jsConsoleLog(message.toJS);
+}
+
+@JS('console.log')
+external void _jsConsoleLog(JSString message);
 
 /// A character in the CRDT text with a unique fractional position.
 class CrdtChar {
@@ -116,17 +125,29 @@ class TextCrdt {
           .map((item) => CrdtChar.fromJson(item as Map<String, dynamic>))
           .toList();
 
+      _consoleLog('[CRDT] merge: ${remoteChars.length} remote chars');
+      var newCount = 0;
+      var updatedCount = 0;
+      var restoredCount = 0;
+
       for (final remote in remoteChars) {
         final localIndex = _chars.indexWhere((c) => c.id == remote.id);
 
         if (localIndex == -1) {
           // New character from remote
           _chars.add(remote);
+          newCount++;
         } else {
           // Existing character - use HLC to resolve conflicts
           final local = _chars[localIndex];
           if (remote.hlc.compareTo(local.hlc) > 0) {
+            // Check if this is restoring a deleted character
+            if (local.deleted && !remote.deleted) {
+              restoredCount++;
+              _consoleLog('[CRDT] merge RESTORE: char="${remote.char}" id=${remote.id} localHlc=${local.hlc} remoteHlc=${remote.hlc}');
+            }
             _chars[localIndex] = remote;
+            updatedCount++;
           }
         }
 
@@ -136,9 +157,10 @@ class TextCrdt {
         }
       }
 
+      _consoleLog('[CRDT] merge done: new=$newCount updated=$updatedCount restored=$restoredCount');
       _sortChars();
-    } catch (_) {
-      // Ignore corrupt remote data
+    } catch (e) {
+      _consoleLog('[CRDT] merge error: $e');
     }
   }
 
@@ -212,8 +234,8 @@ class TextCrdt {
     _hlc = _hlc.increment();
 
     final visible = _chars.where((c) => !c.deleted).toList();
-    print('[CRDT] delete: start=$start, end=$end, visibleLen=${visible.length}');
-    print('[CRDT] delete: chars to delete: "${visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
+    _consoleLog('[CRDT] delete: start=$start, end=$end, visibleLen=${visible.length}');
+    _consoleLog('[CRDT] delete: chars to delete: "${visible.skip(start).take(end - start).map((c) => c.char == '\n' ? '\\n' : c.char).join()}"');
 
     for (var i = start; i < end && i < visible.length; i++) {
       final charId = visible[i].id;
@@ -223,9 +245,10 @@ class TextCrdt {
           deleted: true,
           hlc: _hlc,
         );
+        _consoleLog('[CRDT] marked deleted: id=${charId}, char="${_chars[charIndex].char}"');
       }
     }
-    print('[CRDT] after delete: text="${text.replaceAll('\n', '\\n')}"');
+    _consoleLog('[CRDT] after delete: text="${text.replaceAll('\n', '\\n')}"');
   }
 
   /// Replace all text (used for initial sync or full replacement)
@@ -251,7 +274,7 @@ class TextCrdt {
   void applyChange(String oldText, String newText) {
     if (oldText == newText) return;
 
-    print('[CRDT] applyChange: oldLen=${oldText.length}, newLen=${newText.length}');
+    _consoleLog('[CRDT] applyChange: oldLen=${oldText.length}, newLen=${newText.length}');
 
     // Find common prefix
     var prefixLen = 0;
@@ -274,8 +297,8 @@ class TextCrdt {
     final deleteEnd = oldText.length - suffixLen;
     final insertText = newText.substring(prefixLen, newText.length - suffixLen);
 
-    print('[CRDT] diff: prefixLen=$prefixLen, suffixLen=$suffixLen, deleteStart=$deleteStart, deleteEnd=$deleteEnd');
-    print('[CRDT] diff: deleteCount=${deleteEnd - deleteStart}, insertLen=${insertText.length}');
+    _consoleLog('[CRDT] diff: prefixLen=$prefixLen, suffixLen=$suffixLen, deleteStart=$deleteStart, deleteEnd=$deleteEnd');
+    _consoleLog('[CRDT] diff: deleteCount=${deleteEnd - deleteStart}, insertLen=${insertText.length}');
 
     // Delete old characters
     if (deleteEnd > deleteStart) {

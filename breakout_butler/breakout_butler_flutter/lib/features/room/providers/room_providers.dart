@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:js_interop';
 import 'dart:math';
 
 import 'package:breakout_butler_client/breakout_butler_client.dart';
@@ -8,6 +9,14 @@ import 'package:web/web.dart' as web;
 
 import '../../../core/utils/text_crdt.dart';
 import '../../../main.dart';
+
+/// Log to browser console (works in WASM)
+void _consoleLog(String message) {
+  _jsConsoleLog(message.toJS);
+}
+
+@JS('console.log')
+external void _jsConsoleLog(JSString message);
 
 /// Render CRDT JSON to plain text (for display in dashboard)
 String _renderCrdtToText(String content) {
@@ -168,6 +177,7 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   String _lastSavedDrawing = '';
   bool _hasJoined = false;
   bool _isLocallyEditingDrawing = false;
+  bool _hasPendingContentChanges = false;
 
   Future<void> init() async {
     // Get persistent user ID first (sync, uses localStorage)
@@ -236,13 +246,22 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
         presence: update.presence ?? [],
       );
 
-      // Merge remote CRDT content
+      // Merge remote CRDT content (skip if we have pending local changes)
       final remoteContent = update.content;
       if (remoteContent != _lastSavedCrdtJson && _textCrdt != null) {
-        if (remoteContent.startsWith('[') && remoteContent.contains('"id"')) {
+        if (_hasPendingContentChanges) {
+          _consoleLog('[RoomEditor] SKIPPING merge - pending local changes');
+        } else if (remoteContent.startsWith('[') && remoteContent.contains('"id"')) {
           // Remote is CRDT JSON - merge it
+          final textBefore = _textCrdt!.text;
+          _consoleLog('[RoomEditor] merge triggered, textBefore="${textBefore.replaceAll('\n', '\\n')}"');
           _textCrdt!.merge(remoteContent);
           _lastSavedCrdtJson = _textCrdt!.toJson();
+          final textAfter = _textCrdt!.text;
+          _consoleLog('[RoomEditor] merge done, textAfter="${textAfter.replaceAll('\n', '\\n')}"');
+          if (textBefore != textAfter) {
+            _consoleLog('[RoomEditor] TEXT CHANGED BY MERGE!');
+          }
           state = state.copyWith(
             content: _textCrdt!.text,
             crdtJson: _lastSavedCrdtJson,
@@ -288,6 +307,9 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 
   void updateContent(String newText, {int cursorPosition = -1}) {
     if (!mounted || _textCrdt == null) return;
+
+    // Mark that we have pending changes - skip remote merges until saved
+    _hasPendingContentChanges = true;
 
     // Apply change to CRDT
     final oldText = _textCrdt!.text;
@@ -403,6 +425,8 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     try {
       await client.room.updateRoomContent(_sessionId, _roomNumber, crdtJson);
       _lastSavedCrdtJson = crdtJson;
+      _hasPendingContentChanges = false;
+      _consoleLog('[RoomEditor] content saved, pending=false');
     } finally {
       if (mounted) state = state.copyWith(isSaving: false);
     }
