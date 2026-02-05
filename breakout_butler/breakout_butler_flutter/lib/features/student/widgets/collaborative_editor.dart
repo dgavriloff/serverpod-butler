@@ -38,6 +38,7 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
   /// Find another user who is currently typing (not me)
   UserPresence? _findTypingUser(RoomEditorState state) {
     final myId = state.myPresence?.userId;
+    if (myId == null) return null; // Can't determine "other" if we don't know ourselves
     for (final user in state.presence) {
       if (user.userId != myId && user.isTyping) {
         return user;
@@ -49,6 +50,7 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
   /// Find another user who is currently drawing (not me)
   UserPresence? _findDrawingUser(RoomEditorState state) {
     final myId = state.myPresence?.userId;
+    if (myId == null) return null; // Can't determine "other" if we don't know ourselves
     for (final user in state.presence) {
       if (user.userId != myId && user.isDrawing) {
         return user;

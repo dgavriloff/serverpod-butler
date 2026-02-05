@@ -48004,9 +48004,11 @@ A.Bt.prototype={
 ad(){return new A.WW(new A.bD(null,t.L2),B.eS)}}
 A.WW.prototype={
 acg(a){var s,r=a.w,q=r==null?null:r.a
+if(q==null)return null
 for(r=J.b6(a.r);r.q();){s=r.gJ()
 if(s.a!==q&&s.e)return s}return null},
 acc(a){var s,r=a.w,q=r==null?null:r.a
+if(q==null)return null
 for(r=J.b6(a.r);r.q();){s=r.gJ()
 if(s.a!==q&&s.w)return s}return null},
 aB(){this.aQ()
