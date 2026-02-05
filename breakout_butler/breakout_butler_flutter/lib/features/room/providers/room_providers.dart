@@ -334,7 +334,7 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 
     // Reset typing indicator after cooldown
     _editingCooldown?.cancel();
-    _editingCooldown = Timer(const Duration(milliseconds: 1500), () {
+    _editingCooldown = Timer(const Duration(seconds: 5), () {
       _sendPresenceUpdate(isTyping: false);
     });
   }
@@ -351,7 +351,7 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 
     // Reset editing flag after cooldown
     _editingCooldown?.cancel();
-    _editingCooldown = Timer(const Duration(milliseconds: 1500), () {
+    _editingCooldown = Timer(const Duration(seconds: 5), () {
       _isLocallyEditingDrawing = false;
       // Also mark as not drawing
       _sendPresenceUpdate(isDrawing: false);

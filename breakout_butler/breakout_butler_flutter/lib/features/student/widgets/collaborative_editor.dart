@@ -1,3 +1,4 @@
+import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,6 +34,28 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
   final GlobalKey<DrawingCanvasState> _canvasKey = GlobalKey();
   bool _initialized = false;
   EditorMode _mode = EditorMode.write;
+
+  /// Find another user who is currently typing (not me)
+  UserPresence? _findTypingUser(RoomEditorState state) {
+    final myId = state.myPresence?.userId;
+    for (final user in state.presence) {
+      if (user.userId != myId && user.isTyping) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  /// Find another user who is currently drawing (not me)
+  UserPresence? _findDrawingUser(RoomEditorState state) {
+    final myId = state.myPresence?.userId;
+    for (final user in state.presence) {
+      if (user.userId != myId && user.isDrawing) {
+        return user;
+      }
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -151,65 +174,126 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
 
             // Layered editor: text underneath, drawing on top
             Expanded(
-              child: Stack(
-                children: [
-                  // ── Text layer (bottom) ──────────────────────────────────
-                  Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: SpSpacing.md,
-                      ),
-                      child: TextField(
-                        controller: _controller,
-                        maxLines: null,
-                        expands: true,
-                        readOnly: _mode == EditorMode.draw,
-                        textAlignVertical: TextAlignVertical.top,
-                        style: SpTypography.body,
-                        decoration: InputDecoration(
-                          hintText:
-                              _mode == EditorMode.write ? 'start writing...' : null,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.all(SpSpacing.md),
-                        ),
-                        onChanged: (text) {
-                          ref
-                              .read(roomEditorProvider(
-                                (
-                                  sessionId: widget.sessionId,
-                                  roomNumber: widget.roomNumber,
-                                ),
-                              ).notifier)
-                              .updateContent(
-                                text,
-                                cursorPosition: _controller.selection.baseOffset,
-                              );
-                        },
-                      ),
-                    ),
-                  ),
+              child: Builder(
+                builder: (context) {
+                  final typingUser = _findTypingUser(editorState);
+                  final drawingUser = _findDrawingUser(editorState);
+                  final isTextLocked = typingUser != null && _mode == EditorMode.write;
+                  final isDrawLocked = drawingUser != null && _mode == EditorMode.draw;
 
-                  // ── Drawing layer (top) ──────────────────────────────────
-                  Positioned.fill(
-                    child: DrawingCanvas(
-                      key: _canvasKey,
-                      initialData: editorState.drawingData,
-                      interactive: _mode == EditorMode.draw,
-                      onChanged: (json) {
-                        ref
-                            .read(roomEditorProvider(
-                              (
-                                sessionId: widget.sessionId,
-                                roomNumber: widget.roomNumber,
+                  return Stack(
+                    children: [
+                      // ── Text layer (bottom) ──────────────────────────────────
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: SpSpacing.md,
+                          ),
+                          child: TextField(
+                            controller: _controller,
+                            maxLines: null,
+                            expands: true,
+                            readOnly: _mode == EditorMode.draw || isTextLocked,
+                            textAlignVertical: TextAlignVertical.top,
+                            style: SpTypography.body,
+                            decoration: InputDecoration(
+                              hintText:
+                                  _mode == EditorMode.write ? 'start writing...' : null,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              contentPadding: const EdgeInsets.all(SpSpacing.md),
+                            ),
+                            onChanged: (text) {
+                              ref
+                                  .read(roomEditorProvider(
+                                    (
+                                      sessionId: widget.sessionId,
+                                      roomNumber: widget.roomNumber,
+                                    ),
+                                  ).notifier)
+                                  .updateContent(
+                                    text,
+                                    cursorPosition: _controller.selection.baseOffset,
+                                  );
+                            },
+                          ),
+                        ),
+                      ),
+
+                      // ── Drawing layer (top) ──────────────────────────────────
+                      Positioned.fill(
+                        child: DrawingCanvas(
+                          key: _canvasKey,
+                          initialData: editorState.drawingData,
+                          interactive: _mode == EditorMode.draw && !isDrawLocked,
+                          onChanged: (json) {
+                            ref
+                                .read(roomEditorProvider(
+                                  (
+                                    sessionId: widget.sessionId,
+                                    roomNumber: widget.roomNumber,
+                                  ),
+                                ).notifier)
+                                .updateDrawing(json);
+                          },
+                        ),
+                      ),
+
+                      // ── Lock overlay ──────────────────────────────────────────
+                      if (isTextLocked || isDrawLocked)
+                        Positioned.fill(
+                          child: Container(
+                            color: SpColors.background.withValues(alpha: 0.7),
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: SpSpacing.lg,
+                                  vertical: SpSpacing.md,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: SpColors.surfaceSecondary,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _parseColor(
+                                      isTextLocked
+                                          ? typingUser!.color
+                                          : drawingUser!.color,
+                                    ),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: _parseColor(
+                                          isTextLocked
+                                              ? typingUser!.color
+                                              : drawingUser!.color,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: SpSpacing.sm),
+                                    Text(
+                                      '${isTextLocked ? typingUser!.displayName : drawingUser!.displayName} is ${isTextLocked ? 'typing' : 'drawing'}...',
+                                      style: SpTypography.body.copyWith(
+                                        color: SpColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ).notifier)
-                            .updateDrawing(json);
-                      },
-                    ),
-                  ),
-                ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ],
