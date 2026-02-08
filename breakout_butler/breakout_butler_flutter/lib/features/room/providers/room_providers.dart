@@ -322,8 +322,13 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     );
 
     _contentDebounce?.cancel();
-    _contentDebounce = Timer(const Duration(milliseconds: 300), () {
-      _saveContent(crdtJson);
+    _contentDebounce = Timer(const Duration(milliseconds: 300), () async {
+      await _saveContent(crdtJson);
+      // Only reset typing indicator after save completes + cooldown
+      _editingCooldown?.cancel();
+      _editingCooldown = Timer(const Duration(seconds: 3), () {
+        _sendPresenceUpdate(isTyping: false);
+      });
     });
 
     // Send presence update (typing state + cursor position)
@@ -331,12 +336,6 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
       isTyping: true,
       textCursor: cursorPosition,
     );
-
-    // Reset typing indicator after cooldown
-    _editingCooldown?.cancel();
-    _editingCooldown = Timer(const Duration(seconds: 5), () {
-      _sendPresenceUpdate(isTyping: false);
-    });
   }
 
   void updateDrawing(String drawingData) {
@@ -345,16 +344,14 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     state = state.copyWith(drawingData: drawingData);
 
     _drawingDebounce?.cancel();
-    _drawingDebounce = Timer(const Duration(milliseconds: 500), () {
-      _saveDrawing(drawingData);
-    });
-
-    // Reset editing flag after cooldown
-    _editingCooldown?.cancel();
-    _editingCooldown = Timer(const Duration(seconds: 5), () {
-      _isLocallyEditingDrawing = false;
-      // Also mark as not drawing
-      _sendPresenceUpdate(isDrawing: false);
+    _drawingDebounce = Timer(const Duration(milliseconds: 500), () async {
+      await _saveDrawing(drawingData);
+      // Only reset drawing indicator after save completes + cooldown
+      _editingCooldown?.cancel();
+      _editingCooldown = Timer(const Duration(seconds: 3), () {
+        _isLocallyEditingDrawing = false;
+        _sendPresenceUpdate(isDrawing: false);
+      });
     });
   }
 
