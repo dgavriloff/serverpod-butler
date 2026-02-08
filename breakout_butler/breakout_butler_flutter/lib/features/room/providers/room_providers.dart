@@ -7,7 +7,6 @@ import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web/web.dart' as web;
 
-import '../../../core/utils/text_crdt.dart';
 import '../../../main.dart';
 
 /// Log to browser console (works in WASM)
@@ -18,11 +17,15 @@ void _consoleLog(String message) {
 @JS('console.log')
 external void _jsConsoleLog(JSString message);
 
-/// Render CRDT JSON to plain text (for display in dashboard)
-String _renderCrdtToText(String content) {
+/// Extract plain text from content (handles legacy CRDT JSON format)
+String _extractPlainText(String content) {
+  if (content.isEmpty) return '';
+
+  // Check if this is legacy CRDT JSON format
   if (!content.startsWith('[') || !content.contains('"id"')) {
-    return content; // Not CRDT JSON, return as-is
+    return content; // Already plain text
   }
+
   try {
     final list = jsonDecode(content) as List<dynamic>;
     // Sort by position and filter out deleted chars
@@ -33,7 +36,7 @@ String _renderCrdtToText(String content) {
       ..sort((a, b) => (a['position'] as num).compareTo(b['position'] as num));
     return chars.map((c) => c['char'] as String).join();
   } catch (_) {
-    return content;
+    return content; // Return as-is if parsing fails
   }
 }
 
@@ -124,7 +127,7 @@ class RoomContentsNotifier extends StateNotifier<Map<int, RoomState>> {
       final map = <int, RoomState>{};
       for (final room in rooms) {
         map[room.roomNumber] = RoomState(
-          content: _renderCrdtToText(room.content),
+          content: _extractPlainText(room.content),
           occupantCount: 0,
         );
       }
@@ -137,7 +140,7 @@ class RoomContentsNotifier extends StateNotifier<Map<int, RoomState>> {
         state = {
           ...state,
           update.roomNumber: RoomState(
-            content: _renderCrdtToText(update.content),
+            content: _extractPlainText(update.content),
             occupantCount: update.occupantCount,
           ),
         };
@@ -158,13 +161,15 @@ final roomContentsProvider = StateNotifierProvider.autoDispose
 );
 
 /// Manages local content + drawing editing with debounced save for a student room.
+///
+/// With turn-based locking, we use simple plain text sync instead of CRDT.
+/// Only one user can edit at a time, so no merge conflicts are possible.
 class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   RoomEditorNotifier(this._sessionId, this._roomNumber)
       : super(const RoomEditorState());
 
   final int _sessionId;
   final int _roomNumber;
-  TextCrdt? _textCrdt;
   String? _userId;
   Timer? _contentDebounce;
   Timer? _drawingDebounce;
@@ -173,16 +178,15 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   Timer? _heartbeatTimer;
   StreamSubscription<RoomUpdate>? _sub;
   StreamSubscription<PresenceUpdate>? _presenceSub;
-  String _lastSavedCrdtJson = '';
+  String _lastSavedContent = '';
   String _lastSavedDrawing = '';
   bool _hasJoined = false;
+  bool _isLocallyEditing = false;
   bool _isLocallyEditingDrawing = false;
-  bool _hasPendingContentChanges = false;
 
   Future<void> init() async {
     // Get persistent user ID first (sync, uses localStorage)
     _userId = _getOrCreateUserId();
-    _textCrdt = TextCrdt(nodeId: _userId);
 
     // Join the room with user ID
     try {
@@ -207,31 +211,22 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
       // Ignore join errors - room updates will still work
     }
 
-    // Load initial content - try to load as CRDT JSON, fallback to plain text
+    // Load initial content (plain text or extract from legacy CRDT JSON)
     final room = await client.room.getRoom(_sessionId, _roomNumber);
     if (room != null && mounted) {
       _lastSavedDrawing = room.drawingData ?? '';
 
-      // Try to load as CRDT JSON, fallback to treating as plain text
-      final content = room.content;
-      if (content.startsWith('[') && content.contains('"id"')) {
-        // Looks like CRDT JSON
-        _textCrdt!.loadFromJson(content);
-        _lastSavedCrdtJson = content;
-      } else {
-        // Plain text - convert to CRDT
-        _textCrdt!.replaceAll(content);
-        _lastSavedCrdtJson = _textCrdt!.toJson();
-      }
+      // Extract plain text (handle legacy CRDT JSON format)
+      final content = _extractPlainText(room.content);
+      _lastSavedContent = content;
 
       state = state.copyWith(
-        content: _textCrdt!.text,
-        crdtJson: _lastSavedCrdtJson,
+        content: content,
         drawingData: room.drawingData ?? '',
         loaded: true,
       );
     } else if (mounted) {
-      state = state.copyWith(content: '', crdtJson: '[]', drawingData: '', loaded: true);
+      state = state.copyWith(content: '', drawingData: '', loaded: true);
     }
 
     // Subscribe to remote updates
@@ -246,28 +241,12 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
         presence: update.presence ?? [],
       );
 
-      // Merge remote CRDT content (skip if we have pending local changes)
-      final remoteContent = update.content;
-      if (remoteContent != _lastSavedCrdtJson && _textCrdt != null) {
-        if (_hasPendingContentChanges) {
-          _consoleLog('[RoomEditor] SKIPPING merge - pending local changes');
-        } else if (remoteContent.startsWith('[') && remoteContent.contains('"id"')) {
-          // Remote is CRDT JSON - merge it
-          final textBefore = _textCrdt!.text;
-          _consoleLog('[RoomEditor] merge triggered, textBefore="${textBefore.replaceAll('\n', '\\n')}"');
-          _textCrdt!.merge(remoteContent);
-          _lastSavedCrdtJson = _textCrdt!.toJson();
-          final textAfter = _textCrdt!.text;
-          _consoleLog('[RoomEditor] merge done, textAfter="${textAfter.replaceAll('\n', '\\n')}"');
-          if (textBefore != textAfter) {
-            _consoleLog('[RoomEditor] TEXT CHANGED BY MERGE!');
-          }
-          state = state.copyWith(
-            content: _textCrdt!.text,
-            crdtJson: _lastSavedCrdtJson,
-          );
-        }
-        // If remote is plain text, ignore it (we're using CRDT now)
+      // Apply remote content (skip if we're actively editing locally)
+      final remoteContent = _extractPlainText(update.content);
+      if (!_isLocallyEditing && remoteContent != _lastSavedContent) {
+        _consoleLog('[RoomEditor] applying remote content: "${remoteContent.replaceAll('\n', '\\n')}"');
+        _lastSavedContent = remoteContent;
+        state = state.copyWith(content: remoteContent);
       }
 
       // Only apply remote drawing if we're not actively editing
@@ -306,27 +285,21 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
   }
 
   void updateContent(String newText, {int cursorPosition = -1}) {
-    if (!mounted || _textCrdt == null) return;
+    if (!mounted) return;
 
-    // Mark that we have pending changes - skip remote merges until saved
-    _hasPendingContentChanges = true;
+    // Mark that we're editing locally - skip remote updates until done
+    _isLocallyEditing = true;
 
-    // Apply change to CRDT
-    final oldText = _textCrdt!.text;
-    _textCrdt!.applyChange(oldText, newText);
-
-    final crdtJson = _textCrdt!.toJson();
-    state = state.copyWith(
-      content: _textCrdt!.text,
-      crdtJson: crdtJson,
-    );
+    // Update local state immediately
+    state = state.copyWith(content: newText);
 
     _contentDebounce?.cancel();
     _contentDebounce = Timer(const Duration(milliseconds: 300), () async {
-      await _saveContent(crdtJson);
+      await _saveContent(newText);
       // Only reset typing indicator after save completes + cooldown
       _editingCooldown?.cancel();
       _editingCooldown = Timer(const Duration(seconds: 3), () {
+        _isLocallyEditing = false;
         _sendPresenceUpdate(isTyping: false);
       });
     });
@@ -416,14 +389,13 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
     client.room.updatePresence(_sessionId, _roomNumber, updated);
   }
 
-  Future<void> _saveContent(String crdtJson) async {
+  Future<void> _saveContent(String content) async {
     if (!mounted) return;
     state = state.copyWith(isSaving: true);
     try {
-      await client.room.updateRoomContent(_sessionId, _roomNumber, crdtJson);
-      _lastSavedCrdtJson = crdtJson;
-      _hasPendingContentChanges = false;
-      _consoleLog('[RoomEditor] content saved, pending=false');
+      await client.room.updateRoomContent(_sessionId, _roomNumber, content);
+      _lastSavedContent = content;
+      _consoleLog('[RoomEditor] content saved: "${content.replaceAll('\n', '\\n')}"');
     } finally {
       if (mounted) state = state.copyWith(isSaving: false);
     }
@@ -461,7 +433,6 @@ class RoomEditorNotifier extends StateNotifier<RoomEditorState> {
 class RoomEditorState {
   const RoomEditorState({
     this.content = '',
-    this.crdtJson = '[]',
     this.drawingData = '',
     this.isSaving = false,
     this.loaded = false,
@@ -470,11 +441,8 @@ class RoomEditorState {
     this.myPresence,
   });
 
-  /// Rendered text content (for display)
+  /// Plain text content
   final String content;
-
-  /// CRDT JSON data (for sync)
-  final String crdtJson;
 
   final String drawingData;
   final bool isSaving;
@@ -489,7 +457,6 @@ class RoomEditorState {
 
   RoomEditorState copyWith({
     String? content,
-    String? crdtJson,
     String? drawingData,
     bool? isSaving,
     bool? loaded,
@@ -499,7 +466,6 @@ class RoomEditorState {
   }) {
     return RoomEditorState(
       content: content ?? this.content,
-      crdtJson: crdtJson ?? this.crdtJson,
       drawingData: drawingData ?? this.drawingData,
       isSaving: isSaving ?? this.isSaving,
       loaded: loaded ?? this.loaded,
