@@ -6,8 +6,8 @@ import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 
-/// Dashboard tabs: content vs rooms.
-enum DashboardTab { content, rooms }
+/// Dashboard tabs: content, rooms, transcript.
+enum DashboardTab { content, rooms, transcript }
 
 /// Tab selector for the professor dashboard.
 class DashboardTabBar extends StatelessWidget {
@@ -56,6 +56,12 @@ class DashboardTabBar extends StatelessWidget {
             label: 'rooms',
             isSelected: currentTab == DashboardTab.rooms,
             onTap: () => onChanged(DashboardTab.rooms),
+          ),
+          const SizedBox(width: SpSpacing.lg),
+          _TabLabel(
+            label: 'transcript',
+            isSelected: currentTab == DashboardTab.transcript,
+            onTap: () => onChanged(DashboardTab.transcript),
           ),
           const Spacer(),
           OutlinedButton(

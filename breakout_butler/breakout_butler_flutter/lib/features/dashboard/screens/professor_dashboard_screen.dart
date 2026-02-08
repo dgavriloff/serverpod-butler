@@ -20,6 +20,7 @@ import '../widgets/dashboard_tab_bar.dart';
 import '../widgets/record_button.dart';
 import '../widgets/rooms_tab.dart';
 import '../widgets/synthesis_dialog.dart';
+import '../widgets/transcript_tab.dart';
 
 /// Professor dashboard screen — three-panel layout with rooms grid
 /// and transcript sidebar.
@@ -233,7 +234,7 @@ class _ProfessorDashboardScreenState
           // ── Tab content ────────────────────────────────────────────
           Expanded(
             child: IndexedStack(
-              index: _currentTab == DashboardTab.content ? 0 : 1,
+              index: _currentTab.index,
               children: [
                 ContentTab(sessionId: _sessionId!),
                 RoomsTab(
@@ -241,6 +242,7 @@ class _ProfessorDashboardScreenState
                   roomCount: _roomCount,
                   urlTag: widget.urlTag,
                 ),
+                TranscriptTab(sessionId: _sessionId!),
               ],
             ),
           ),
