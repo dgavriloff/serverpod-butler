@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
@@ -20,67 +18,35 @@ class DashboardTabBar extends StatelessWidget {
   final DashboardTab currentTab;
   final ValueChanged<DashboardTab> onChanged;
 
-  void _copyLink(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: Uri.base.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('link copied to clipboard'),
-        duration: Duration(seconds: 2),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isMobile = screenSizeOf(context) == SpScreenSize.mobile;
-
     return Container(
-      padding: const EdgeInsets.only(
-        left: SpSpacing.lg - SpSpacing.xs, // Compensate for _TabLabel internal padding
-        right: SpSpacing.lg,
-        top: SpSpacing.sm,
-        bottom: SpSpacing.sm,
+      padding: const EdgeInsets.symmetric(
+        vertical: SpSpacing.sm,
       ),
       decoration: const BoxDecoration(
         color: SpColors.surface,
         border: Border(bottom: BorderSide(color: SpColors.border)),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _TabLabel(
             label: 'content',
             isSelected: currentTab == DashboardTab.content,
             onTap: () => onChanged(DashboardTab.content),
           ),
-          const SizedBox(width: SpSpacing.lg),
+          const SizedBox(width: SpSpacing.xl),
           _TabLabel(
             label: 'rooms',
             isSelected: currentTab == DashboardTab.rooms,
             onTap: () => onChanged(DashboardTab.rooms),
           ),
-          const SizedBox(width: SpSpacing.lg),
+          const SizedBox(width: SpSpacing.xl),
           _TabLabel(
             label: 'transcript',
             isSelected: currentTab == DashboardTab.transcript,
             onTap: () => onChanged(DashboardTab.transcript),
-          ),
-          const Spacer(),
-          OutlinedButton(
-            onPressed: () => _copyLink(context),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: SpColors.textSecondary,
-              side: const BorderSide(color: SpColors.border),
-            ),
-            child: isMobile
-                ? Icon(Icons.link, size: 18, color: SpColors.textSecondary)
-                : const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.link, size: 16),
-                      SizedBox(width: 8),
-                      Text('copy link', style: TextStyle(height: 1.0)),
-                    ],
-                  ),
           ),
         ],
       ),

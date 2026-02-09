@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/sp_colors.dart';
+import '../../../core/theme/sp_radius.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_highlight.dart';
@@ -62,64 +63,83 @@ class _TranscriptTabState extends ConsumerState<TranscriptTab> {
         recordingState.isRecording || _transcriptHovered || _transcriptFocused;
     final headerText = Text('transcript', style: SpTypography.section);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: SpSpacing.lg,
-            vertical: SpSpacing.md,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(SpSpacing.lg),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600),
+          decoration: BoxDecoration(
+            color: SpColors.surface,
+            borderRadius: BorderRadius.circular(SpRadius.card),
+            boxShadow: [
+              BoxShadow(
+                color: SpColors.shadowColor,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  isActive ? SpHighlight(child: headerText) : headerText,
-                  if (recordingState.isRecording) ...[
-                    const SizedBox(width: SpSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: SpSpacing.xs,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: SpColors.live.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'recording',
-                        style: SpTypography.caption.copyWith(
-                          color: SpColors.live,
-                          fontSize: 10,
-                        ),
-                      ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpSpacing.lg,
+                  vertical: SpSpacing.md,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        isActive ? SpHighlight(child: headerText) : headerText,
+                        if (recordingState.isRecording) ...[
+                          const SizedBox(width: SpSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: SpSpacing.xs,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: SpColors.live.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'recording',
+                              style: SpTypography.caption.copyWith(
+                                color: SpColors.live,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: SpSpacing.xs),
+                    Text(
+                      recordingState.isRecording
+                          ? 'listening to lecture...'
+                          : 'type or record lecture content',
+                      style:
+                          SpTypography.caption.copyWith(color: SpColors.textTertiary),
                     ),
                   ],
-                ],
+                ),
               ),
-              const SizedBox(height: SpSpacing.xs),
-              Text(
-                recordingState.isRecording
-                    ? 'listening to lecture...'
-                    : 'type or record lecture content',
-                style:
-                    SpTypography.caption.copyWith(color: SpColors.textTertiary),
+
+              const Divider(height: 1),
+
+              // Transcript content - editable when not recording
+              Expanded(
+                child: recordingState.isRecording
+                    ? _buildLiveTranscript(transcriptState)
+                    : _buildEditableTranscript(),
               ),
             ],
           ),
         ),
-
-        const Divider(height: 1),
-
-        // Transcript content - editable when not recording
-        Expanded(
-          child: recordingState.isRecording
-              ? _buildLiveTranscript(transcriptState)
-              : _buildEditableTranscript(),
-        ),
-      ],
+      ),
     );
   }
 

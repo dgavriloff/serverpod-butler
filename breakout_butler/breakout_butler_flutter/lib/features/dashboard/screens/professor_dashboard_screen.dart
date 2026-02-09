@@ -1,5 +1,6 @@
 import 'package:breakout_butler_client/breakout_butler_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,7 +18,6 @@ import '../../session/providers/session_providers.dart';
 import '../../student/widgets/room_selector.dart';
 import '../widgets/content_tab.dart';
 import '../widgets/dashboard_tab_bar.dart';
-import '../widgets/record_button.dart';
 import '../widgets/rooms_tab.dart';
 import '../widgets/synthesis_dialog.dart';
 import '../widgets/transcript_tab.dart';
@@ -202,7 +202,31 @@ class _ProfessorDashboardScreenState
                     padding: const EdgeInsets.only(right: SpSpacing.sm),
                     child: _SynthesizeButton(sessionId: _sessionId!, compact: isMobile),
                   ),
-                RecordButton(sessionId: _sessionId!, compact: isMobile),
+                OutlinedButton(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: Uri.base.toString()));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('link copied to clipboard'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SpColors.textSecondary,
+                    side: const BorderSide(color: SpColors.border),
+                  ),
+                  child: isMobile
+                      ? Icon(Icons.link, size: 18, color: SpColors.textSecondary)
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.link, size: 16),
+                            SizedBox(width: 8),
+                            Text('copy link', style: TextStyle(height: 1.0)),
+                          ],
+                        ),
+                ),
                 const SizedBox(width: SpSpacing.sm),
                 OutlinedButton(
                   onPressed: _onCloseRoom,
