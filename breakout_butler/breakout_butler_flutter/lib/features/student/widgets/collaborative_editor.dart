@@ -105,9 +105,11 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
           children: [
             // Status bar (top) - occupant count left, typing indicator center, save indicator right
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SpSpacing.lg,
-                vertical: SpSpacing.xs,
+              padding: const EdgeInsets.only(
+                left: SpSpacing.lg,
+                right: SpSpacing.lg,
+                top: SpSpacing.sm,
+                bottom: SpSpacing.xs,
               ),
               child: Row(
                 children: [
