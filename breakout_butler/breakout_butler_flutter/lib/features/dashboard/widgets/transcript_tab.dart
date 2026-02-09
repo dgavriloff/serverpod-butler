@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/theme/sp_colors.dart';
 import '../../../core/theme/sp_radius.dart';
 import '../../../core/theme/sp_spacing.dart';
@@ -62,6 +63,23 @@ class _TranscriptTabState extends ConsumerState<TranscriptTab> {
     final isActive =
         recordingState.isRecording || _transcriptHovered || _transcriptFocused;
     final headerText = Text('transcript', style: SpTypography.section);
+    final screenSize = screenSizeOf(context);
+    final isWide = screenSize != SpScreenSize.mobile;
+
+    // Show error as snackbar when it changes
+    ref.listen<RecordingState>(
+      recordingControllerProvider(widget.sessionId),
+      (previous, next) {
+        if (next.error != null && next.error != previous?.error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.error!),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      },
+    );
 
     return Center(
       child: Padding(
@@ -82,47 +100,37 @@ class _TranscriptTabState extends ConsumerState<TranscriptTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Header with button
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: SpSpacing.lg,
                   vertical: SpSpacing.md,
                 ),
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        isActive ? SpHighlight(child: headerText) : headerText,
-                        if (recordingState.isRecording) ...[
-                          const SizedBox(width: SpSpacing.sm),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: SpSpacing.xs,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: SpColors.live.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              'recording',
-                              style: SpTypography.caption.copyWith(
-                                color: SpColors.live,
-                                fontSize: 10,
-                              ),
-                            ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          isActive ? SpHighlight(child: headerText) : headerText,
+                          const SizedBox(height: SpSpacing.xs),
+                          Text(
+                            recordingState.isRecording
+                                ? 'listening to lecture...'
+                                : 'type or record lecture content',
+                            style: SpTypography.caption
+                                .copyWith(color: SpColors.textTertiary),
                           ),
                         ],
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: SpSpacing.xs),
-                    Text(
-                      recordingState.isRecording
-                          ? 'listening to lecture...'
-                          : 'type or record lecture content',
-                      style:
-                          SpTypography.caption.copyWith(color: SpColors.textTertiary),
+                    _RecordButton(
+                      isRecording: recordingState.isRecording,
+                      iconOnly: !isWide,
+                      onPressed: () => ref
+                          .read(recordingControllerProvider(widget.sessionId).notifier)
+                          .toggle(),
                     ),
                   ],
                 ),
@@ -211,6 +219,106 @@ class _TranscriptTabState extends ConsumerState<TranscriptTab> {
               .read(transcriptStateProvider(widget.sessionId).notifier)
               .setFullText(text);
         },
+      ),
+    );
+  }
+}
+
+/// Record button styled like SpSecondaryButton.
+class _RecordButton extends StatelessWidget {
+  const _RecordButton({
+    required this.isRecording,
+    required this.onPressed,
+    this.iconOnly = false,
+  });
+
+  final bool isRecording;
+  final VoidCallback onPressed;
+  final bool iconOnly;
+
+  @override
+  Widget build(BuildContext context) {
+    if (isRecording) {
+      // Recording state: red styling with blinking dot
+      return OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: SpColors.live,
+          side: const BorderSide(color: SpColors.live),
+        ),
+        child: iconOnly
+            ? const _BlinkingDot()
+            : const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _BlinkingDot(),
+                  SizedBox(width: 8),
+                  Text('stop', style: TextStyle(height: 1.0)),
+                ],
+              ),
+      );
+    }
+
+    // Not recording: normal styling with mic icon
+    return OutlinedButton(
+      onPressed: onPressed,
+      child: iconOnly
+          ? const Icon(Icons.mic_none, size: 16)
+          : const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.mic_none, size: 16),
+                SizedBox(width: 8),
+                Text('record', style: TextStyle(height: 1.0)),
+              ],
+            ),
+    );
+  }
+}
+
+/// Blinking red dot indicator for recording state.
+class _BlinkingDot extends StatefulWidget {
+  const _BlinkingDot();
+
+  @override
+  State<_BlinkingDot> createState() => _BlinkingDotState();
+}
+
+class _BlinkingDotState extends State<_BlinkingDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) => Opacity(
+        opacity: _animation.value,
+        child: Container(
+          width: 10,
+          height: 10,
+          decoration: const BoxDecoration(
+            color: SpColors.live,
+            shape: BoxShape.circle,
+          ),
+        ),
       ),
     );
   }
