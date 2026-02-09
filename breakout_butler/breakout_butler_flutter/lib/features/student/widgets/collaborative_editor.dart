@@ -162,10 +162,13 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
                         ),
                       ),
                       const SizedBox(width: SpSpacing.xs),
-                      Text(
-                        editorState.isSaving ? 'saving...' : 'saved',
-                        style: SpTypography.caption.copyWith(
-                          color: SpColors.textTertiary,
+                      SizedBox(
+                        width: 50, // Fixed width to prevent jitter
+                        child: Text(
+                          editorState.isSaving ? 'saving...' : 'saved',
+                          style: SpTypography.caption.copyWith(
+                            color: SpColors.textTertiary,
+                          ),
                         ),
                       ),
                     ],
