@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/sp_colors.dart';
+import '../../../core/theme/sp_radius.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_highlight.dart';
@@ -42,67 +43,80 @@ class _PromptPanelState extends ConsumerState<PromptPanel> {
   Widget build(BuildContext context) {
     final promptAsync = ref.watch(promptProvider(widget.sessionId));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.all(SpSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SpHighlight(
-                child: Text('prompt', style: SpTypography.section),
-              ),
-              const SizedBox(height: SpSpacing.xs),
-              Text(
-                'assignment from your professor',
-                style:
-                    SpTypography.caption.copyWith(color: SpColors.textTertiary),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: SpColors.surface,
+        borderRadius: BorderRadius.circular(SpRadius.card),
+        boxShadow: [
+          BoxShadow(
+            color: SpColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(SpSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SpHighlight(
+                  child: Text('prompt', style: SpTypography.section),
+                ),
+                const SizedBox(height: SpSpacing.xs),
+                Text(
+                  'assignment from your professor',
+                  style:
+                      SpTypography.caption.copyWith(color: SpColors.textTertiary),
+                ),
+              ],
+            ),
+          ),
 
-        const Divider(height: 1),
+          const Divider(height: 1),
 
-        // Prompt content
-        Expanded(
-          child: promptAsync.when(
-            data: (prompt) => prompt.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(SpSpacing.lg),
-                      child: Text(
-                        'no prompt yet.\nwait for your professor to set an assignment.',
-                        style: SpTypography.caption.copyWith(
-                          color: SpColors.textPlaceholder,
+          // Prompt content
+          Expanded(
+            child: promptAsync.when(
+              data: (prompt) => prompt.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(SpSpacing.lg),
+                        child: Text(
+                          'no prompt yet.\nwait for your professor to set an assignment.',
+                          style: SpTypography.caption.copyWith(
+                            color: SpColors.textPlaceholder,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
                       ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(SpSpacing.md),
+                      child: SpMarkdown(data: prompt),
                     ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(SpSpacing.md),
-                    child: SpMarkdown(data: prompt),
-                  ),
-            loading: () => const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+              loading: () => const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               ),
-            ),
-            error: (e, _) => Center(
-              child: Text(
-                'error loading prompt',
-                style:
-                    SpTypography.caption.copyWith(color: SpColors.textTertiary),
+              error: (e, _) => Center(
+                child: Text(
+                  'error loading prompt',
+                  style:
+                      SpTypography.caption.copyWith(color: SpColors.textTertiary),
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -6,9 +6,10 @@ import 'dart:ui';
 /// No gradients, no pure black.
 abstract final class SpColors {
   // ── Backgrounds & Surfaces ──────────────────────────────────────────
-  static const background = Color(0xFFFFFFFF);
+  static const background = Color(0xFFF5F5F5);
+  static const surface = Color(0xFFFFFFFF);
   static const surfaceSecondary = Color(0xFFFAFAFA);
-  static const surfaceTertiary = Color(0xFFF5F5F5);
+  static const surfaceTertiary = Color(0xFFEEEEEE);
 
   // ── Borders ─────────────────────────────────────────────────────────
   static const border = Color(0xFFE8E8E8);
@@ -40,4 +41,9 @@ abstract final class SpColors {
   // ── Highlight ─────────────────────────────────────────────────────
   /// Soft yellow underline for big text emphasis (breadcrumbs, headers, numbers).
   static const highlight = Color(0xFFFFF176);
+
+  // ── Shadows ───────────────────────────────────────────────────────
+  /// Subtle shadow for elevated surfaces.
+  static const shadowColor = Color(0x0D000000); // 5% black
+  static const shadowColorMedium = Color(0x14000000); // 8% black
 }

@@ -1,5 +1,9 @@
 # Breakout Butler
 
+## Project Status
+- **No longer in hackathon mode** - focus on production-quality features
+- Target user: Professor at UW Seattle (uses Canvas LMS)
+
 ## Project Structure
 Serverpod monorepo:
 - `breakout_butler_server` - Dart backend

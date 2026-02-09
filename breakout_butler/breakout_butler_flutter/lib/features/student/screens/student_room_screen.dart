@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/error_utils.dart';
 import '../../../core/theme/sp_colors.dart';
+import '../../../core/theme/sp_radius.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_breadcrumb_nav.dart';
@@ -105,27 +106,43 @@ class _StudentRoomScreenState extends ConsumerState<StudentRoomScreen> {
 
           // Two-pane layout: editor (left) + prompt (right)
           Expanded(
-            child: Row(
-              children: [
-                // Left: Collaborative editor
-                Expanded(
-                  flex: 2,
-                  child: CollaborativeEditor(
-                    sessionId: _sessionId!,
-                    roomNumber: widget.roomNumber,
+            child: Padding(
+              padding: const EdgeInsets.all(SpSpacing.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Left: Collaborative editor
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: SpColors.surface,
+                        borderRadius: BorderRadius.circular(SpRadius.card),
+                        boxShadow: [
+                          BoxShadow(
+                            color: SpColors.shadowColor,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(SpRadius.card),
+                        child: CollaborativeEditor(
+                          sessionId: _sessionId!,
+                          roomNumber: widget.roomNumber,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                // Divider
-                Container(
-                  width: 1,
-                  color: SpColors.border,
-                ),
-                // Right: Prompt panel
-                Expanded(
-                  flex: 1,
-                  child: PromptPanel(sessionId: _sessionId!),
-                ),
-              ],
+                  const SizedBox(width: SpSpacing.md),
+                  // Right: Prompt panel (already has its own shadow)
+                  Expanded(
+                    flex: 1,
+                    child: PromptPanel(sessionId: _sessionId!),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

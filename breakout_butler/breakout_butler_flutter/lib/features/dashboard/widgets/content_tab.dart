@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/layout/sp_breakpoints.dart';
 import '../../../core/theme/sp_colors.dart';
+import '../../../core/theme/sp_radius.dart';
 import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_button.dart';
@@ -102,110 +103,124 @@ class _ContentTabState extends ConsumerState<ContentTab> {
 
     // Center the content with max width (similar to when it was 50% in two-pane)
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with button
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: SpSpacing.lg,
-                vertical: SpSpacing.md,
+      child: Padding(
+        padding: const EdgeInsets.all(SpSpacing.lg),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600),
+          decoration: BoxDecoration(
+            color: SpColors.surface,
+            borderRadius: BorderRadius.circular(SpRadius.card),
+            boxShadow: [
+              BoxShadow(
+                color: SpColors.shadowColor,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        isActive ? SpHighlight(child: headerText) : headerText,
-                        const SizedBox(height: SpSpacing.xs),
-                        Text(
-                          'assignment for students',
-                          style: SpTypography.caption
-                              .copyWith(color: SpColors.textTertiary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Preview/Edit toggle
-                  IconButton(
-                    icon: Icon(
-                      _showPromptPreview ? Icons.edit : Icons.visibility,
-                      size: 18,
-                      color: SpColors.textSecondary,
-                    ),
-                    tooltip: _showPromptPreview ? 'edit' : 'preview',
-                    onPressed: () =>
-                        setState(() => _showPromptPreview = !_showPromptPreview),
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                  ),
-                  const SizedBox(width: SpSpacing.xs),
-                  SpSecondaryButton(
-                    label: 'pull from transcript',
-                    icon: Icons.auto_awesome,
-                    iconOnly: !isWide,
-                    isLoading: _isExtracting,
-                    onPressed: canPull ? _pullFromTranscript : null,
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(height: 1),
-
-            // Editable prompt or preview
-            Expanded(
-              child: _isExtracting
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: SpSpacing.lg,
-                        vertical: SpSpacing.md,
-                      ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with button
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: SpSpacing.lg,
+                  vertical: SpSpacing.md,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SpSkeleton(width: double.infinity, height: 16),
-                          const SizedBox(height: SpSpacing.sm),
-                          SpSkeleton(width: double.infinity, height: 16),
-                          const SizedBox(height: SpSpacing.sm),
-                          SpSkeleton(width: 200, height: 16),
+                          isActive ? SpHighlight(child: headerText) : headerText,
+                          const SizedBox(height: SpSpacing.xs),
+                          Text(
+                            'assignment for students',
+                            style: SpTypography.caption
+                                .copyWith(color: SpColors.textTertiary),
+                          ),
                         ],
                       ),
-                    )
-                  : _showPromptPreview
-                      ? _buildPromptPreview()
-                      : MouseRegion(
-                          onEnter: (_) => setState(() => _promptHovered = true),
-                          onExit: (_) => setState(() => _promptHovered = false),
-                          child: TextField(
-                            controller: _promptController,
-                            focusNode: _promptFocusNode,
-                            maxLines: null,
-                            expands: true,
-                            textAlignVertical: TextAlignVertical.top,
-                            style: SpTypography.body,
-                            decoration: InputDecoration(
-                              hintText:
-                                  'what should students work on? (supports markdown)',
-                              hintStyle: SpTypography.body
-                                  .copyWith(color: SpColors.textPlaceholder),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: SpSpacing.lg,
-                                vertical: SpSpacing.md,
-                              ),
-                            ),
-                            onChanged: _onPromptChanged,
-                          ),
+                    ),
+                    // Preview/Edit toggle
+                    IconButton(
+                      icon: Icon(
+                        _showPromptPreview ? Icons.edit : Icons.visibility,
+                        size: 18,
+                        color: SpColors.textSecondary,
+                      ),
+                      tooltip: _showPromptPreview ? 'edit' : 'preview',
+                      onPressed: () =>
+                          setState(() => _showPromptPreview = !_showPromptPreview),
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    ),
+                    const SizedBox(width: SpSpacing.xs),
+                    SpSecondaryButton(
+                      label: 'pull from transcript',
+                      icon: Icons.auto_awesome,
+                      iconOnly: !isWide,
+                      isLoading: _isExtracting,
+                      onPressed: canPull ? _pullFromTranscript : null,
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(height: 1),
+
+              // Editable prompt or preview
+              Expanded(
+                child: _isExtracting
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: SpSpacing.lg,
+                          vertical: SpSpacing.md,
                         ),
-            ),
-          ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SpSkeleton(width: double.infinity, height: 16),
+                            const SizedBox(height: SpSpacing.sm),
+                            SpSkeleton(width: double.infinity, height: 16),
+                            const SizedBox(height: SpSpacing.sm),
+                            SpSkeleton(width: 200, height: 16),
+                          ],
+                        ),
+                      )
+                    : _showPromptPreview
+                        ? _buildPromptPreview()
+                        : MouseRegion(
+                            onEnter: (_) => setState(() => _promptHovered = true),
+                            onExit: (_) => setState(() => _promptHovered = false),
+                            child: TextField(
+                              controller: _promptController,
+                              focusNode: _promptFocusNode,
+                              maxLines: null,
+                              expands: true,
+                              textAlignVertical: TextAlignVertical.top,
+                              style: SpTypography.body,
+                              decoration: InputDecoration(
+                                hintText:
+                                    'what should students work on? (supports markdown)',
+                                hintStyle: SpTypography.body
+                                    .copyWith(color: SpColors.textPlaceholder),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: SpSpacing.lg,
+                                  vertical: SpSpacing.md,
+                                ),
+                              ),
+                              onChanged: _onPromptChanged,
+                            ),
+                          ),
+              ),
+            ],
+          ),
         ),
       ),
     );

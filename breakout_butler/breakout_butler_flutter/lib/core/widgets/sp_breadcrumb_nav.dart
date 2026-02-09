@@ -30,11 +30,15 @@ class SpBreadcrumbNav extends StatelessWidget {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: SpSpacing.lg),
-      decoration: const BoxDecoration(
-        color: SpColors.background,
-        border: Border(
-          bottom: BorderSide(color: SpColors.border),
-        ),
+      decoration: BoxDecoration(
+        color: SpColors.surface,
+        boxShadow: [
+          BoxShadow(
+            color: SpColors.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
