@@ -108,7 +108,7 @@ class _CollaborativeEditorState extends ConsumerState<CollaborativeEditor> {
               padding: const EdgeInsets.only(
                 left: SpSpacing.lg,
                 right: SpSpacing.lg,
-                top: SpSpacing.sm,
+                top: 12,
                 bottom: SpSpacing.xs,
               ),
               child: Row(
