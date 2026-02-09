@@ -46356,7 +46356,7 @@ I(){return"DashboardTab."+this.b}}
 A.OF.prototype={
 H(a){var s=this,r=null,q=A.aGJ(a),p=s.c,o=A.tq(r,r,r,r,r,r,r,r,r,B.ay,r,r,r,r,r,B.bN,r,r,r,r)
 q=q===B.fz?A.l8(B.oH,B.ay,r,18):B.Ps
-return A.dj(r,A.dk(A.b([new A.zY("content",p===B.jR,new A.a8F(s),r),B.A2,new A.zY("rooms",p===B.jS,new A.a8G(s),r),B.A2,new A.zY("transcript",p===B.nM,new A.a8H(s),r),B.lW,A.mT(q,new A.a8I(s,a),o)],t.p),B.D,B.r,B.a3,0,r),B.u,r,r,B.CH,r,r,r,B.GW,r,r,r)}}
+return A.dj(r,A.dk(A.b([new A.zY("content",p===B.jR,new A.a8F(s),r),B.A2,new A.zY("rooms",p===B.jS,new A.a8G(s),r),B.A2,new A.zY("transcript",p===B.nM,new A.a8H(s),r),B.lW,A.mT(q,new A.a8I(s,a),o)],t.p),B.D,B.r,B.a3,0,r),B.u,r,r,B.CK,r,r,r,B.GW,r,r,r)}}
 A.a8F.prototype={
 $0(){return this.a.d.$1(B.jR)},
 $S:0}
@@ -46422,7 +46422,7 @@ A.aub.prototype={
 $2(a,b){var s=null,r=this.a.e
 r===$&&A.a()
 r=r.b.ai(r.a.gA())
-return A.ajV(A.dj(s,s,B.u,s,s,B.CK,s,10,s,s,s,s,10),r)},
+return A.ajV(A.dj(s,s,B.u,s,s,B.CJ,s,10,s,s,s,s,10),r)},
 $S:378}
 A.LJ.prototype={
 m(){var s=this,r=s.bw$
@@ -46741,7 +46741,7 @@ o.toString
 o=A.bK(o,B.es,t.w).w
 o=A.n4(0,new A.QS(this.x,r),r,r,0,r,0,o.a.a*0.62)
 s=t.p
-return A.hZ(B.bM,A.b([o,A.En(0,A.dk(A.b([A.hd(new A.bn(new A.aw(q?96:32,32,24,32),B.Ew,r),55),A.hd(A.dj(r,A.dV(new A.fb(B.CE,A.nh(A.cy(A.b([B.nH,B.bl,B.vx,B.bl,A.aqu(!0,B.oI,!1,!1,"join a session",new A.axR(this))],s),B.c3,B.r,B.I),r,r,B.ac),r),r,r),B.u,r,r,B.CJ,r,r,r,new A.aw(24,32,p,32),r,r,r),45)],s),B.D,B.r,B.a3,0,r))],s),B.K,B.b8,r)}}
+return A.hZ(B.bM,A.b([o,A.En(0,A.dk(A.b([A.hd(new A.bn(new A.aw(q?96:32,32,24,32),B.Ew,r),55),A.hd(A.dj(r,A.dV(new A.fb(B.CE,A.nh(A.cy(A.b([B.nH,B.bl,B.vx,B.bl,A.aqu(!0,B.oI,!1,!1,"join a session",new A.axR(this))],s),B.c3,B.r,B.I),r,r,B.ac),r),r,r),B.u,r,r,B.CI,r,r,r,new A.aw(24,32,p,32),r,r,r),45)],s),B.D,B.r,B.a3,0,r))],s),B.K,B.b8,r)}}
 A.axV.prototype={
 $0(){var s=this.a
 s.a_(new A.axU(s))},
@@ -90826,7 +90826,7 @@ l=s.ch
 k=A.aPJ(l,1)
 j=A.dy(2)
 s=p==null?s.at:p
-k=A.aIu(B.Vp,8,q,B.U,new A.bQ(B.jG,i,i,j,i,i,B.Q),B.dM,m,o,B.U,new A.bQ(s,i,i,A.dy(2),i,i,B.Q),B.dM,B.TX,B.U8,r.f,B.U,B.a9,r.r,B.U,B.a9,r.w,B.U,B.a9,n,B.U,B.a9,n,B.U,B.a9,n,B.U,B.a9,new A.bQ(i,i,new A.dh(new A.aN(l,5,B.t,-1),B.m,B.m,B.m),i,i,i,B.Q),q,q,B.GK,24,B.U,q,B.a9,B.fG,i,q,k,B.CI,B.o3,B.Dg,B.Vm,B.bI,B.o2,i,B.lZ,B.U,i,i,B.U)
+k=A.aIu(B.Vp,8,q,B.U,new A.bQ(B.jG,i,i,j,i,i,B.Q),B.dM,m,o,B.U,new A.bQ(s,i,i,A.dy(2),i,i,B.Q),B.dM,B.TX,B.U8,r.f,B.U,B.a9,r.r,B.U,B.a9,r.w,B.U,B.a9,n,B.U,B.a9,n,B.U,B.a9,n,B.U,B.a9,new A.bQ(i,i,new A.dh(new A.aN(l,5,B.t,-1),B.m,B.m,B.m),i,i,i,B.Q),q,q,B.GK,24,B.U,q,B.a9,B.fG,i,q,k,B.CH,B.o3,B.Dg,B.Vm,B.bI,B.o2,i,B.lZ,B.U,i,i,B.U)
 s=k
 break $label0$0}r=A.cd(a,B.bK)
 r=r==null?i:r.gcO()
@@ -101282,17 +101282,18 @@ B.CF=new A.an(0,600,0,1/0)
 B.jn=new A.an(36,1/0,36,1/0)
 B.jo=new A.an(1/0,1/0,1/0,1/0)
 B.CG=new A.an(0,500,0,1/0)
-B.Cu=new A.dh(B.m,B.m,B.bN,B.m)
 B.Q=new A.NF(0,"rectangle")
-B.CH=new A.bQ(null,null,B.Cu,null,null,null,B.Q)
-B.CI=new A.bQ(null,null,null,null,null,null,B.Q)
+B.CH=new A.bQ(null,null,null,null,null,null,B.Q)
 B.F1=new A.P(0.0784313725490196,0,0,0,B.i)
 B.Nq=new A.i(-8,0)
 B.CO=new A.dz(0,B.c1,B.F1,B.Nq,24)
 B.KG=s([B.CO],t.sq)
-B.CJ=new A.bQ(B.aF,null,null,null,B.KG,null,B.Q)
+B.CI=new A.bQ(B.aF,null,null,null,B.KG,null,B.Q)
 B.cU=new A.NF(1,"circle")
-B.CK=new A.bQ(B.br,null,null,null,null,null,B.cU)
+B.CJ=new A.bQ(B.br,null,null,null,null,null,B.cU)
+B.k=new A.P(1,1,1,1,B.i)
+B.Cu=new A.dh(B.m,B.m,B.bN,B.m)
+B.CK=new A.bQ(B.k,null,B.Cu,null,null,null,B.Q)
 B.mP=new A.a6u(6,"scaleDown")
 B.fU=new A.B2(0,"tight")
 B.mQ=new A.B2(1,"max")
@@ -101617,7 +101618,6 @@ B.fZ=new A.r5(0,"done")
 B.h_=new A.r5(1,"error")
 B.EE=new A.a84(1,"matrix")
 B.jC=new A.P(1,0.403921568627451,0.3137254901960784,0.6431372549019608,B.i)
-B.k=new A.P(1,1,1,1,B.i)
 B.h8=new A.P(1,0.9176470588235294,0.8666666666666667,1,B.i)
 B.hg=new A.P(1,0.30980392156862746,0.21568627450980393,0.5450980392156862,B.i)
 B.eH=new A.P(1,0.8156862745098039,0.7372549019607844,1,B.i)

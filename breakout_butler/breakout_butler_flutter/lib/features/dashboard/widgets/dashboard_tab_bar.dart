@@ -42,6 +42,7 @@ class DashboardTabBar extends StatelessWidget {
         bottom: SpSpacing.sm,
       ),
       decoration: const BoxDecoration(
+        color: SpColors.surface,
         border: Border(bottom: BorderSide(color: SpColors.border)),
       ),
       child: Row(
