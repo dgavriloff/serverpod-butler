@@ -11,6 +11,7 @@ import '../../../core/theme/sp_spacing.dart';
 import '../../../core/theme/sp_typography.dart';
 import '../../../core/widgets/sp_breadcrumb_nav.dart';
 import '../../../core/widgets/sp_skeleton.dart';
+import '../../../core/widgets/sp_text_field.dart';
 import '../../../main.dart';
 import '../../../services/cookie_web.dart';
 import '../../scribe/providers/scribe_providers.dart';
@@ -99,6 +100,72 @@ class _ProfessorDashboardScreenState
     }
   }
 
+  void _showPinDialog() {
+    final pinController = TextEditingController();
+    String? error;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> submit() async {
+              final pin = pinController.text.trim();
+              if (pin.isEmpty) return;
+
+              final token = await client.session.validateTeacherPin(
+                widget.urlTag,
+                pin,
+              );
+
+              if (token != null) {
+                CookieService.set('creator_${widget.urlTag}', token);
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+                _validateAndLoad();
+              } else {
+                setDialogState(() {
+                  error = 'incorrect pin';
+                });
+              }
+            }
+
+            return AlertDialog(
+              title:
+                  const Text('teacher pin', style: SpTypography.section),
+              content: SpTextField(
+                controller: pinController,
+                hint: 'enter pin',
+                errorText: error,
+                autofocus: true,
+                onSubmitted: (_) => submit(),
+              ),
+              actions: [
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SpColors.textSecondary,
+                    side: const BorderSide(color: SpColors.border),
+                  ),
+                  child: const Text('cancel'),
+                ),
+                OutlinedButton(
+                  onPressed: submit,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: SpColors.textSecondary,
+                    side: const BorderSide(color: SpColors.border),
+                  ),
+                  child: const Text('submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _onCloseRoom() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -170,12 +237,12 @@ class _ProfessorDashboardScreenState
               onSegmentTap: (index) {
                 if (index == 0) context.go('/');
               },
+              trailing: _DashboardLink(onTap: _showPinDialog),
             ),
             Expanded(
               child: RoomSelector(
                 urlTag: widget.urlTag,
                 roomCount: _roomCount,
-                onTeacherAuthenticated: _validateAndLoad,
               ),
             ),
           ],
@@ -326,6 +393,38 @@ class _SynthesizeButton extends ConsumerWidget {
                 const Text('synthesize', style: TextStyle(height: 1.0)),
               ],
             ),
+    );
+  }
+}
+
+/// Plain text link that turns blue on hover.
+class _DashboardLink extends StatefulWidget {
+  const _DashboardLink({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_DashboardLink> createState() => _DashboardLinkState();
+}
+
+class _DashboardLinkState extends State<_DashboardLink> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Text(
+          'dashboard',
+          style: SpTypography.body.copyWith(
+            color: _hovering ? SpColors.primaryAction : SpColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }
