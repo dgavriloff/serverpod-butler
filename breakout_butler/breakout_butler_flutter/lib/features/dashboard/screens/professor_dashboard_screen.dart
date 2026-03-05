@@ -133,7 +133,7 @@ class _ProfessorDashboardScreenState
 
             return AlertDialog(
               title:
-                  const Text('teacher pin', style: SpTypography.section),
+                  const Text('admin pin', style: SpTypography.section),
               content: SpTextField(
                 controller: pinController,
                 hint: 'enter pin',

@@ -131,7 +131,7 @@ class _CreateSessionCardState extends State<CreateSessionCard> {
               Expanded(
                 child: SpTextField(
                   controller: _pinController,
-                  label: 'teacher pin (optional)',
+                  label: 'admin pin (optional)',
                   hint: 'e.g., 1234',
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _submit(),

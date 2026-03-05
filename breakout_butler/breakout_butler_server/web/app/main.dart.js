@@ -47172,7 +47172,7 @@ case 6:case 1:return A.I(q,r)
 case 2:return A.H(o.at(-1),r)}})
 return A.J($async$qy,r)},
 H(a){var s,r=this,q=null,p=t.VS,o=t.p
-p=A.b([A.bi("create a session",q,q,q,B.bI,q,q),B.fA,A.xW(!1,r.d,q,"e.g., psych101",A.b([new A.oD(A.ae("[a-zA-Z0-9\\-_]",!0,!1,!1),!0,""),new A.p3(30,q)],p),q,"session tag",q,B.iJ),B.bm,A.de(A.b([A.fe(A.xW(!1,r.e,q,"4",A.b([$.aKZ(),new A.p3(2,q)],p),B.At,"number of rooms",q,B.iJ),1),B.bX,A.fe(A.xW(!1,r.f,q,"e.g., 1234",A.b([new A.p3(20,q)],p),q,"teacher pin (optional)",new A.avp(r),B.fG),1)],o),B.Y,B.r,B.a1,0,q)],o)
+p=A.b([A.bi("create a session",q,q,q,B.bI,q,q),B.fA,A.xW(!1,r.d,q,"e.g., psych101",A.b([new A.oD(A.ae("[a-zA-Z0-9\\-_]",!0,!1,!1),!0,""),new A.p3(30,q)],p),q,"session tag",q,B.iJ),B.bm,A.de(A.b([A.fe(A.xW(!1,r.e,q,"4",A.b([$.aKZ(),new A.p3(2,q)],p),B.At,"number of rooms",q,B.iJ),1),B.bX,A.fe(A.xW(!1,r.f,q,"e.g., 1234",A.b([new A.p3(20,q)],p),q,"admin pin (optional)",new A.avp(r),B.fG),1)],o),B.Y,B.r,B.a1,0,q)],o)
 s=r.w
 if(s!=null)B.b.K(p,A.b([B.bm,A.bi(s,q,q,q,B.av.b_(B.bP),q,q)],o))
 p.push(B.fA)
@@ -104178,7 +104178,7 @@ B.X_=new A.dx("Page Not Found",null,B.fI,null,null,null,null,null,null,null)
 B.TV=new A.p(!0,B.k,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.X0=new A.dx("Go to home page",null,B.TV,null,null,null,null,null,null,null)
 B.AA=new A.dx("cancel",null,null,null,null,null,null,null,null,null)
-B.X1=new A.dx("teacher pin",null,B.bI,null,null,null,null,null,null,null)
+B.X1=new A.dx("admin pin",null,B.bI,null,null,null,null,null,null,null)
 B.X2=new A.dx("Home",null,null,null,null,null,null,null,null,null)
 B.AB=new A.dx("close",null,null,null,null,null,null,null,null,null)
 B.X4=new A.dx("close room?",null,B.bI,null,null,null,null,null,null,null)
