@@ -24,6 +24,7 @@ class CreateSessionCard extends StatefulWidget {
 class _CreateSessionCardState extends State<CreateSessionCard> {
   final _tagController = TextEditingController();
   final _roomCountController = TextEditingController(text: '4');
+  final _pinController = TextEditingController();
   bool _isCreating = false;
   String? _error;
 
@@ -31,6 +32,7 @@ class _CreateSessionCardState extends State<CreateSessionCard> {
   void dispose() {
     _tagController.dispose();
     _roomCountController.dispose();
+    _pinController.dispose();
     super.dispose();
   }
 
@@ -62,9 +64,11 @@ class _CreateSessionCardState extends State<CreateSessionCard> {
     try {
       final session = await client.session.createSession(tag, roomCount);
 
+      final pin = _pinController.text.trim();
       final liveSession = await client.session.startLiveSession(
         session.id!,
         tag,
+        pin.isEmpty ? null : pin,
       );
 
       if (!mounted) return;
@@ -107,16 +111,35 @@ class _CreateSessionCardState extends State<CreateSessionCard> {
             ],
           ),
           const SizedBox(height: SpSpacing.sm),
-          SpTextField(
-            controller: _roomCountController,
-            label: 'number of rooms',
-            hint: '4',
-            keyboardType: TextInputType.number,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: SpTextField(
+                  controller: _roomCountController,
+                  label: 'number of rooms',
+                  hint: '4',
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(2),
+                  ],
+                ),
+              ),
+              const SizedBox(width: SpSpacing.sm),
+              Expanded(
+                child: SpTextField(
+                  controller: _pinController,
+                  label: 'teacher pin (optional)',
+                  hint: 'e.g., 1234',
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _submit(),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(20),
+                  ],
+                ),
+              ),
             ],
           ),
           if (_error != null) ...[

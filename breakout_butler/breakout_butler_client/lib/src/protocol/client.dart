@@ -582,13 +582,29 @@ class EndpointSession extends _i2.EndpointRef {
   /// Start a live session with a URL tag
   _i3.Future<_i14.LiveSession> startLiveSession(
     int sessionId,
-    String urlTag,
-  ) => caller.callServerEndpoint<_i14.LiveSession>(
+    String urlTag, [
+    String? teacherPin,
+  ]) => caller.callServerEndpoint<_i14.LiveSession>(
     'session',
     'startLiveSession',
     {
       'sessionId': sessionId,
       'urlTag': urlTag,
+      'teacherPin': teacherPin,
+    },
+  );
+
+  /// Validate a teacher PIN for a live session.
+  /// Returns the creator token if the PIN matches, null otherwise.
+  _i3.Future<String?> validateTeacherPin(
+    String urlTag,
+    String pin,
+  ) => caller.callServerEndpoint<String?>(
+    'session',
+    'validateTeacherPin',
+    {
+      'urlTag': urlTag,
+      'pin': pin,
     },
   );
 

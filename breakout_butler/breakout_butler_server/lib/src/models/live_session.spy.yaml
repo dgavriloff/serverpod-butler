@@ -18,6 +18,8 @@ fields:
   expiresAt: DateTime?
   ### Secret token for creator/professor access to the dashboard
   creatorToken: String?
+  ### Optional PIN for teacher to access dashboard from another device
+  teacherPin: String?
 indexes:
   ### URL tags must be unique among active sessions
   url_tag_active_idx:

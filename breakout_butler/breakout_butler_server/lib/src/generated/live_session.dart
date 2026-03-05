@@ -25,6 +25,7 @@ abstract class LiveSession
     required this.startedAt,
     this.expiresAt,
     this.creatorToken,
+    this.teacherPin,
   });
 
   factory LiveSession({
@@ -37,6 +38,7 @@ abstract class LiveSession
     required DateTime startedAt,
     DateTime? expiresAt,
     String? creatorToken,
+    String? teacherPin,
   }) = _LiveSessionImpl;
 
   factory LiveSession.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -54,6 +56,7 @@ abstract class LiveSession
           ? null
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['expiresAt']),
       creatorToken: jsonSerialization['creatorToken'] as String?,
+      teacherPin: jsonSerialization['teacherPin'] as String?,
     );
   }
 
@@ -88,6 +91,9 @@ abstract class LiveSession
   /// Secret token for creator/professor access to the dashboard
   String? creatorToken;
 
+  /// Optional PIN for teacher to access dashboard from another device
+  String? teacherPin;
+
   @override
   _i1.Table<int?> get table => t;
 
@@ -104,6 +110,7 @@ abstract class LiveSession
     DateTime? startedAt,
     DateTime? expiresAt,
     String? creatorToken,
+    String? teacherPin,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -118,6 +125,7 @@ abstract class LiveSession
       'startedAt': startedAt.toJson(),
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
       if (creatorToken != null) 'creatorToken': creatorToken,
+      if (teacherPin != null) 'teacherPin': teacherPin,
     };
   }
 
@@ -134,6 +142,7 @@ abstract class LiveSession
       'startedAt': startedAt.toJson(),
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
       if (creatorToken != null) 'creatorToken': creatorToken,
+      if (teacherPin != null) 'teacherPin': teacherPin,
     };
   }
 
@@ -180,6 +189,7 @@ class _LiveSessionImpl extends LiveSession {
     required DateTime startedAt,
     DateTime? expiresAt,
     String? creatorToken,
+    String? teacherPin,
   }) : super._(
          id: id,
          sessionId: sessionId,
@@ -190,6 +200,7 @@ class _LiveSessionImpl extends LiveSession {
          startedAt: startedAt,
          expiresAt: expiresAt,
          creatorToken: creatorToken,
+         teacherPin: teacherPin,
        );
 
   /// Returns a shallow copy of this [LiveSession]
@@ -206,6 +217,7 @@ class _LiveSessionImpl extends LiveSession {
     DateTime? startedAt,
     Object? expiresAt = _Undefined,
     Object? creatorToken = _Undefined,
+    Object? teacherPin = _Undefined,
   }) {
     return LiveSession(
       id: id is int? ? id : this.id,
@@ -217,6 +229,7 @@ class _LiveSessionImpl extends LiveSession {
       startedAt: startedAt ?? this.startedAt,
       expiresAt: expiresAt is DateTime? ? expiresAt : this.expiresAt,
       creatorToken: creatorToken is String? ? creatorToken : this.creatorToken,
+      teacherPin: teacherPin is String? ? teacherPin : this.teacherPin,
     );
   }
 }
@@ -266,6 +279,11 @@ class LiveSessionUpdateTable extends _i1.UpdateTable<LiveSessionTable> {
         table.creatorToken,
         value,
       );
+
+  _i1.ColumnValue<String, String> teacherPin(String? value) => _i1.ColumnValue(
+    table.teacherPin,
+    value,
+  );
 }
 
 class LiveSessionTable extends _i1.Table<int?> {
@@ -303,6 +321,10 @@ class LiveSessionTable extends _i1.Table<int?> {
       'creatorToken',
       this,
     );
+    teacherPin = _i1.ColumnString(
+      'teacherPin',
+      this,
+    );
   }
 
   late final LiveSessionUpdateTable updateTable;
@@ -331,6 +353,9 @@ class LiveSessionTable extends _i1.Table<int?> {
   /// Secret token for creator/professor access to the dashboard
   late final _i1.ColumnString creatorToken;
 
+  /// Optional PIN for teacher to access dashboard from another device
+  late final _i1.ColumnString teacherPin;
+
   @override
   List<_i1.Column> get columns => [
     id,
@@ -342,6 +367,7 @@ class LiveSessionTable extends _i1.Table<int?> {
     startedAt,
     expiresAt,
     creatorToken,
+    teacherPin,
   ];
 }
 

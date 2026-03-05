@@ -1314,8 +1314,9 @@ class _SessionEndpoint {
   _i3.Future<_i14.LiveSession> startLiveSession(
     _i1.TestSessionBuilder sessionBuilder,
     int sessionId,
-    String urlTag,
-  ) async {
+    String urlTag, [
+    String? teacherPin,
+  ]) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
           (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
@@ -1330,6 +1331,7 @@ class _SessionEndpoint {
           parameters: _i1.testObjectToJson({
             'sessionId': sessionId,
             'urlTag': urlTag,
+            'teacherPin': teacherPin,
           }),
           serializationManager: _serializationManager,
         );
@@ -1339,6 +1341,41 @@ class _SessionEndpoint {
                   _localCallContext.arguments,
                 )
                 as _i3.Future<_i14.LiveSession>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i3.Future<String?> validateTeacherPin(
+    _i1.TestSessionBuilder sessionBuilder,
+    String urlTag,
+    String pin,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'session',
+            method: 'validateTeacherPin',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'session',
+          methodName: 'validateTeacherPin',
+          parameters: _i1.testObjectToJson({
+            'urlTag': urlTag,
+            'pin': pin,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i3.Future<String?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

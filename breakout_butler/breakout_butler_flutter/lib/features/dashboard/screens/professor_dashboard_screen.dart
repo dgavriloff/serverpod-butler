@@ -175,6 +175,7 @@ class _ProfessorDashboardScreenState
               child: RoomSelector(
                 urlTag: widget.urlTag,
                 roomCount: _roomCount,
+                onTeacherAuthenticated: _validateAndLoad,
               ),
             ),
           ],

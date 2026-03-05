@@ -38,8 +38,9 @@ class SessionEndpoint extends Endpoint {
   Future<LiveSession> startLiveSession(
     Session session,
     int sessionId,
-    String urlTag,
-  ) async {
+    String urlTag, [
+    String? teacherPin,
+  ]) async {
     // Check if URL tag is already in use
     final existing = await LiveSession.db.findFirstRow(
       session,
@@ -59,9 +60,31 @@ class SessionEndpoint extends Endpoint {
       prompt: '',
       startedAt: DateTime.now(),
       creatorToken: token,
+      teacherPin: teacherPin,
     );
 
     return await LiveSession.db.insertRow(session, liveSession);
+  }
+
+  /// Validate a teacher PIN for a live session.
+  /// Returns the creator token if the PIN matches, null otherwise.
+  Future<String?> validateTeacherPin(
+    Session session,
+    String urlTag,
+    String pin,
+  ) async {
+    final liveSession = await LiveSession.db.findFirstRow(
+      session,
+      where: (t) => t.urlTag.equals(urlTag) & t.isActive.equals(true),
+    );
+
+    if (liveSession == null ||
+        liveSession.teacherPin == null ||
+        liveSession.teacherPin != pin) {
+      return null;
+    }
+
+    return liveSession.creatorToken;
   }
 
   /// Get a live session by URL tag
