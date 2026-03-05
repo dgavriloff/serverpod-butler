@@ -142,20 +142,12 @@ class _ProfessorDashboardScreenState
                 onSubmitted: (_) => submit(),
               ),
               actions: [
-                OutlinedButton(
+                TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: SpColors.textSecondary,
-                    side: const BorderSide(color: SpColors.border),
-                  ),
                   child: const Text('cancel'),
                 ),
-                OutlinedButton(
+                TextButton(
                   onPressed: submit,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: SpColors.textSecondary,
-                    side: const BorderSide(color: SpColors.border),
-                  ),
                   child: const Text('submit'),
                 ),
               ],
@@ -237,7 +229,14 @@ class _ProfessorDashboardScreenState
               onSegmentTap: (index) {
                 if (index == 0) context.go('/');
               },
-              trailing: _DashboardLink(onTap: _showPinDialog),
+              trailing: OutlinedButton(
+                onPressed: _showPinDialog,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: SpColors.textSecondary,
+                  side: const BorderSide(color: SpColors.border),
+                ),
+                child: const Text('dashboard'),
+              ),
             ),
             Expanded(
               child: RoomSelector(
@@ -393,38 +392,6 @@ class _SynthesizeButton extends ConsumerWidget {
                 const Text('synthesize', style: TextStyle(height: 1.0)),
               ],
             ),
-    );
-  }
-}
-
-/// Plain text link that turns blue on hover.
-class _DashboardLink extends StatefulWidget {
-  const _DashboardLink({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  State<_DashboardLink> createState() => _DashboardLinkState();
-}
-
-class _DashboardLinkState extends State<_DashboardLink> {
-  bool _hovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hovering = true),
-      onExit: (_) => setState(() => _hovering = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Text(
-          'dashboard',
-          style: SpTypography.body.copyWith(
-            color: _hovering ? SpColors.primaryAction : SpColors.textSecondary,
-          ),
-        ),
-      ),
     );
   }
 }
